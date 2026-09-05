@@ -32,9 +32,6 @@ import {
   isAuthError,
   isValidationError,
 } from "../utils/errors";
-import { isCapacitorMobile } from "../config/mobileApiConfig";
-import { mobileAIService, AICardGenError } from "../services/ai";
-import { getMobileSupabaseClient } from "../utils/supabase";
 const GenerateCardsModal = lazy(() =>
   import("../components/Learning/GenerateCardsModal").then((module) => ({
     default: module.GenerateCardsModal,
@@ -464,152 +461,6 @@ export const LearningMode = () => {
           )
         : undefined;
 
-    const isCapacitor = isCapacitorMobile();
-    if (isCapacitor) {
-      if (!mobileAIService.isConfigured()) {
-        msgHelper.error(t("learning.cards.configureApiKey"), {
-          action: { label: t("learning.cards.goToSettings"), onClick: () => navigate("/settings#prompts") },
-        });
-        return;
-      }
-      const targetIds = config.targetNodeIds?.length ? config.targetNodeIds : (nodeId ? [nodeId] : []);
-      if (targetIds.length === 0) {
-        msgHelper.warning(t("learning.cards.selectNode"));
-        return;
-      }
-      setIsGeneratingCards(true);
-      abortControllerRef.current = new AbortController();
-      const { signal } = abortControllerRef.current;
-      try {
-        const client = getMobileSupabaseClient();
-        if (!client) throw new Error("Supabase client not initialized");
-        const totalCards = Math.max(1, config.count);
-        // 题库批量：每个节点各产一份完整题量，卡片总数 = 节点数 × totalCards
-        const totalExpected = totalCards * targetIds.length;
-        setGenerateProgress({ current: 0, total: totalExpected, isGenerating: true });
-        if (isChallengePendingRef.current) {
-          setIsGenModalOpen(false);
-          useLevelTestNotificationStore.getState().setNotice({
-            status: "generating",
-            current: 0,
-            total: totalExpected,
-            nodeId: nodeId ?? "",
-            graphId: graphId ?? "",
-            from: "learning",
-          });
-        }
-
-        let generatedCount = 0;
-        let savedCount = 0;
-        const batchSize = 3;
-        for (let nIndex = 0; nIndex < targetIds.length; nIndex++) {
-          const id = targetIds[nIndex];
-          const nodeQuota = totalCards;
-          if (nodeQuota <= 0) continue;
-
-          const { data: graphNodes, error: gnError } = await client
-            .from("graph_nodes")
-            .select(`knowledge_point_id, graph_id, knowledge_points ( id, title, content )`)
-            .eq("knowledge_point_id", id).is("deleted_at", null);
-          if (gnError) { console.error("查询 graph_nodes 失败:", gnError); msgHelper.error(t("learning.cards.queryFailed")); continue; }
-          if (!graphNodes || graphNodes.length === 0) { continue; }
-          const graphNode = graphNodes[0] as unknown as {
-            knowledge_point_id: string; graph_id: string;
-            knowledge_points?: { id: string; title?: string | null; content?: string | null } | null;
-          };
-          const node = {
-            knowledge_point_id: graphNode.knowledge_point_id, graph_id: graphNode.graph_id,
-            title: graphNode.knowledge_points?.title || "", content: graphNode.knowledge_points?.content || "",
-          };
-
-          const nodeBatches = Math.ceil(nodeQuota / batchSize);
-          for (let i = 0; i < nodeBatches; i++) {
-            if (signal.aborted) { break; }
-            const currentBatchSize = Math.min(batchSize, nodeQuota - (i * batchSize));
-            if (currentBatchSize <= 0) { continue; }
-            setGenerateProgress({ current: generatedCount, total: totalExpected, isGenerating: true });
-            if (!isChallengePendingRef.current) {
-              msgHelper.info(t("learning.cards.generating", {
-                start: generatedCount + 1, end: generatedCount + currentBatchSize, total: totalExpected,
-              }), { duration: 2500 });
-            }
-            try {
-              const result = await mobileAIService.generateAndSaveCards(
-                node.title || "", node.content || "", node.knowledge_point_id, node.graph_id,
-                {
-                  types: config.types,
-                  count: currentBatchSize,
-                  difficulty: config.difficulty,
-                  coverage: config.coverage,
-                  customPrompt: config.customPrompt || undefined,
-                  // 把二维矩阵信息传入移动端服务，本地按权重/难度分派：
-                  cardsPerType: cardsPerTypeNum,
-                  countPerDifficulty: countPerDiffNum,
-                  countMatrix: countMatrixNum,
-                },
-              );
-              if (result.success) {
-                generatedCount += currentBatchSize;
-                savedCount += result.savedCount;
-                setGenerateProgress({ current: generatedCount, total: totalExpected, isGenerating: true });
-                if (isChallengePendingRef.current) {
-                  useLevelTestNotificationStore.getState().setNotice({
-                    status: "generating",
-                    current: generatedCount,
-                    total: totalExpected,
-                    nodeId: nodeId ?? "",
-                    graphId: graphId ?? "",
-                    from: "learning",
-                  });
-                }
-              }
-            } catch (batchError) {
-              console.error(`Batch ${nIndex + 1}-${i + 1} failed:`, batchError);
-              msgHelper.warning(t("learning.cards.batchFailed", { batch: nIndex * nodeBatches + i + 1 }), { duration: 3000 });
-            }
-          }
-        }
-        if (!signal.aborted && savedCount > 0) {
-          if (isChallengePendingRef.current) {
-            isChallengePendingRef.current = false;
-            setIsGenModalOpen(false);
-            useLevelTestNotificationStore.getState().setNotice({
-              status: "success",
-              nodeId: nodeId ?? "",
-              graphId: graphId ?? "",
-              from: "learning",
-            });
-          } else {
-            msgHelper.success(t("learning.cards.generateSuccess", { count: savedCount }), {
-              duration: 5000,
-              action: { label: t("learning.cards.startChallenge"), onClick: handleStartChallenge },
-            });
-          }
-        } else if (!signal.aborted && savedCount === 0 && isChallengePendingRef.current) {
-          isChallengePendingRef.current = false;
-          setIsGenModalOpen(false);
-          useLevelTestNotificationStore.getState().setNotice({
-            status: "error",
-            nodeId: nodeId ?? "",
-            graphId: graphId ?? "",
-            from: "learning",
-          });
-        }
-      } catch (error) {
-        console.error("[LearningMode] 移动端题目生成异常:", error);
-        const isAICardGenError = (err: unknown): err is AICardGenError => typeof err === "object" && err !== null && "type" in err && "suggestion" in err;
-        if (isAICardGenError(error)) { handleAICardGenError(error, config); }
-        else {
-          const errorMessage = error instanceof Error ? error.message : t("learning.cards.generateFailed");
-          msgHelper.error(errorMessage, {
-            duration: 5000,
-            action: { label: t("learning.cards.retry"), onClick: () => handleManualGenerateCards(config) },
-          });
-        }
-      } finally { setIsGeneratingCards(false); setGenerateProgress(null); abortControllerRef.current = null; }
-      return;
-    }
-
     // Desktop path
     const desktopTargetIds = config.targetNodeIds?.length ? config.targetNodeIds : (nodeId ? [nodeId] : []);
     if (desktopTargetIds.length === 0) { msgHelper.warning(t("learning.cards.selectNode")); return; }
@@ -655,44 +506,6 @@ export const LearningMode = () => {
       else if (error instanceof Error) errorMessage = t("learning.cards.submitFailed", { error: error.message });
       msgHelper.error(errorMessage);
     } finally { setIsGeneratingCards(false); }
-  };
-
-  const handleAICardGenError = (
-    error: AICardGenError,
-    config: {
-      count: number;
-      types: string[];
-      cardsPerType: Partial<Record<string, number>>;
-      countPerDifficulty: Partial<Record<"easy" | "medium" | "hard", number>>;
-      countMatrix?: Record<string, { easy: number; medium: number; hard: number }>;
-      difficulty: "easy" | "medium" | "hard" | "mixed";
-      coverage: "current_only" | "with_children" | "with_siblings" | "graph";
-      customPrompt: string;
-      targetNodeIds: string[];
-    },
-  ) => {
-    switch (error.type) {
-      case "api_key_missing": case "api_key_invalid":
-        msgHelper.error(error.message, { duration: 8000, action: { label: t("learning.cards.goToSettings"), onClick: () => navigate("/settings#prompts") } });
-        break;
-      case "quota_exceeded":
-        msgHelper.error(error.message, { duration: 8000 }); msgHelper.info(error.suggestion, { duration: 8000 });
-        break;
-      case "rate_limited":
-        msgHelper.warning(error.message, { duration: 5000, action: { label: t("learning.cards.retryLater"), onClick: () => setIsGenModalOpen(true) } });
-        break;
-      case "network_error": case "timeout":
-        msgHelper.error(error.message, { duration: 5000, action: { label: t("learning.cards.retry"), onClick: () => handleManualGenerateCards(config) } });
-        break;
-      case "database_error":
-        msgHelper.error(error.message, { duration: 8000 });
-        msgHelper.info(error.suggestion, { duration: 8000, action: error.retryable ? { label: t("learning.cards.retry"), onClick: () => handleManualGenerateCards(config) } : undefined });
-        break;
-      case "invalid_response":
-        msgHelper.warning(error.message, { duration: 5000, action: { label: t("learning.cards.retry"), onClick: () => handleManualGenerateCards(config) } });
-        break;
-      default: msgHelper.error(error.message, { duration: 5000 });
-    }
   };
 
   const handleCancelGenerate = () => {

@@ -5,7 +5,6 @@ import {
   Loader2,
   BrainCircuit,
   Settings,
-  AlertCircle,
   Cloud,
   CloudUpload,
   Eye,
@@ -28,7 +27,6 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { isCapacitorMobile } from '../../config/mobileApiConfig';
-import { mobileAIService } from '../../services/ai';
 import { ModalShell } from '../common';
 
 export type GenerateCardsDifficulty = 'easy' | 'medium' | 'hard' | 'mixed';
@@ -153,7 +151,6 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [isMobileAIConfigured, setIsMobileAIConfigured] = useState(true);
 
   // 滑杆拖拽起点快照：每次 pointerdown 记录当时的 total + matrix，
   // 防止拖拽过程中 React state 异步导致 base 来回跳、比例缩放错乱。
@@ -167,11 +164,7 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
   const typeSet = useMemo(() => new Set(types), [types]);
 
   useEffect(() => {
-    const mobile = isCapacitorMobile();
-    setIsMobile(mobile);
-    if (mobile) {
-      setIsMobileAIConfigured(mobileAIService.isConfigured());
-    }
+    setIsMobile(isCapacitorMobile());
   }, [isOpen]);
 
   useEffect(() => {
@@ -766,7 +759,6 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
   const handleConfirm = async (): Promise<void> => {
     if (types.length === 0) return;
     if (grandTotal <= 0) return;
-    if (isMobile && !isMobileAIConfigured) return;
     if (targetNodeIds.length === 0 && !isMobile) return;
 
     setIsLoading(true);
@@ -1364,20 +1356,7 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
           </div>
 
           {/* 提示 */}
-          {isMobile && !isMobileAIConfigured ? (
-            <div className="bg-red-50 dark:bg-red-900/20 p-3.5 rounded-xl border border-red-100 dark:border-red-900/30 text-xs text-red-700 dark:text-red-400 flex gap-3">
-              <div className="p-1 bg-red-100 dark:bg-red-800 rounded-full h-fit mt-0.5 shrink-0">
-                <AlertCircle size={12} className="text-red-600 dark:text-red-300" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold mb-1">{t('learning.generateCards.configureApiKey')}</p>
-                <p className="leading-relaxed opacity-80">
-                  {t('learning.generateCards.mobileAIRequired')}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div
+          <div
               className={`p-3.5 rounded-xl border text-xs flex gap-3 ${
                 isMobile
                   ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-100 dark:border-primary-900/30 text-primary-700 dark:text-primary-400'
@@ -1403,7 +1382,6 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
                   : t('learning.generateCards.backgroundProcess')}
               </p>
             </div>
-          )}
         </aside>
       </div>
 
@@ -1458,25 +1436,15 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
             >
               {t('learning.generateCards.cancel')}
             </button>
-            {isMobile && !isMobileAIConfigured ? (
-              <button
-                type="button"
-                onClick={handleGoToSettings}
-                className="px-6 py-2 bg-gradient-to-r from-primary-600 to-violet-600 hover:from-primary-700 hover:to-violet-700 text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-lg shadow-primary-200 dark:shadow-none hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <Settings size={16} />
-                {t('learning.generateCards.goToSettings')}
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleConfirm}
-                disabled={
-                  isLoading ||
-                  types.length === 0 ||
-                  grandTotal <= 0 ||
-                  (targetNodeIds.length === 0 && !isMobile)
-                }
+            <button
+              type="button"
+              onClick={handleConfirm}
+              disabled={
+                isLoading ||
+                types.length === 0 ||
+                grandTotal <= 0 ||
+                (targetNodeIds.length === 0 && !isMobile)
+              }
                 className="px-6 py-2 bg-gradient-to-r from-primary-600 to-violet-600 hover:from-primary-700 hover:to-violet-700 text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-200 dark:shadow-none hover:scale-[1.02] active:scale-[0.98]"
               >
                 {isLoading ? (
@@ -1486,7 +1454,6 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
                 )}
                 {t('learning.generateCards.startGenerate')}
               </button>
-            )}
           </>
         )}
       </div>

@@ -4,7 +4,6 @@ export { AIProviderConfigSection } from "./AIProviderConfigSection";
 export { AIStatusSection } from "./AIStatusSection";
 export { VoiceServiceSettings } from "./VoiceServiceSettings";
 export { DatabaseSettings } from "./DatabaseSettings";
-export { MobileAISettings } from "./MobileAISettings";
 export { StudyStrategySettings } from "./StudyStrategySettings";
 export { StudyAlgorithmSettings } from "./StudyAlgorithmSettings";
 export { GraphEditorSettings } from "./GraphEditorSettings";

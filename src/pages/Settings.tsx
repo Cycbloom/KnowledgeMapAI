@@ -40,7 +40,6 @@ import {
   AIStatusSection,
   VoiceServiceSettings,
   DatabaseSettings,
-  MobileAISettings,
   StudyStrategySettings,
   StudyAlgorithmSettings,
   GraphEditorSettings,
@@ -111,7 +110,6 @@ export const Settings = () => {
     { id: "prompts", label: t("settings.sections.prompts") },
     { id: "voice", label: t("settings.sections.voice") },
     { id: "database", label: t("settings.sections.database") },
-    { id: "mobileAI", label: t("settings.sections.mobileAI") },
     { id: "studyStrategy", label: t("settings.sections.studyStrategy") },
     { id: "studyAlgorithm", label: t("settings.sections.studyAlgorithm") },
     { id: "graphEditor", label: t("settings.sections.graphEditor") },
@@ -418,14 +416,6 @@ export const Settings = () => {
                 onConfigChange={handleDatabaseConfigChange}
                 sectionRef={dbSectionRef}
               />
-            </section>
-            <section
-              id="mobileAI"
-              ref={(el) => {
-                if (el) sectionRefs.current.mobileAI = el;
-              }}
-            >
-              <MobileAISettings availableModels={availableModels} />
             </section>
             <section
               id="studyStrategy"

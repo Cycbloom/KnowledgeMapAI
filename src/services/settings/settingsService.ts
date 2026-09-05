@@ -26,7 +26,6 @@ import type { StudyStrategyValues } from "@/components/Settings/settingsConstant
 import { api } from "@/services/api";
 import { authApi } from "@/services/api/auth";
 import { apiClient } from "@/services/api/createApiClient";
-import { mobileAIService } from "@/services/ai";
 import { useFocusStore } from "@/store/useFocusStore";
 import { useGraphEditorPreferencesStore } from "@/store/useGraphEditorPreferencesStore";
 import { useLearningSettingsStore } from "@/store/useLearningSettingsStore";
@@ -56,7 +55,6 @@ import { useStore } from "@/store/useStore";
  *  - prompts        → api.prompts (server: prompt_templates table)
  *  - aiActions      → api.aiActions (server: ai_actions table)
  *  - aiProviders    → apiClient "/ai/config/providers" (server)
- *  - aiMobile       → mobileAIService (localStorage key "mobile_ai_config")
  *  - studyStrategy  → authApi.updateProfile (server: users.settings JSONB)
  *  - studyAlgorithm → api.study FSRS endpoints (server: /study/fsrs-parameters)
  *  - voice          → api.tts / api.stt (server: /ai/tts/*, /ai/stt/*)
@@ -304,17 +302,6 @@ export const settingsService = {
         success: boolean;
         message: string;
       }>,
-  },
-
-  /**
-   * Mobile AI config (Capacitor). Backed by `mobileAIService` (localStorage
-   * key "mobile_ai_config").
-   */
-  aiMobile: {
-    getConfig: mobileAIService.getConfig,
-    setConfig: mobileAIService.setConfig,
-    clearConfig: mobileAIService.clearConfig,
-    isConfigured: mobileAIService.isConfigured,
   },
 
   /**

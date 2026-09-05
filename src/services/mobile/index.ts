@@ -2,7 +2,6 @@ import { mobileGraphsApi } from "./graphs";
 import { mobileNodesApi } from "./nodes";
 import { mobileEdgesApi } from "./edges";
 import { mobileBacklinksApi } from "./backlinks";
-import { mobileAiApi } from "./ai";
 import {
   mobileStudyApi,
   mobileDashboardApi,
@@ -57,7 +56,6 @@ export { mobileGraphsApi } from "./graphs";
 export { mobileNodesApi } from "./nodes";
 export { mobileEdgesApi } from "./edges";
 export { mobileBacklinksApi } from "./backlinks";
-export { mobileAiApi } from "./ai";
 export {
   mobileStudyApi,
   mobileDashboardApi,
@@ -84,8 +82,7 @@ export const mobileApi: IApi = {
   knowledgePoints: createNotSupportedModule<IKnowledgePointsApi>("knowledgePoints"),
   graphNodes: createNotSupportedModule<IGraphNodesApi>("graphNodes"),
   combinedView: createNotSupportedModule<ICombinedViewApi>("combinedView"),
-  ai: mobileAiApi,
-  aiActions: mobileAiApi.aiActions,
+  // ai / aiActions 不在此覆盖：三端统一走 webApi 的后端代理实现（AI 单链路）
   tts: createNotSupportedModule<ITtsApi>("tts"),
   stt: createNotSupportedModule<ISttApi>("stt"),
   study: mobileStudyApi,

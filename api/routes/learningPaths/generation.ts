@@ -1,4 +1,4 @@
-// 学习路径生成相关路由：生成预览、生成问题、生成并保存、自动排程
+// 学习路径生成相关路由：生成预览、生成问题、生成并保存
 
 import { Router, type Response } from "express";
 import { z } from "zod";
@@ -45,12 +45,6 @@ const generatePreviewPathSchema = z.object({
 // 生成问题请求 schema
 const getQuestionsSchema = z.object({
   graph_id: z.string().uuid(),
-});
-
-// 自动排程请求 schema
-const autoScheduleSchema = z.object({
-  start_date: z.string().datetime().optional(),
-  daily_minutes: z.number().min(5).max(240).optional(),
 });
 
 // 跨图谱学习路径生成请求 schema
@@ -155,46 +149,6 @@ router.post(
       if (error instanceof AppError) throw error;
       throw new AppError(
         (error as Error).message || "学习路径生成失败",
-        500,
-        ErrorCodes.SYSTEM_INTERNAL_ERROR,
-      );
-    }
-  },
-);
-
-// 自动排程学习路径
-router.post(
-  "/:id/auto-schedule",
-  requireAuth,
-  validate({ body: autoScheduleSchema }),
-  async (req: AuthedRequest, res: Response) => {
-    const { id } = req.params;
-    const { start_date, daily_minutes } = req.body;
-    const supabase = req.supabase;
-
-    try {
-      const result = await learningPathService.autoSchedulePath(
-        supabase,
-        id,
-        req.user.id,
-        {
-          start_date,
-          daily_minutes,
-        },
-      );
-
-      res.json({
-        success: true,
-        main_task_id: result.main_task_id,
-        subtask_ids: result.subtask_ids,
-        total_tasks: result.total_tasks,
-        estimated_days: result.estimated_days,
-      });
-    } catch (error) {
-      logger.error("Auto Schedule Error:", error);
-      if (error instanceof AppError) throw error;
-      throw new AppError(
-        (error as Error).message || "自动排程失败",
         500,
         ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );

@@ -313,23 +313,6 @@ export class LearningPathService {
     return this.taskIntegration.convertNodeToTask(supabase, nodeId, userId, options);
   }
 
-  async autoSchedulePath(
-    supabase: SupabaseClient,
-    pathId: string,
-    userId: string,
-    options?: {
-      start_date?: string;
-      daily_minutes?: number;
-    },
-  ): Promise<{
-    main_task_id: string;
-    subtask_ids: string[];
-    total_tasks: number;
-    estimated_days: number;
-  }> {
-    return this.taskIntegration.autoSchedulePath(supabase, pathId, userId, options);
-  }
-
   async syncProgressWithTask(
     supabase: SupabaseClient,
     taskId: string,

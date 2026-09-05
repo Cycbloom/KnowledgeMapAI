@@ -16,6 +16,7 @@ import {
   generateGraphSkeleton,
 } from "../ai/nodeSuggestionService";
 import { graphLockService } from "../common/graphLockService";
+import { graphTaskService } from "../scheduler/graphTaskService";
 import { notDeleted } from '../common/softDeleteHelper';
 
 interface RecursiveGraphPayload {
@@ -385,6 +386,24 @@ export class RecursiveGraphProcessor implements TaskProcessor {
       logger.info(
         `Graph generation completed for graph ${graph_id}: ${totalNodes} nodes, ${totalEdges} edges`,
       );
+
+      // 深度拓展新建了知识点 → 同步图谱大任务：为每个新知识点补建子任务并重算大任务进度。
+      // 本处理器经 createNodeWithCrossGraphReuse 直建节点，不触发 node_created 事件，
+      // 需显式同步（与 ExpandGraphProcessor 一致），否则学习任务缺少新节点的子任务。
+      if (graph_id) {
+        try {
+          await graphTaskService.syncTaskWithGraphChanges(supabase, graph_id);
+        } catch (err) {
+          logger.warn(
+            "[RecursiveGraphProcessor] sync task after expansion failed",
+            {
+              graphId: graph_id,
+              error: err instanceof Error ? err.message : String(err),
+            },
+          );
+        }
+      }
+
       await updateTaskStatus(
         supabase,
         taskId,

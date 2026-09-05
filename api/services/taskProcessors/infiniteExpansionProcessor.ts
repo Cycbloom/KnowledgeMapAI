@@ -348,20 +348,6 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
                 totalGraphsCreated++;
                 batchTitles.add(normalizedTitle);
 
-                // 与 graphService 创建图谱保持一致：发布 graph_created 事件，
-                // 让 cacheInvalidationSubscriber 立即失效该用户的 GRAPH_MAP/USER_GRAPHS 缓存。
-                // 否则新扩展图谱要等缓存 TTL 过期后才在地图上可见，且 forceReload 无法绕过后端进程缓存。
-                appEventBus.publish(
-                  "graph_created",
-                  {
-                    graphId: newGraph.id,
-                    title: suggestion.title,
-                    userId,
-                  } as GraphCreatedPayload,
-                  userId,
-                  "infinite_expansion_processor",
-                );
-
                 if (currentDomainInfo) {
                   const { error: domainError } = await supabase
                     .from("graph_domains")
@@ -435,6 +421,25 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
                     depth: current.depth + 1,
                   });
                 }
+              }
+
+              // 宽度拓展新建了图谱 → 发布 graph_created 事件。
+              // 必须在节点生成之后发布：publish 是异步 fire-and-forget，smartTaskLinker
+              // 收到事件时若图还无节点会建出「空任务」，后续节点经 createNodeWithCrossGraphReuse
+              // 静默加入、不触发 node_created，子任务将缺失。放在节点生成后再发，让
+              // getOrCreateTaskForGraph 一次见到带节点的图并补建每知识点子任务；
+              // 同时让 cacheInvalidationSubscriber 失效该用户的 GRAPH_MAP/USER_GRAPHS 缓存。
+              if (targetGraphId) {
+                appEventBus.publish(
+                  "graph_created",
+                  {
+                    graphId: targetGraphId,
+                    title: suggestion.title,
+                    userId,
+                  } as GraphCreatedPayload,
+                  userId,
+                  "infinite_expansion_processor",
+                );
               }
             }
 

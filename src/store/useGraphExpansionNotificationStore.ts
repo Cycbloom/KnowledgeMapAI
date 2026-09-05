@@ -52,13 +52,21 @@ interface TaskStatusPayload {
     totalNodes?: number;
     totalEdges?: number;
   };
+  runtime_progress?: {
+    total_graphs_created?: number;
+    total_nodes_created?: number;
+    totalNodes?: number;
+    totalEdges?: number;
+  };
 }
 
 const resolveCount = (
   task: TaskStatusPayload | null,
   mode: GraphExpansionMode,
 ): { graphs?: number; nodes?: number } => {
-  const out = task?.output_data;
+  // 拓展处理器把完成结果作为 progress 写入 runtime_progress 列（第 4 位置参数），
+  // 而非 output_data；部分处理器仍写 output_data，故两者都读、runtime 优先。
+  const out = task?.runtime_progress ?? task?.output_data;
   if (!out) return {};
   if (mode === 'width') {
     return {

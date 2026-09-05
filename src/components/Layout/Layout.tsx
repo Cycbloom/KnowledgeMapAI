@@ -690,6 +690,14 @@ export const Layout = () => {
         )}
 
         <main id="main-content" ref={mainRef} tabIndex={-1} className="flex-1 overflow-y-auto custom-scrollbar flex flex-col w-full relative focus:outline-none">
+          {/* 移动端原生壳延伸到挖孔区后，用安全区高度把内容压到前置摄像头行以下 */}
+          {isMobile && !isFullScreenPage && (
+            <div
+              aria-hidden="true"
+              className="shrink-0"
+              style={{ height: "env(safe-area-inset-top, 0px)" }}
+            />
+          )}
           {!isFullScreenPage && (
             <header
               className={`h-12 px-4 md:px-6 flex items-center justify-between shrink-0 z-10 shadow-sm transition-colors border-b relative ${

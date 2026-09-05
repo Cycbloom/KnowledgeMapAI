@@ -17,6 +17,10 @@ const config: CapacitorConfig = {
       backgroundColor: "#ffffff",
       showSpinner: false,
     },
+    StatusBar: {
+      // 插件默认 #000000，Android 15 以下会在启动瞬间把状态栏涂黑
+      backgroundColor: "#ffffff",
+    },
   },
   android: {
     allowMixedContent: isDev,

@@ -38,6 +38,8 @@ export interface CrossGraphStage {
   reason: string;
   isCompleted: boolean;
   completion: number;
+  /** 该图谱的实际节点数（生成路径/估算时长用；空图谱为 0，时长按目标估算） */
+  nodeCount?: number;
   /** 前置图谱 id（仅 prerequisite/extension 关系） */
   prerequisites: string[];
 }
@@ -175,6 +177,7 @@ export function generateCrossGraphRulePath(
         reason: "",
         isCompleted: false,
         completion: 0,
+        nodeCount: 0,
         prerequisites: [],
       };
     }
@@ -197,6 +200,7 @@ export function generateCrossGraphRulePath(
       reason,
       isCompleted,
       completion: node.completion,
+      nodeCount: node.nodeCount,
       prerequisites: parentMap.get(node.graphId) ?? [],
     };
   });
@@ -272,8 +276,8 @@ export async function generateCrossGraphAIPath(
 要求：
 1. 先评估每张图谱与「学习目标」的相关性，只把**与目标直接相关的图谱**列入 path，与其无关的图谱**不要放入**，也不要补充未选中的图谱（path 即完整子图）；
 2. 先学前置/基础图谱，再学依赖它的扩展图谱；同层图谱按重要性与完成度排序（未完成的优先）；
-3. 每个图谱给出 priority（high/medium/low）、reason（简短中文理由）、estimatedTime（分钟）、prerequisites（前置图谱标题，用输入中的精确标题）；
-4. 返回 JSON：{"path":[{"nodeTitle":"...","priority":"high","reason":"...","estimatedTime":30,"prerequisites":[]}],"suggestions":["..."]}`;
+3. 每个图谱给出 priority（high/medium/low）、reason（简短中文理由）、prerequisites（前置图谱标题，用输入中的精确标题）；图谱学习时长由系统统一估算，estimatedTime 填 0 即可；
+4. 返回 JSON：{"path":[{"nodeTitle":"...","priority":"high","reason":"...","estimatedTime":0,"prerequisites":[]}],"suggestions":["..."]}`;
 
   try {
     const completion = await provider.client.chat.completions.create({
@@ -314,6 +318,7 @@ export async function generateCrossGraphAIPath(
         reason: item.reason || "",
         isCompleted: graph.completion >= CROSS_GRAPH_COMPLETION_THRESHOLD,
         completion: graph.completion,
+        nodeCount: graph.nodeCount,
         prerequisites: (item.prerequisites || [])
           .map((p: string) => titleToGraphId.get(String(p).toLowerCase()) || p)
           .filter(Boolean),

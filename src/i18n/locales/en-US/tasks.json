@@ -73,6 +73,7 @@
   "reviewGeneration": "Review task generation",
   "translateNodes": "Translate Nodes",
   "discoverNodeRelations": "Discover Node Relations",
+  "generateLearningPathCandidates": "Generate Candidate Learning Paths",
   "continueRelationCreation": "Continue Creating Relations",
   "searchPlaceholder": "Search tasks...",
   "noSearchResults": "No matching tasks found",

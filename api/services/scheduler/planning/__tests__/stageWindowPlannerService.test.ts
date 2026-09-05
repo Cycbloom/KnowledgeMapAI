@@ -1,9 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import {
-  createMockSupabase,
-  createChainedMock,
-  type MockSupabaseClient,
-} from "../../../../../tests/helpers/mockFactories";
+import { createChainedMock } from "../../../../../tests/helpers/mockFactories";
 
 vi.mock("../../../study/learningPathService", () => ({
   learningPathService: {
@@ -106,8 +102,10 @@ describe("StageWindowPlannerService (P2 两级排课)", () => {
   });
 
   it("stage 按周容量顺序装箱：超出本周容量的 stage 顺延到下周", async () => {
-    // 全局预算默认 60 → 周容量 420；g1 300 + g2 200 = 500 > 420 → 分两周
-    const { supabase, windowChain } = buildDispatch({});
+    // 显式固定日容量 60 → 周容量 420；g1 300 + g2 200 = 500 > 420 → 分两周
+    const { supabase } = buildDispatch({
+      settings: { daily_capacity_minutes: 60, review_buffer_ratio: 0.2 },
+    });
     (
       learningPathService.getLearningPath as ReturnType<typeof vi.fn>
     ).mockResolvedValue(
@@ -151,7 +149,7 @@ describe("StageWindowPlannerService (P2 两级排课)", () => {
       ]),
     );
 
-    const result = await stageWindowPlannerService.planStageWindows(
+    await stageWindowPlannerService.planStageWindows(
       supabase as never,
       "user-1",
       "path-1",
@@ -167,7 +165,9 @@ describe("StageWindowPlannerService (P2 两级排课)", () => {
   });
 
   it("超长 stage（> 周容量）跨多周，窗口结束日覆盖整个跨度", async () => {
-    const { supabase, windowChain } = buildDispatch({});
+    const { supabase, windowChain } = buildDispatch({
+      settings: { daily_capacity_minutes: 60, review_buffer_ratio: 0.2 },
+    });
     (
       learningPathService.getLearningPath as ReturnType<typeof vi.fn>
     ).mockResolvedValue(
@@ -216,7 +216,7 @@ describe("StageWindowPlannerService (P2 两级排课)", () => {
   });
 
   it("getStageWindows 标记已过期仍未完成的窗口为滞后", async () => {
-    const { supabase, windowChain } = buildDispatch({
+    const { supabase } = buildDispatch({
       windowRows: [
         {
           id: "w1",
@@ -326,16 +326,13 @@ describe("StageWindowPlannerService (P2 两级排课)", () => {
       "path-1",
     );
 
-    // 等价全量重排：窗口从本周一起重建
+    // 等价全量重排：窗口从今天起重建（起点 = 当天，非本周一）
     const today = new Date();
-    const offset = (today.getDay() + 6) % 7;
-    const monday = new Date(today);
-    monday.setDate(monday.getDate() - offset);
     const pad = (n: number) => String(n).padStart(2, "0");
-    const mondayStr = `${monday.getFullYear()}-${pad(monday.getMonth() + 1)}-${pad(monday.getDate())}`;
+    const todayStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
     expect(result.postponedFrom).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     const rows = insertedRows(windowChain);
     expect(rows).toHaveLength(1);
-    expect(rows[0]?.week_start_date).toBe(mondayStr);
+    expect(rows[0]?.week_start_date).toBe(todayStr);
   });
 });

@@ -138,6 +138,8 @@ const getTypeLabel = (type: string, t: TFunction) => {
       return t("tasks.translateNodes");
     case "discover_node_relations":
       return t("tasks.discoverNodeRelations");
+    case "cross_graph_path_variants":
+      return t("tasks.generateLearningPathCandidates");
     default:
       return type;
   }

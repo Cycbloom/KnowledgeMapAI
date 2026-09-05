@@ -94,7 +94,7 @@ export const GoalDrivenPathDialog: React.FC<GoalDrivenPathDialogProps> = ({
     useState(false);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   // Step4：保存
-  const [dailyMinutes, setDailyMinutes] = useState(30);
+  const [dailyMinutes, setDailyMinutes] = useState(180);
   const [isSaving, setIsSaving] = useState(false);
 
   const listRef = useRef<HTMLDivElement>(null);
@@ -953,7 +953,7 @@ export const GoalDrivenPathDialog: React.FC<GoalDrivenPathDialogProps> = ({
                     <input
                       type="range"
                       min={10}
-                      max={120}
+                      max={240}
                       step={10}
                       value={dailyMinutes}
                       onChange={(e) => setDailyMinutes(parseInt(e.target.value, 10))}

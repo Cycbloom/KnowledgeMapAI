@@ -25,6 +25,7 @@ import {
 } from "./crossGraphPathAlgorithms";
 import { searchSimilarGraphs } from "../../utils/similaritySearch";
 import { stageWindowPlannerService } from "../scheduler/planning/stageWindowPlannerService";
+import { graphTimeEstimatorService, estimateGraphMinutes } from "./graphTimeEstimator";
 import { getAIProvider, getAIProviderForTask } from "../ai/factory";
 import { promptService } from "../ai/promptService";
 import { chatService } from "../ai/chatService";
@@ -386,7 +387,7 @@ ${domainSummary}
       ? await getAIProvider(opts.provider as AIProviderType)
       : await getAIProviderForTask("text");
 
-    const dailyMinutes = opts.dailyMinutes ?? 30;
+    const dailyMinutes = opts.dailyMinutes ?? 180;
     const variantCount = Math.min(3, Math.max(2, opts.variantCount ?? 3));
 
     const mapData = await graphCrudService.getGraphMap(supabase, userId);
@@ -576,6 +577,17 @@ ${domainSummary}
     stages: VariantStage[];
     archivedOld: boolean;
   }> {
+    // 每张图谱学习时长按「实际节点数」估算（覆盖 AI 给出的偏小估算）；
+    // 空图谱（无实际节点）回退到目标估算数
+    const estimateSettings = await graphTimeEstimatorService.getSettings(
+      supabase,
+      userId,
+    );
+    const nodeCounts = await graphTimeEstimatorService.getActualNodeCounts(
+      supabase,
+      userId,
+      opts.variant.stages.map((s) => s.graph_id),
+    );
     const stages: VariantStage[] = opts.variant.stages
       .slice()
       .sort((a, b) => a.order - b.order)
@@ -585,7 +597,10 @@ ${domainSummary}
         order: index,
         priority: s.priority,
         reason: s.reason ?? "",
-        estimatedTime: s.estimated_time,
+        estimatedTime: estimateGraphMinutes(
+          estimateSettings,
+          nodeCounts.get(s.graph_id),
+        ),
       }));
 
     if (stages.length === 0) {
@@ -1128,7 +1143,7 @@ ${
 1. 先评估每张图谱与学习目标的相关性，只把**与目标直接相关的图谱**纳入 path，与其无关的图谱**不要放入**（path 即完整子图，不会自动补齐未选中的图谱）；
 2. 每个变体输出 2-4 条整体建议（suggestions）；
 3. 每个变体内 path 的 nodeTitle 必须使用输入中的精确图谱标题；
-4. 为每张图给出 priority（high/medium/low）与简短 reason（≤20 字）与 estimatedTime（分钟，5-60）；
+4. 为每张图给出 priority（high/medium/low）与简短 reason（≤20 字）；图谱学习时长由系统统一估算，estimatedTime 填 0 即可，无需估算；
 5. 排序时尽量让同一领域的图谱相邻，先按领域组织再按前置关系推进。`;
   }
 

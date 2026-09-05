@@ -15,6 +15,7 @@ import { AppError } from "../../../middleware/errorHandler";
 import { ErrorCodes } from "../../../../shared/types/errorCodes";
 import { learningPathService } from "../../study/learningPathService";
 import { capacityService } from "./capacityService";
+import { graphTimeEstimatorService, estimateGraphMinutes, type GraphTimeEstimateSettings } from "../../study/graphTimeEstimator";
 import type { LearningPathNode } from "../../study/learningPathTypes";
 
 export type StageWindowStatus = "planned" | "in_progress" | "completed" | "skipped";
@@ -81,12 +82,43 @@ class StageWindowPlannerService {
         ErrorCodes.RESOURCE_NOT_FOUND,
       );
     }
-    const stages = (path.nodes ?? [])
+    const graphStages = (path.nodes ?? [])
       .filter((n): n is LearningPathNode => !!n.graph_id)
       .sort((a, b) => a.order_index - b.order_index);
-    if (stages.length === 0) {
+    if (graphStages.length === 0) {
       return { pathId, windows: [] };
     }
+
+    // 跨图图谱节点：时长按「实际节点数」估算（空图谱回退目标估算数，不信任
+    // AI/历史写死的偏小值），先回写节点与路径总时长，再重新读取用于装箱，
+    // 保证窗口/详情/排程三方一致
+    const estimateSettings = await graphTimeEstimatorService.getSettings(
+      supabase,
+      userId,
+    );
+    const nodeCounts = await graphTimeEstimatorService.getActualNodeCounts(
+      supabase,
+      userId,
+      graphStages
+        .map((s) => s.graph_id)
+        .filter((g): g is string => !!g),
+    );
+    await this.refreshGraphStageTimes(
+      supabase,
+      userId,
+      pathId,
+      graphStages,
+      nodeCounts,
+      estimateSettings,
+    );
+    const refreshed = await learningPathService.getLearningPath(
+      supabase,
+      pathId,
+      userId,
+    );
+    const stages = (refreshed?.nodes ?? [])
+      .filter((n): n is LearningPathNode => !!n.graph_id)
+      .sort((a, b) => a.order_index - b.order_index);
 
     const { dailyCapacityMinutes } = await capacityService.getCapacitySettings(
       supabase,
@@ -95,8 +127,9 @@ class StageWindowPlannerService {
     const weeklyCapacity = Math.max(30, dailyCapacityMinutes * 7);
 
     const start = options?.start_date
-      ? startOfWeek(new Date(`${options.start_date}T00:00:00`))
-      : startOfWeek(new Date());
+      ? new Date(`${options.start_date}T00:00:00`)
+      : new Date();
+    start.setHours(0, 0, 0, 0);
 
     const windows = this.packStagesIntoWeeks(stages, start, weeklyCapacity);
 
@@ -361,6 +394,52 @@ class StageWindowPlannerService {
       ...this.rowToWindow(row, today),
       pathTitle: (row.learning_paths as { title?: string } | null)?.title,
     }));
+  }
+
+  /**
+   * 回写跨图图谱节点时长（按每张图谱实际节点数分别估算）并重算路径总时长，
+   * 保证窗口/详情/排程三方一致。尽力而为：失败仅告警，不阻塞装箱。
+   */
+  private async refreshGraphStageTimes(
+    supabase: SupabaseClient,
+    userId: string,
+    pathId: string,
+    stages: LearningPathNode[],
+    nodeCounts: Map<string, number>,
+    settings: GraphTimeEstimateSettings,
+  ): Promise<void> {
+    try {
+      for (const stage of stages) {
+        if (!stage.graph_id) continue;
+        const minutes = estimateGraphMinutes(
+          settings,
+          nodeCounts.get(stage.graph_id),
+        );
+        await supabase
+          .from("learning_path_nodes")
+          .update({ estimated_time: minutes })
+          .eq("id", stage.id);
+      }
+      const { data } = await supabase
+        .from("learning_path_nodes")
+        .select("estimated_time")
+        .eq("path_id", pathId);
+      const total = (data ?? []).reduce(
+        (sum, n) =>
+          sum + (Number((n as { estimated_time?: number }).estimated_time) || 0),
+        0,
+      );
+      await supabase
+        .from("learning_paths")
+        .update({ total_estimated_time: total })
+        .eq("id", pathId)
+        .eq("user_id", userId);
+    } catch (err) {
+      logger.warn("[StageWindow] refresh graph stage times failed", {
+        pathId,
+        err,
+      });
+    }
   }
 
   /** 周装箱：里程碑独占一周；超长 stage 跨多周；返回窗口列表 */

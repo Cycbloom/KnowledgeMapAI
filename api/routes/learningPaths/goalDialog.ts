@@ -134,7 +134,10 @@ router.post(
       req.user.id,
       "cross_graph_path_variants",
       { ...req.body },
-      "生成候选学习路径",
+      // title 必须等于 processor 类型 key：asyncTaskService 恢复（retry/resume/重启）
+      // 依赖 getOriginalTaskType 用 title 反查 processor，传可读中文名会误分发到
+      // generate_questions，导致候选路径永远无法重试。展示标签由前端 getTypeLabel 本地化。
+      "cross_graph_path_variants",
     );
     res.json({
       success: true,

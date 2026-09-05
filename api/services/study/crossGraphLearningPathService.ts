@@ -21,6 +21,7 @@ import {
   type CrossGraphRelationInput,
   type CrossGraphStage,
 } from "./crossGraphPathAlgorithms";
+import { graphTimeEstimatorService, estimateGraphMinutes } from "./graphTimeEstimator";
 import type { GraphRelationType } from "../graph/graphRelationService";
 
 /** 跨图路径默认标题（可读中文文案，落库直接用） */
@@ -153,12 +154,17 @@ class CrossGraphLearningPathService {
           graphs,
           relations,
           targetGoal,
-          options?.dailyMinutes ?? 30,
+          options?.dailyMinutes ?? 180,
         )
       : generateCrossGraphRulePath(graphs, relations);
 
     const title = options?.title ?? DEFAULT_CROSS_GRAPH_PATH_TITLE;
-    const dailyMinutes = options?.dailyMinutes ?? 30;
+    const dailyMinutes = options?.dailyMinutes ?? 180;
+    // 每张图谱学习时长按「实际节点数」估算；空图谱（nodeCount=0）回退到目标估算数
+    const estimateSettings = await graphTimeEstimatorService.getSettings(
+      supabase,
+      userId,
+    );
 
     // 3. 落库为 cross_graph 学习路径（节点以 graph_id 为单位）
     const savedPath = await learningPathService.createLearningPath(
@@ -175,7 +181,10 @@ class CrossGraphLearningPathService {
           order_index: stage.order,
           title: stage.graphTitle,
           description: stage.reason,
-          estimated_time: 30,
+          estimated_time: estimateGraphMinutes(
+            estimateSettings,
+            stage.nodeCount,
+          ),
           is_milestone: stage.priority === "high",
           prerequisites: stage.prerequisites,
         })),

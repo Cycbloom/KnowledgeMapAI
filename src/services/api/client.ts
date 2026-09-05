@@ -89,6 +89,34 @@ export const requestData = async <T>(url: string, options: RequestInit = {}): Pr
   return res.data;
 };
 
+/**
+ * FormData 上传（图片/文档/音频等 multipart 端点）。
+ * 走 apiClient 统一出口：鉴权/CSRF/移动端标识头由拦截器补齐，
+ * Content-Type 由浏览器按 multipart 自动设置，调用方不得手工指定。
+ */
+export const requestUpload = async <T = any>(url: string, formData: FormData): Promise<T> => {
+  return apiClient.request<T, T>({
+    url,
+    method: 'POST',
+    data: formData,
+  }) as unknown as T;
+};
+
+/**
+ * 二进制下载（导出文件 / TTS 音频等 blob 端点），同样走 apiClient 统一出口。
+ */
+export const requestBlob = async (
+  url: string,
+  options: { method?: Method; data?: unknown } = {},
+): Promise<Blob> => {
+  return apiClient.request<Blob, Blob>({
+    url,
+    method: options.method || 'GET',
+    data: options.data,
+    responseType: 'blob',
+  }) as unknown as Blob;
+};
+
 export type AITaskType = 'text' | 'embedding' | 'reasoning';
 
 export interface AIConfig {

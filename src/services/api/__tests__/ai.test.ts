@@ -380,7 +380,7 @@ describe('aiApi', () => {
   });
 
   describe('chatStream', () => {
-    it('应该以流式方式调用 createStreamHandler 请求 /ai/chat 并附带鉴权选项', async () => {
+    it('应该以流式方式调用 createStreamHandler 请求 /ai/chat（基址与鉴权头由统一出口内部处理）', async () => {
       const data = { message: '你好', graph_id: 'g1' };
 
       await aiApi.chatStream(data, onChunk);
@@ -389,11 +389,6 @@ describe('aiApi', () => {
         '/ai/chat',
         { ...data, language: DEFAULT_LANG },
         onChunk,
-        expect.objectContaining({
-          baseUrl: 'http://api.test',
-          token: null,
-          csrfToken: null,
-        }),
       );
     });
   });

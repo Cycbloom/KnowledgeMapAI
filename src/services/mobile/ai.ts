@@ -10,7 +10,6 @@ import { getAILanguage } from "@/hooks/ai/useAILanguage";
 import { getMobileSupabaseClient } from "@/utils/supabase";
 import {
   createStreamHandler,
-  handleUnauthorized,
 } from "../shared/streamHandler";
 import { logger } from "@/utils/logger";
 
@@ -97,13 +96,8 @@ const createMobileStreamHandler = async (
   payload: unknown,
   onChunk: (content: string) => void,
 ) => {
-  const token = useStore.getState().token;
-  const streamBaseURL = getCloudApiBaseUrl() || "";
-  await createStreamHandler(url, payload, onChunk, {
-    baseUrl: streamBaseURL,
-    token,
-    onUnauthorized: handleUnauthorized,
-  });
+  // 基址 / 鉴权 / CSRF / 移动端标识头统一由流式出口内部处理
+  await createStreamHandler(url, payload, onChunk);
 };
 
 export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {

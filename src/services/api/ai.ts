@@ -9,10 +9,7 @@ import {
 import { useStore } from "@/store/useStore";
 import type { AIAction, TutorMode } from "@shared/types";
 import { getAILanguage } from "@/hooks/ai/useAILanguage";
-import {
-  createStreamHandler,
-  handleUnauthorized,
-} from "../shared/streamHandler";
+import { createStreamHandler } from "../shared/streamHandler";
 import type { IAiApi, IAiActionsApi } from "./contracts/IAiApi";
 
 export const aiActionsApi: IAiActionsApi = {
@@ -39,15 +36,8 @@ const createApiStreamHandler = async (
   payload: unknown,
   onChunk: (content: string) => void,
 ) => {
-  const token = useStore.getState().token;
-  const csrfToken = getCsrfToken();
-  const apiUrl = await getApiUrl();
-  await createStreamHandler(url, payload, onChunk, {
-    baseUrl: apiUrl,
-    token,
-    csrfToken,
-    onUnauthorized: handleUnauthorized,
-  });
+  // 基址 / 鉴权 / CSRF / 移动端标识头统一由流式出口内部处理
+  await createStreamHandler(url, payload, onChunk);
 };
 
 export const aiApi: IAiApi = {

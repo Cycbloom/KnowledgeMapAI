@@ -79,7 +79,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
   const [customGoal, setCustomGoal] = useState('');
   const [knowledgeAnswers, setKnowledgeAnswers] = useState<Record<string, string>>({});
   const [learningStyle, setLearningStyle] = useState<'sequential' | 'exploratory' | 'focused'>('sequential');
-  const [dailyTime, setDailyTime] = useState(30);
+  const [dailyTime, setDailyTime] = useState(180);
   const [selectedPrerequisites, setSelectedPrerequisites] = useState<Set<string>>(new Set());
   const [createdGraphs, setCreatedGraphs] = useState<Array<{
     topic: string;
@@ -590,7 +590,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
                   <input
                     type="range"
                     min={10}
-                    max={120}
+                    max={240}
                     step={10}
                     value={dailyTime}
                     onChange={(e) => setDailyTime(parseInt(e.target.value))}

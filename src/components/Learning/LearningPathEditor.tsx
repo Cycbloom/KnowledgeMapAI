@@ -349,7 +349,7 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
         graph_id: graphId,
         target_goal: t('learning.pathEditor.defaultTargetGoal'),
         learning_style: 'sequential',
-        daily_time_minutes: 30
+        daily_time_minutes: 180
       }) as { stages: LearningPathStage[]; graphTitle: string; targetGoal?: string };
 
       if (result.stages && result.stages.length > 0) {
@@ -365,7 +365,7 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
           title: t('learning.pathEditor.pathTitle', { title: result.graphTitle }),
           description: result.targetGoal || t('learning.pathEditor.aiGeneratedDescription'),
           goal: result.targetGoal,
-          daily_minutes_target: 30,
+          daily_minutes_target: 180,
           ai_generated: true,
           nodes,
         });

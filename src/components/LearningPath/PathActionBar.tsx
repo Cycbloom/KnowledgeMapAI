@@ -35,7 +35,7 @@ const PathActionBar: React.FC<PathActionBarProps> = ({
         <div className="flex items-center gap-2">
           {pathDetail.graph_id && (
             <button
-              onClick={() => navigate(`/graphs/${pathDetail.graph_id}`)}
+              onClick={() => navigate(`/graph/${pathDetail.graph_id}`)}
               className="px-4 py-2 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 flex items-center gap-2"
             >
               <BookOpen className="w-4 h-4" />
@@ -52,7 +52,9 @@ const PathActionBar: React.FC<PathActionBarProps> = ({
             ) : (
               <CalendarClock className="w-4 h-4" />
             )}
-            {t('learningPath.pathActionBar.autoSchedule')}
+            {t(pathDetail.path_type === "cross_graph"
+              ? 'learningPath.pathActionBar.replanStageWindows'
+              : 'learningPath.pathActionBar.autoSchedule')}
           </button>
         </div>
 

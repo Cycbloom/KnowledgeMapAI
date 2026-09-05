@@ -65,6 +65,7 @@ const LearningPathDetailPage: React.FC = () => {
       notes: "",
       related_task_id: undefined,
       related_task: undefined,
+      graph_id: node.graph_id,
     }));
 
     const progress = (r.progress as Record<string, number>) || {
@@ -83,6 +84,7 @@ const LearningPathDetailPage: React.FC = () => {
       description: r.description as string,
       graph_id: r.source_graph_id as string,
       graph_title: undefined,
+      path_type: r.path_type as "single_graph" | "cross_graph" | undefined,
       status: (r.status as "completed" | "paused" | "active" | "archived") || "active",
       goal_type: "natural_language",
       goal_content: r.goal as string,
@@ -246,12 +248,20 @@ const LearningPathDetailPage: React.FC = () => {
 
     setIsUpdating(true);
     try {
-      const result = await learningPathsApi.autoSchedule(pathId, {
-        start_date: new Date().toISOString(),
-        daily_minutes: pathDetail.daily_minutes_target || 30,
-      });
-
-      message.success(t("learningPaths.detail.autoScheduleSuccess", { total: result.total_tasks, days: result.estimated_days }));
+      if (pathDetail.path_type === "cross_graph") {
+        const result = await learningPathsApi.replanStageWindows(pathId);
+        message.success(
+          t("learningPaths.messages.replanStageWindowsSuccess", {
+            count: result.windows.length,
+          }),
+        );
+      } else {
+        const result = await learningPathsApi.autoSchedule(pathId, {
+          start_date: new Date().toISOString(),
+          daily_minutes: pathDetail.daily_minutes_target || 180,
+        });
+        message.success(t("learningPaths.detail.autoScheduleSuccess", { total: result.total_tasks, days: result.estimated_days }));
+      }
 
       await queryClient.invalidateQueries({ queryKey: learningPathKeys.mappedDetail(pathId ?? "") });
     } catch (error) {

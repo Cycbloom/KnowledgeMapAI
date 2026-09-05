@@ -106,6 +106,11 @@ const PathHeaderSection: React.FC<PathHeaderSectionProps> = ({
                 >
                   {statusLabel}
                 </span>
+                {pathDetail.path_type === "cross_graph" && (
+                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
+                    {t('learningPaths.pathType.crossGraph')}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -133,7 +138,7 @@ const PathHeaderSection: React.FC<PathHeaderSectionProps> = ({
                       <button
                         onClick={() => {
                           onShowActionsChange(null);
-                          navigate(`/graphs/${pathDetail.graph_id}`);
+                          navigate(`/graph/${pathDetail.graph_id}`);
                         }}
                         className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center gap-2"
                       >
@@ -149,7 +154,9 @@ const PathHeaderSection: React.FC<PathHeaderSectionProps> = ({
                       className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center gap-2"
                     >
                       <CalendarClock className="w-4 h-4" />
-                      {t('learningPath.pathHeader.autoSchedule')}
+                      {pathDetail.path_type === "cross_graph"
+                        ? t('learningPath.pathHeader.replanStageWindows')
+                        : t('learningPath.pathHeader.autoSchedule')}
                     </button>
                     <button
                       onClick={() => {

@@ -27,6 +27,8 @@ export interface LearningPathNode {
   time_spent?: number;
   notes?: string;
   related_task_id?: string;
+  /** 图谱级节点（跨图路径）：仅关联图谱，无知识点 */
+  graph_id?: string;
   related_task?: {
     id: string;
     title: string;
@@ -39,6 +41,7 @@ export interface LearningPathNode {
 export interface ApiLearningPathNode {
   id: string;
   knowledge_point_id?: string;
+  graph_id?: string;
   title: string;
   description?: string;
   order_index?: number;
@@ -85,6 +88,7 @@ export interface LearningPathDetail {
   description?: string;
   graph_id?: string;
   graph_title?: string;
+  path_type?: "single_graph" | "cross_graph";
   status: "active" | "completed" | "paused" | "archived";
   goal_type: "natural_language" | "graph_node" | "template";
   goal_content?: string;

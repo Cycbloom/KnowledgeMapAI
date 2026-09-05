@@ -210,11 +210,16 @@ const PathNodeListSection: React.FC<PathNodeListSectionProps> = ({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="text-xs text-gray-400 w-6">
-                              #{node.order}
+                              #{node.order + 1}
                             </span>
                             <h3 className="font-medium text-gray-900 dark:text-white truncate">
                               {node.title}
                             </h3>
+                            {node.graph_id && (
+                              <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
+                                {t('learningPath.pathNodeList.graphLevelTag')}
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 dark:text-gray-400">
                             {node.estimated_minutes && (

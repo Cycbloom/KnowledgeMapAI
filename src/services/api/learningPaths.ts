@@ -68,6 +68,21 @@ export interface LearningPathResponse {
   completed_nodes_count?: number;
 }
 
+/** 跨图学习路径周窗口（P2 两级排课） */
+export interface StageWindow {
+  id?: string;
+  stageIndex: number;
+  graphId: string | null;
+  graphNodeId: string;
+  title?: string;
+  weekStartDate: string;
+  weekEndDate: string;
+  plannedMinutes: number;
+  status: "planned" | "in_progress" | "completed" | "skipped";
+  /** 派生：窗口已结束但仍为 planned → 进度滞后 */
+  isLagging?: boolean;
+}
+
 /**
  * 学习路径日计划（后端 LearningPlan 结构）
  */
@@ -390,6 +405,26 @@ export const learningPathsApi = {
       method: "POST",
       body: JSON.stringify(options || {}),
     }),
+
+  getStageWindows: (pathId: string) =>
+    request<{ windows: StageWindow[] }>(`/learning-paths/${pathId}/stage-windows`),
+
+  replanStageWindows: (pathId: string, options?: { start_date?: string }) =>
+    request<{
+      pathId: string;
+      windows: StageWindow[];
+      startDate?: string;
+      endDate?: string;
+    }>(`/learning-paths/${pathId}/stage-windows/replan`, {
+      method: "POST",
+      body: JSON.stringify(options || {}),
+    }),
+
+  postponeStageWindows: (pathId: string) =>
+    request<{ pathId: string; postponedFrom: string; windows: StageWindow[] }>(
+      `/learning-paths/${pathId}/stage-windows/postpone`,
+      { method: "POST" },
+    ),
 
   generateCrossGraph: (data?: {
     daily_time_minutes?: number;

@@ -113,7 +113,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
   const [selectedStyle, setSelectedStyle] = useState<
     "sequential" | "exploratory" | "focused" | "custom"
   >("sequential");
-  const [dailyTime, setDailyTime] = useState(30);
+  const [dailyTime, setDailyTime] = useState(180);
   const [showSettings, setShowSettings] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
 
@@ -454,7 +454,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                 <input
                   type="range"
                   min={10}
-                  max={120}
+                  max={240}
                   step={10}
                   value={dailyTime}
                   onChange={(e) => setDailyTime(parseInt(e.target.value))}

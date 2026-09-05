@@ -83,6 +83,7 @@ interface LearningPathItem {
   total_estimated_time: number;
   ai_generated: boolean;
   status: LearningPathStatus;
+  path_type?: "single_graph" | "cross_graph";
   daily_minutes_target: number;
   source_graph_id?: string;
   created_at: string;
@@ -112,7 +113,7 @@ export const LearningPaths = () => {
   const [newPathTitle, setNewPathTitle] = useState("");
   const [newPathDescription, setNewPathDescription] = useState("");
   const [newPathGoal, setNewPathGoal] = useState("");
-  const [newPathDailyMinutes, setNewPathDailyMinutes] = useState(30);
+  const [newPathDailyMinutes, setNewPathDailyMinutes] = useState(180);
   const [newPathTargetDate, setNewPathTargetDate] = useState("");
 
   const createModalRef = useFocusTrap<HTMLDivElement>({ enabled: isCreating });
@@ -159,7 +160,7 @@ export const LearningPaths = () => {
       setNewPathTitle("");
       setNewPathDescription("");
       setNewPathGoal("");
-      setNewPathDailyMinutes(30);
+      setNewPathDailyMinutes(180);
       setNewPathTargetDate("");
       setIsCreating(false);
       message.success(t("learningPaths.messages.createSuccess"));
@@ -201,7 +202,7 @@ export const LearningPaths = () => {
     try {
       const result = await learningPathsApi.autoSchedule(path.id, {
         start_date: new Date().toISOString(),
-        daily_minutes: path.daily_minutes_target || 30,
+        daily_minutes: path.daily_minutes_target || 180,
       });
       message.success(
         t("learningPaths.detail.autoScheduleSuccess", {
@@ -212,6 +213,21 @@ export const LearningPaths = () => {
       await refetch();
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : t("learningPaths.detail.autoScheduleFailed");
+      message.error(errMsg);
+    }
+  };
+
+  const handleReplanStageWindows = async (path: LearningPathItem) => {
+    try {
+      const result = await learningPathsApi.replanStageWindows(path.id);
+      message.success(
+        t("learningPaths.messages.replanStageWindowsSuccess", {
+          count: result.windows.length,
+        }),
+      );
+      await refetch();
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : t("learningPaths.messages.replanStageWindowsFailed");
       message.error(errMsg);
     }
   };
@@ -359,6 +375,11 @@ export const LearningPaths = () => {
                         >
                           {t(statusConfig[path.status].labelKey)}
                         </span>
+                        {path.path_type === "cross_graph" && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
+                            {t("learningPaths.pathType.crossGraph")}
+                          </span>
+                        )}
                         {path.ai_generated && (
                           <span className="flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400">
                             <Sparkles size={12} />
@@ -401,7 +422,7 @@ export const LearningPaths = () => {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setOpenMenuId(null);
-                                navigate(`/graphs/${path.source_graph_id}`);
+                                navigate(`/graph/${path.source_graph_id}`);
                               }}
                               className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center gap-2"
                             >
@@ -413,12 +434,16 @@ export const LearningPaths = () => {
                             onClick={(e) => {
                               e.stopPropagation();
                               setOpenMenuId(null);
-                              void handleAutoSchedule(path);
+                              void (path.path_type === "cross_graph"
+                                ? handleReplanStageWindows(path)
+                                : handleAutoSchedule(path));
                             }}
                             className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center gap-2"
                           >
                             <CalendarClock className="w-4 h-4" />
-                            {t("learningPath.pathHeader.autoSchedule")}
+                            {path.path_type === "cross_graph"
+                              ? t("learningPath.pathHeader.replanStageWindows")
+                              : t("learningPath.pathHeader.autoSchedule")}
                           </button>
                           <button
                             onClick={(e) => {

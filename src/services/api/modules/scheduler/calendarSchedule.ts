@@ -23,6 +23,22 @@ export interface RescheduleResult {
   merged: boolean;
 }
 
+/** 复习到期预测事件（FSRS next_review 投影，只读不落库） */
+export interface ReviewProjectionEvent {
+  id: string;
+  title: string;
+  description: string;
+  start: string;
+  end: string;
+  allDay: boolean;
+  type: "review_projection";
+  color: string;
+  status: string | null;
+  estimated_duration: number;
+  knowledgePointId: string | null;
+  scheduledDate: string;
+}
+
 export const calendarScheduleApi = {
   getScheduleEvents: (
     start?: string,
@@ -34,6 +50,20 @@ export const calendarScheduleApi = {
     const qs = query.toString();
     return requestData<CalendarScheduleEvent[]>(
       `/calendar/schedule${qs ? `?${qs}` : ""}`,
+    );
+  },
+
+  /** 复习到期预测（按知识点 × 到期日聚合，只读投影） */
+  getReviewProjections: (
+    start?: string,
+    end?: string,
+  ): Promise<ReviewProjectionEvent[]> => {
+    const query = new URLSearchParams();
+    if (start) query.set("start", start);
+    if (end) query.set("end", end);
+    const qs = query.toString();
+    return requestData<ReviewProjectionEvent[]>(
+      `/calendar/review-projections${qs ? `?${qs}` : ""}`,
     );
   },
 

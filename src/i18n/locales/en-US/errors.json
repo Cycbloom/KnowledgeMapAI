@@ -108,6 +108,7 @@
     "schedulerTaskExecutionFailed": "Task execution failed",
     "schedulerDependencyError": "Task dependency error",
     "schedulerQueueError": "Task queue error",
+    "schedulerCapacityExceeded": "Daily learning capacity exceeded; please pick another date",
     "fileTooLarge": "File size exceeds the limit",
     "fileInvalidType": "Unsupported file type",
     "fileUploadFailed": "File upload failed",

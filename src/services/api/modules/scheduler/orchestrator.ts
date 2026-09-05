@@ -115,6 +115,40 @@ export interface LoopsDecision {
   small?: SmallLoopDecision;
 }
 
+/** 今日概览（P4 今日卡片） */
+export interface TodayBrief {
+  date: string;
+  schedule: Array<{
+    id: string;
+    knowledgePointId: string | null;
+    title: string;
+    pathTitle: string | null;
+    estimatedTime: number;
+    status: string;
+  }>;
+  capacity: {
+    dailyCapacityMinutes: number;
+    scheduledMinutes: number;
+    completedMinutes: number;
+    reviewBufferRatio: number;
+  };
+  reviews: { dueToday: number; overdue: number };
+  bigLoop: BigLoopDecision | null;
+  laggingWindows: Array<{
+    id?: string;
+    stageIndex: number;
+    graphId: string | null;
+    graphNodeId: string;
+    title?: string;
+    weekStartDate: string;
+    weekEndDate: string;
+    plannedMinutes: number;
+    status: string;
+    isLagging?: boolean;
+    pathTitle?: string;
+  }>;
+}
+
 export const orchestratorApi = {
   startLearningLoop: async (knowledgePointId?: string, graphId?: string) => {
     return requestData<LearningLoop>("/scheduler/learning-loops", {
@@ -166,6 +200,11 @@ export const orchestratorApi = {
       ? `?overdue_threshold=${overdueThreshold}`
       : "";
     return requestData<LoopsDecision>(`/scheduler/decision/loops${params}`);
+  },
+
+  /** 今日概览（P4 今日卡片）：今日排期 + 容量使用 + 到期复习 + 大循环决策 + 滞后窗口 */
+  getTodayBrief: async () => {
+    return requestData<TodayBrief>("/scheduler/today-brief");
   },
 
   /** 执行动作：给定图谱大任务返回小循环「下一步」对应跳转 */

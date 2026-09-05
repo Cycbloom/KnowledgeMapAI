@@ -1717,7 +1717,9 @@
     "executionSummary": "✓ {{title}}",
     "executionDescription": "实际执行时间: {{minutes}} 分钟",
     "pathSchedule": "路径排课",
-    "pathScheduleDesc": "路径排课 · {{count}} 个学习目标"
+    "pathScheduleDesc": "路径排课 · {{count}} 个学习目标",
+    "reviewProjection": "到期复习",
+    "reviewProjectionDesc": "预计 {{count}} 张卡片到期 · 约 {{minutes}} 分钟"
   },
   "systemTask": {
     "errors": {
@@ -1760,5 +1762,18 @@
       "knowledgePointNeedsReview": "知识点需要复习：掌握度已降至 {{mastery}}%",
       "quizTitle": "测验: {{title}}"
     }
+  },
+  "todayBrief": {
+    "title": "今日该学什么",
+    "noSchedule": "今天暂无排期，去日历或路径页安排学习吧",
+    "untitledNode": "未命名知识点",
+    "minutes": "{{count}} 分钟",
+    "capacityLabel": "今日容量使用",
+    "capacityValue": "已排 {{scheduled}} / {{capacity}} 分钟 · 已完成 {{completed}}",
+    "overdueBadge": "{{count}} 条逾期复习",
+    "bigLoopReview": "有 {{count}} 个知识点逾期未复习，建议先复习",
+    "bigLoopGraph": "当前推进图谱：{{graph}}",
+    "bigLoopEmpty": "暂无进行中的学习大任务",
+    "laggingTitle": "{{count}} 个学习窗口已过期未完成"
   }
 }

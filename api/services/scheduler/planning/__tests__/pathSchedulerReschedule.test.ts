@@ -59,7 +59,7 @@ function makeChain(
   thenValue: unknown,
 ): Chain {
   const chain = createChainedMock({
-    chainMethods: ["select", "update", "delete", "eq", "in"],
+    chainMethods: ["select", "update", "delete", "eq", "in", "gte"],
     terminals: [
       { name: "maybeSingle", value: maybeSingleValue, async: true },
       { name: "single", value: maybeSingleValue, async: true },

@@ -38,7 +38,7 @@ export interface CalendarEvent {
   /** 从 UserTask.scheduled_end 映射 */
   end?: UserTask["scheduled_end"];
   /** 从 UserTask.tags 计算：包含"study"→study，包含"review"→review，否则→task */
-  type: "task" | "study" | "review" | "other" | "path_schedule";
+  type: "task" | "study" | "review" | "other" | "path_schedule" | "review_projection";
   /** 从 UserTask.priority 计算：4→red，3→orange，其他→blue */
   color?: string;
   /** 路径排课事件特有字段：知识点 ID（用于跳转学习） */

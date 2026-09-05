@@ -108,6 +108,7 @@
     "schedulerTaskExecutionFailed": "任务执行失败",
     "schedulerDependencyError": "任务依赖关系错误",
     "schedulerQueueError": "任务队列错误",
+    "schedulerCapacityExceeded": "当日学习预算已满，请选择其他日期",
     "fileTooLarge": "文件大小超出限制",
     "fileInvalidType": "文件类型不支持",
     "fileUploadFailed": "文件上传失败",

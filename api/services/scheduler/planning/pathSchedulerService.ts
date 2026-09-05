@@ -1,12 +1,16 @@
 /**
- * @schedule decision - 学习路径排课（Phase A 日历自动排课）。
+ * @schedule decision - 学习路径排课（Phase A 日历自动排课 + P1 统一计划体系）。
  *
  * 职责：以「知识点」为排期主体，把某条学习路径的待学节点按
- *   依赖(拓扑) + 预估时长 + 每日目标时长 → 摊排到连续日期，
+ *   依赖(拓扑) + 预估时长 + 每日配额 + 全局日容量 → 摊排到连续日期，
  *   写入 learning_path_schedule（全局唯一键：user_id+knowledge_point_id+scheduled_date）。
  *
  * 设计要点（见 spec）：
- * - 多路径复用同一知识点时，同一天只落一条排期（唯一键强制），来源并入 source_path_ids。
+ * - 知识点全局唯一排期：同一知识点（跨路径、跨日期）只保留一行 scheduled，
+ *   后排的路径直接复用先占位的日期并把自身并入 source_path_ids。
+ * - 容量感知装箱：路径节奏 = min(daily_minutes_target, 全局预算) × (1 - 复习缓冲)；
+ *   硬约束 = 当日全局已排负载 + 新增 ≤ task_settings.daily_capacity_minutes，
+ *   超出顺延到下一天（节点不拆分；空日上超长节点允许溢出，否则无法安置）。
  * - 里程碑(is_milestone)节点独立占一天，便于高亮。
  * - 只排日期，不排时钟。
  * - learning_paths 作为「学习窗口」记录 scheduled_start_date / scheduled_end_date。
@@ -17,6 +21,7 @@ import { AppError } from "../../../middleware/errorHandler";
 import { ErrorCodes } from "../../../../shared/types/errorCodes";
 import { learningPathService } from "../../study/learningPathService";
 import { topologicalSortNodes } from "../../study/learningPathAlgorithms";
+import { capacityService } from "./capacityService";
 import type { LearningPathNode } from "../../study/learningPathTypes";
 
 /** 单个节点排期结果 */
@@ -26,7 +31,7 @@ export interface ScheduledNode {
   scheduledDate: string;
   estimatedTime: number;
   isMilestone: boolean;
-  /** 是否因「同知识点同日已被其它路径排期」而合并（复用已有排期） */
+  /** 是否复用/合并已有排期（同知识点已被任何路径排期，或同知识点同日冲突） */
   merged: boolean;
 }
 
@@ -55,7 +60,7 @@ function addDays(d: Date, n: number): Date {
 class PathSchedulerService {
   /**
    * 为指定学习路径排课（全自动）。结果写入 learning_path_schedule 并回写学习窗口起止日。
-   * 幂等：重复调用对已排期(同知识点同日期)不新建，仅归并来源路径。
+   * 幂等：重复调用时，知识点已有排期（含本路径此前排的）直接复用原日期，不重复排。
    */
   async planPath(
     supabase: SupabaseClient,
@@ -89,21 +94,63 @@ class PathSchedulerService {
     // 拓扑排序：前置依赖 + order_index
     const ordered = topologicalSortNodes(pendingNodes);
 
+    // P1 全局容量：预算 + 复习缓冲 + 路径配额（节奏）
+    const { dailyCapacityMinutes, reviewBufferRatio } =
+      await capacityService.getCapacitySettings(supabase, userId);
     const dailyTarget = path.daily_minutes_target || 30;
+    const pathQuota = Math.min(dailyTarget, dailyCapacityMinutes);
+    const paceCap = Math.max(
+      1,
+      Math.round(pathQuota * (1 - reviewBufferRatio)),
+    );
     const startDate = options?.start_date
       ? new Date(`${options.start_date}T00:00:00`)
       : new Date();
     startDate.setHours(0, 0, 0, 0);
 
+    // 全局日负载（startDate 起，含其它路径与本路径此前排期），装箱过程中同步累计
+    const dayLoad = await capacityService.getDayLoad(
+      supabase,
+      userId,
+      toDateString(startDate),
+    );
+
+    // 知识点全局唯一排期预取：这些知识点已被任何路径排期的行（任意日期）
+    const kpIds = Array.from(
+      new Set(ordered.map((n) => n.knowledge_point_id as string)),
+    );
+    const existingByKp = await this.fetchExistingByKp(supabase, userId, kpIds);
+
     // 1) 生成每日分配
     const assigned: Array<{
       node: LearningPathNode;
       dateStr: string;
+      existingId?: string;
+      existingSources?: string[];
     }> = [];
     let cursor = startDate;
     let dayUsed = 0;
 
     for (const node of ordered) {
+      const kpId = node.knowledge_point_id as string;
+      const existing = existingByKp.get(kpId);
+      if (existing) {
+        // 全局唯一排期：该知识点已有排期 → 复用其日期（不新增占用），
+        // 游标推进到该日之后，保证后续节点不早于它（拓扑序）
+        assigned.push({
+          node,
+          dateStr: existing.date,
+          existingId: existing.id,
+          existingSources: existing.sources,
+        });
+        const d = new Date(`${existing.date}T00:00:00`);
+        if (!Number.isNaN(d.getTime()) && d > cursor) {
+          cursor = d;
+          dayUsed = 0;
+        }
+        continue;
+      }
+
       const time = node.estimated_time || 30;
       if (node.is_milestone) {
         // 里程碑独占一天：若当天已有普通节点则顺延到次日
@@ -111,36 +158,45 @@ class PathSchedulerService {
           cursor = addDays(cursor, 1);
           dayUsed = 0;
         }
-        assigned.push({ node, dateStr: toDateString(cursor) });
+        const dateStr = toDateString(cursor);
+        assigned.push({ node, dateStr });
+        dayLoad.set(dateStr, (dayLoad.get(dateStr) ?? 0) + time);
         cursor = addDays(cursor, 1);
         dayUsed = 0;
         continue;
       }
-      // 普通节点：填满每日目标，超出则顺延
-      if (dayUsed > 0 && dayUsed + time > dailyTarget) {
+      // 普通节点：路径节奏 + 全局日预算双重检查，超出则顺延；
+      // 空日（本路径未排）上节点不拆分——全局放不下且节点本身≥全局预算时允许溢出
+      for (;;) {
+        const dateStr = toDateString(cursor);
+        const load = dayLoad.get(dateStr) ?? 0;
+        if (dayUsed === 0) {
+          if (
+            load + time <= dailyCapacityMinutes ||
+            time >= dailyCapacityMinutes
+          ) {
+            break;
+          }
+        } else if (
+          dayUsed + time <= paceCap &&
+          load + time <= dailyCapacityMinutes
+        ) {
+          break;
+        }
         cursor = addDays(cursor, 1);
         dayUsed = 0;
       }
-      assigned.push({ node, dateStr: toDateString(cursor) });
+      const dateStr = toDateString(cursor);
+      assigned.push({ node, dateStr });
       dayUsed += time;
+      dayLoad.set(dateStr, (dayLoad.get(dateStr) ?? 0) + time);
     }
 
     if (assigned.length === 0) {
       return { pathId, scheduled: [] };
     }
 
-    // 2) 全局去重合并：预取该用户相关知识点的已有排期（跨路径）
-    const kpIds = Array.from(
-      new Set(assigned.map((a) => a.node.knowledge_point_id as string)),
-    );
-    const dates = Array.from(new Set(assigned.map((a) => a.dateStr)));
-    const existByKey = await this.fetchExisting(
-      supabase,
-      userId,
-      kpIds,
-      dates,
-    );
-
+    // 2) 落库：知识点已排期的行归并来源；其余逐条 upsert（并发下由唯一键兜底）
     const scheduled: ScheduledNode[] = [];
     const toInsert: Array<{
       user_id: string;
@@ -152,16 +208,17 @@ class PathSchedulerService {
       status: string;
     }> = [];
     const toMergeSource: Array<{ id: string; source_path_ids: string[] }> = [];
+    const mergedRowIds = new Set<string>();
 
     for (const a of assigned) {
       const kpId = a.node.knowledge_point_id as string;
-      const key = `${kpId}|${a.dateStr}`;
-      const existing = existByKey.get(key);
-      if (existing) {
-        const sources = existing.source_path_ids ?? [];
-        if (!sources.includes(pathId)) {
+      const estimatedTime = a.node.estimated_time || 30;
+      if (a.existingId) {
+        const sources = a.existingSources ?? [];
+        if (!mergedRowIds.has(a.existingId) && !sources.includes(pathId)) {
+          mergedRowIds.add(a.existingId);
           toMergeSource.push({
-            id: existing.id,
+            id: a.existingId,
             source_path_ids: [...sources, pathId],
           });
         }
@@ -169,29 +226,29 @@ class PathSchedulerService {
           nodeId: a.node.id,
           knowledgePointId: kpId,
           scheduledDate: a.dateStr,
-          estimatedTime: a.node.estimated_time || 30,
+          estimatedTime,
           isMilestone: a.node.is_milestone,
           merged: true,
         });
-      } else {
-        toInsert.push({
-          user_id: userId,
-          knowledge_point_id: kpId,
-          scheduled_date: a.dateStr,
-          path_id: pathId,
-          source_path_ids: [pathId],
-          estimated_time: a.node.estimated_time || 30,
-          status: "scheduled",
-        });
-        scheduled.push({
-          nodeId: a.node.id,
-          knowledgePointId: kpId,
-          scheduledDate: a.dateStr,
-          estimatedTime: a.node.estimated_time || 30,
-          isMilestone: a.node.is_milestone,
-          merged: false,
-        });
+        continue;
       }
+      toInsert.push({
+        user_id: userId,
+        knowledge_point_id: kpId,
+        scheduled_date: a.dateStr,
+        path_id: pathId,
+        source_path_ids: [pathId],
+        estimated_time: estimatedTime,
+        status: "scheduled",
+      });
+      scheduled.push({
+        nodeId: a.node.id,
+        knowledgePointId: kpId,
+        scheduledDate: a.dateStr,
+        estimatedTime,
+        isMilestone: a.node.is_milestone,
+        merged: false,
+      });
     }
 
     if (toInsert.length > 0) {
@@ -254,9 +311,9 @@ class PathSchedulerService {
   /**
    * 手动改期：把某条排期（知识点+日期）整体移动到 newDate。
    *
-   * - 目标日期空闲：直接更新当前行 scheduled_date。
+   * - 目标日期空闲：直接更新当前行 scheduled_date（先做全局日容量检查，超预算 409）。
    * - 目标日期已被同知识点占用（唯一键冲突）：合并 — 目标行 source_path_ids
-   *   取并集，删除当前行（贴合「同知识点同一天只落一条排期」的全局去重语义）。
+   *   取并集，删除当前行（合并不新增占用，无需容量检查）。
    * - 学习窗口：对来源路径只扩不缩（newDate 超出窗口则向外扩展）。
    */
   async reschedule(
@@ -267,7 +324,9 @@ class PathSchedulerService {
   ): Promise<{ id: string; knowledgePointId: string; scheduledDate: string; merged: boolean }> {
     const { data: row, error: rowError } = await supabase
       .from("learning_path_schedule")
-      .select("id, knowledge_point_id, scheduled_date, path_id, source_path_ids")
+      .select(
+        "id, knowledge_point_id, scheduled_date, estimated_time, path_id, source_path_ids",
+      )
       .eq("id", scheduleId)
       .eq("user_id", userId)
       .maybeSingle();
@@ -329,6 +388,24 @@ class PathSchedulerService {
       id = existing.id;
       merged = true;
     } else {
+      // P1 全局容量检查：目标日已排负载（扣除自身旧占位）+ 本行时长 ≤ 全局预算
+      const estimatedTime = Number(row.estimated_time) || 30;
+      const { dailyCapacityMinutes } = await capacityService.getCapacitySettings(
+        supabase,
+        userId,
+      );
+      const load = await capacityService.getDayLoad(supabase, userId, newDate);
+      const current = load.get(newDate) ?? 0;
+      // 取数范围是 newDate（含）之后：被移动行落在范围内时需扣除自身旧占位
+      const selfOnDate =
+        (row.scheduled_date as string) >= newDate ? estimatedTime : 0;
+      if (current - selfOnDate + estimatedTime > dailyCapacityMinutes) {
+        throw new AppError(
+          "errors.errorCodes.schedulerCapacityExceeded",
+          409,
+          ErrorCodes.SCHEDULER_CAPACITY_EXCEEDED,
+        );
+      }
       const { error: updateError } = await supabase
         .from("learning_path_schedule")
         .update({ scheduled_date: newDate })
@@ -415,7 +492,7 @@ class PathSchedulerService {
     }
   }
 
-  /** 预取该用户相关知识点在相关日期内的已有排期，用于跨路径去重合并 */
+  /** 预取该用户相关知识点在相关日期内的已有排期，用于同日冲突合并（reschedule 用） */
   private async fetchExisting(
     supabase: SupabaseClient,
     userId: string,
@@ -445,6 +522,48 @@ class PathSchedulerService {
         id: row.id,
         source_path_ids: row.source_path_ids as string[] | null,
       });
+    }
+    return map;
+  }
+
+  /**
+   * 知识点全局唯一排期预取：这些知识点当前的全部 scheduled 行（任意日期）。
+   * 同一知识点存在多行时取最早日期（学得越早越贴合先占位语义）。
+   */
+  private async fetchExistingByKp(
+    supabase: SupabaseClient,
+    userId: string,
+    kpIds: string[],
+  ): Promise<Map<string, { id: string; date: string; sources: string[] }>> {
+    const map = new Map<string, { id: string; date: string; sources: string[] }>();
+    if (kpIds.length === 0) return map;
+
+    const { data, error } = await supabase
+      .from("learning_path_schedule")
+      .select("id, knowledge_point_id, scheduled_date, source_path_ids")
+      .eq("user_id", userId)
+      .eq("status", "scheduled")
+      .in("knowledge_point_id", kpIds);
+
+    if (error) {
+      logger.warn("[PathScheduler] fetch existing schedule by kp failed", {
+        userId,
+        error: error.message,
+      });
+      return map;
+    }
+    for (const row of data ?? []) {
+      const kpId = row.knowledge_point_id as string | null;
+      const date = row.scheduled_date as string | null;
+      if (!kpId || !date) continue;
+      const current = map.get(kpId);
+      if (!current || date < current.date) {
+        map.set(kpId, {
+          id: row.id,
+          date,
+          sources: (row.source_path_ids as string[] | null) ?? [],
+        });
+      }
     }
     return map;
   }

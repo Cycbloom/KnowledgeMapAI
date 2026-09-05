@@ -12,6 +12,7 @@ import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { graphCrudService } from "../graph/graphCrudService";
 import { learningPathService } from "./learningPathService";
+import { stageWindowPlannerService } from "../scheduler/planning/stageWindowPlannerService";
 import {
   generateCrossGraphRulePath,
   generateCrossGraphAIPath,
@@ -187,6 +188,16 @@ class CrossGraphLearningPathService {
       totalGraphs: stages.length,
       pendingGraphs: stages.filter((s) => !s.isCompleted).length,
     });
+
+    // P2 两级排课：大路径生成后自动排周窗口（失败不阻塞生成）
+    stageWindowPlannerService
+      .planStageWindows(supabase, userId, savedPath.id)
+      .catch((err: unknown) => {
+        logger.warn("[CrossGraphPath] plan stage windows failed", {
+          pathId: savedPath.id,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      });
 
     return {
       pathId: savedPath.id,

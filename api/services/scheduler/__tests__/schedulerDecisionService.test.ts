@@ -31,6 +31,7 @@ vi.mock("../smartTaskLinker", () => ({
 vi.mock("../../study/crossGraphLearningPathService", () => ({
   crossGraphLearningPathService: {
     getNextGraphInPath: vi.fn(),
+    computeGraphCompletions: vi.fn(),
   },
 }));
 
@@ -228,6 +229,108 @@ describe("SchedulerDecisionService (S3)", () => {
     expect(decision.progress?.graphId).toBe("graph-cross-1");
     // 跨图路径命中后不再走推荐队列
     expect(taskRecommendationService.getTaskRecommendations).not.toHaveBeenCalled();
+  });
+
+  it("本周有 stage 周窗口时，大循环优先推进窗口对应的图（P2 两级排课）", async () => {
+    const now = new Date("2026-01-01T12:00:00Z"); // 周四，落在窗口内
+
+    vi.mocked(spacedRepetitionBridge.getUnifiedReviewQueue).mockResolvedValue(
+      [] as never,
+    );
+    vi.mocked(
+      crossGraphLearningPathService.computeGraphCompletions,
+    ).mockResolvedValue(new Map([["graph-week", 0.1]]));
+    vi.mocked(smartTaskLinker.getOrCreateTaskForGraph).mockResolvedValue({
+      mainTaskId: "task-week",
+      graphId: "graph-week",
+      graphName: "本周窗口图",
+      totalNodes: 5,
+      completedNodes: 0,
+      subtasks: [],
+    } as never);
+
+    const supabase = buildMockSupabase({
+      graph_nodes: [],
+      learning_path_stage_windows: [
+        {
+          id: "w1",
+          stage_index: 1,
+          graph_id: "graph-week",
+          graph_node_id: "pn-1",
+          week_start_date: "2025-12-29",
+          week_end_date: "2026-01-04",
+          planned_minutes: 120,
+          status: "planned",
+          learning_paths: { status: "active", priority: 0, target_date: null },
+        },
+      ],
+    });
+
+    const decision = await schedulerDecisionService.getNextStep(
+      supabase as never,
+      "user-1",
+      { now },
+    );
+
+    expect(decision.type).toBe("progress");
+    expect(decision.progress?.graphId).toBe("graph-week");
+    // 窗口命中且未达标时，不再按路径顺序取下一图
+    expect(
+      crossGraphLearningPathService.getNextGraphInPath,
+    ).not.toHaveBeenCalled();
+  });
+
+  it("窗口对应图已达完成阈值时，回退到路径顺序的下一个未完成图", async () => {
+    const now = new Date("2026-01-01T12:00:00Z");
+
+    vi.mocked(spacedRepetitionBridge.getUnifiedReviewQueue).mockResolvedValue(
+      [] as never,
+    );
+    vi.mocked(
+      crossGraphLearningPathService.computeGraphCompletions,
+    ).mockResolvedValue(new Map([["graph-week", 0.95]]));
+    vi.mocked(crossGraphLearningPathService.getNextGraphInPath).mockResolvedValue(
+      {
+        graphId: "graph-next",
+        graphTitle: "下一图",
+        order: 2,
+        completion: 0,
+        nodeCount: 8,
+      },
+    );
+    vi.mocked(smartTaskLinker.getOrCreateTaskForGraph).mockResolvedValue({
+      mainTaskId: "task-next",
+      graphId: "graph-next",
+      graphName: "下一图",
+      totalNodes: 8,
+      completedNodes: 0,
+      subtasks: [],
+    } as never);
+
+    const supabase = buildMockSupabase({
+      graph_nodes: [],
+      learning_path_stage_windows: [
+        {
+          id: "w1",
+          stage_index: 1,
+          graph_id: "graph-week",
+          graph_node_id: "pn-1",
+          week_start_date: "2025-12-29",
+          week_end_date: "2026-01-04",
+          planned_minutes: 120,
+          status: "planned",
+          learning_paths: { status: "active", priority: 0, target_date: null },
+        },
+      ],
+    });
+
+    const decision = await schedulerDecisionService.getNextStep(
+      supabase as never,
+      "user-1",
+      { now },
+    );
+
+    expect(decision.progress?.graphId).toBe("graph-next");
   });
 
   it("无到期复习也无队列任务时返回 empty", async () => {

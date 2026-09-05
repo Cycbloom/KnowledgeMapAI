@@ -117,6 +117,31 @@ router.patch(
 );
 
 router.get(
+  "/review-projections",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    }
+
+    const { start, end } = req.query;
+
+    try {
+      const events = await calendarService.getReviewProjections(
+        supabase,
+        req.user.id,
+        start as string | undefined,
+        end as string | undefined,
+      );
+      res.json({ success: true, data: events });
+    } catch (_err) {
+      throw new AppError("Failed to fetch review projections", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    }
+  },
+);
+
+router.get(
   "/events",
   requireAuth,
   async (req: AuthRequest, res: Response) => {

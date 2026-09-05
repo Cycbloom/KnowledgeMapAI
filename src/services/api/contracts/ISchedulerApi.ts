@@ -7,6 +7,7 @@ import type {
 } from "../modules/scheduler/orchestrator";
 import type {
   CalendarScheduleEvent,
+  ReviewProjectionEvent,
   RescheduleResult,
 } from "../modules/scheduler/calendarSchedule";
 import type {
@@ -321,6 +322,10 @@ export interface ISchedulerCalendarScheduleApi {
     start?: string,
     end?: string,
   ) => Promise<CalendarScheduleEvent[]>;
+  getReviewProjections: (
+    start?: string,
+    end?: string,
+  ) => Promise<ReviewProjectionEvent[]>;
   reschedule: (id: string, newDate: string) => Promise<RescheduleResult>;
 }
 

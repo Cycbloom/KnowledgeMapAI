@@ -3,6 +3,7 @@ import { requireAuth, type AuthRequest } from "../../middleware/auth";
 import { z } from "zod";
 import { validate } from "../../middleware/validate";
 import { schedulerDecisionService } from "../../services/scheduler/schedulerDecisionService";
+import { todayBriefService } from "../../services/scheduler/todayBriefService";
 
 const router = Router();
 
@@ -13,6 +14,19 @@ const nextStepQuerySchema = z.object({
 const nextActionQuerySchema = z.object({
   task_id: z.string().uuid("无效的任务ID"),
 });
+
+/** 今日概览（P4 今日卡片）：今日排期 + 容量使用 + 到期复习 + 大循环决策 + 滞后窗口 */
+router.get(
+  "/today-brief",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const brief = await todayBriefService.getTodayBrief(
+      req.supabase,
+      req.user.id,
+    );
+    res.json({ success: true, data: brief });
+  },
+);
 
 /** 调度决策：返回「现在最该做的下一步」（复习打断 / 队列推进） */
 router.get(

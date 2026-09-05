@@ -181,6 +181,18 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
           border: "border-green-600",
           light: "bg-green-100 dark:bg-green-500/20",
         };
+      case "path_schedule":
+        return {
+          bg: "bg-purple-500",
+          border: "border-purple-600",
+          light: "bg-purple-100 dark:bg-purple-500/20",
+        };
+      case "review_projection":
+        return {
+          bg: "bg-orange-500",
+          border: "border-orange-600",
+          light: "bg-orange-100 dark:bg-orange-500/20",
+        };
       default:
         return {
           bg: "bg-gray-500",

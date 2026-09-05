@@ -22,6 +22,7 @@ import {
 } from "../hooks/queries/useLearningPathQueries";
 import { TodayReview } from "../components/capture/TodayReview";
 import { EmptyState } from "../components/common";
+import { TodayBriefCard } from "../components/Dashboard/TodayBriefCard";
 import { learningPathsApi, type LearningPathResponse } from "../services/api/learningPaths";
 import { message } from "../utils/messageHelper";
 import { getErrorMessage } from "../utils/errors";
@@ -367,6 +368,9 @@ export const Dashboard = () => {
                 </div>
               )}
             </section>
+
+            {/* 今日卡片（P4）：今日排期 + 容量使用 + 到期复习 + 滞后窗口 */}
+            <TodayBriefCard />
 
             {/* 待办队列（紧急/重要/常规） */}
             <section className={`rounded-2xl border shadow-sm overflow-hidden ${boxClass}`}>

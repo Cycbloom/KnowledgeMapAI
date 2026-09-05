@@ -7,6 +7,17 @@ import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { notDeleted } from '../common/softDeleteHelper';
 
+/** 复习投影估时：每张到期卡片约需的复习分钟数 */
+export const REVIEW_MINUTES_PER_CARD = 2;
+
+/** 统一 YYYY-MM-DD 本地日期字符串（到期时间戳投影到本地日，避免 UTC 偏移） */
+function toDateStringLocal(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 interface CalendarTask {
   id: string;
   title: string;
@@ -229,6 +240,112 @@ class CalendarService {
         estimated_duration: undefined,
         knowledgePointId: row.knowledge_point_id,
         scheduledDate: row.scheduled_date,
+      };
+    });
+  }
+
+  /**
+   * 复习到期预测事件（P3 复习入历）。
+   * FSRS 的 next_review 随每次评分自变 —— 投影按需计算、不落库，天然自愈。
+   * 按（知识点 × 到期日）聚合，估时 = 卡片数 × REVIEW_MINUTES_PER_CARD。
+   */
+  async getReviewProjections(
+    supabase: SupabaseClient,
+    userId: string,
+    start?: string,
+    end?: string,
+  ): Promise<
+    Array<{
+      id: string;
+      title: string;
+      description: string;
+      start: string;
+      end: string;
+      allDay: boolean;
+      type: "review_projection";
+      color: string;
+      status: string | null;
+      estimated_duration: number;
+      knowledgePointId: string | null;
+      scheduledDate: string;
+    }>
+  > {
+    const startStr = start ? start.slice(0, 10) : undefined;
+    const endStr = end ? end.slice(0, 10) : undefined;
+
+    let query = supabase
+      .from("study_cards")
+      .select("id, knowledge_point_id, next_review, knowledge_points(title)")
+      .eq("user_id", userId)
+      .not("knowledge_point_id", "is", null);
+
+    if (startStr) {
+      query = query.gte("next_review", `${startStr}T00:00:00.000Z`);
+    }
+    if (endStr) {
+      query = query.lte("next_review", `${endStr}T23:59:59.999Z`);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      logger.warn("[CalendarService] fetch review projections failed", {
+        userId,
+        error: error.message,
+      });
+      return [];
+    }
+    if (!data || data.length === 0) return [];
+
+    // 按（知识点 × 本地到期日）聚合
+    const byKey = new Map<
+      string,
+      { kpId: string; title: string | null; date: string; count: number }
+    >();
+    for (const row of data as Array<{
+      id: string;
+      knowledge_point_id: string | null;
+      next_review: string | null;
+      knowledge_points?: { title?: string | Record<string, string> } | null;
+    }>) {
+      if (!row.knowledge_point_id || !row.next_review) continue;
+      const d = new Date(row.next_review);
+      if (Number.isNaN(d.getTime())) continue;
+      const date = toDateStringLocal(d);
+      const key = `${row.knowledge_point_id}|${date}`;
+      const entry = byKey.get(key);
+      if (entry) {
+        entry.count += 1;
+      } else {
+        byKey.set(key, {
+          kpId: row.knowledge_point_id,
+          title:
+            resolveLocalizedText(row.knowledge_points?.title) ?? "",
+          date,
+          count: 1,
+        });
+      }
+    }
+
+    return Array.from(byKey.values()).map((entry) => {
+      const minutes = entry.count * REVIEW_MINUTES_PER_CARD;
+      return {
+        id: `review-${entry.kpId}-${entry.date}`,
+        title:
+          entry.title ||
+          i18next.t("scheduler.calendarService.reviewProjection"),
+        description: i18next.t(
+          "scheduler.calendarService.reviewProjectionDesc",
+          { count: entry.count, minutes },
+        ),
+        start: `${entry.date}T00:00:00.000Z`,
+        end: `${entry.date}T23:59:59.000Z`,
+        allDay: true,
+        type: "review_projection" as const,
+        color: "orange",
+        status: null,
+        estimated_duration: minutes,
+        knowledgePointId: entry.kpId,
+        scheduledDate: entry.date,
       };
     });
   }

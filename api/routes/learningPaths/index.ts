@@ -7,6 +7,7 @@ import progressRoutes from "./progress";
 import plansRoutes from "./plans";
 import generationRoutes from "./generation";
 import goalDialogRoutes from "./goalDialog";
+import stageWindowsRoutes from "./stageWindows";
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use("/", progressRoutes);
 router.use("/", plansRoutes);
 router.use("/", generationRoutes);
 router.use("/", goalDialogRoutes);
+router.use("/", stageWindowsRoutes);
 
 export default router;

@@ -3,6 +3,7 @@ import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { transactionExecutor } from "../../database/transactionExecutor";
+import { scheduleSyncService } from "../scheduler/planning/scheduleSyncService";
 import type {
   LearningPathNode,
   CreateLearningPathNodeInput,
@@ -63,6 +64,43 @@ export class LearningPathNodeService {
   }
 
   async updateNodeStatus(
+    supabase: SupabaseClient,
+    pathId: string,
+    nodeId: string,
+    userId: string,
+    input: UpdateNodeStatusInput,
+  ): Promise<LearningPathNode> {
+    const result = await this.updateNodeStatusInternal(
+      supabase,
+      pathId,
+      nodeId,
+      userId,
+      input,
+    );
+
+    // P4 完成闭环：知识点在任一路径完成后全局同步（排期行收口 + 跨路径节点同步）。
+    // 同步失败不影响状态更新本身。
+    if (input.status === "completed" && result.knowledge_point_id) {
+      try {
+        await scheduleSyncService.syncKnowledgePointCompleted(
+          supabase,
+          userId,
+          result.knowledge_point_id,
+          { excludePathId: pathId },
+        );
+      } catch (syncError) {
+        logger.warn("syncKnowledgePointCompleted failed", {
+          nodeId,
+          knowledgePointId: result.knowledge_point_id,
+          error: syncError instanceof Error ? syncError.message : String(syncError),
+        });
+      }
+    }
+
+    return result;
+  }
+
+  private async updateNodeStatusInternal(
     supabase: SupabaseClient,
     pathId: string,
     nodeId: string,

@@ -59,6 +59,14 @@ export function useSchedulerOrchestrator() {
     refetchInterval: 1000 * 60 * 5,
   });
 
+  /** 今日概览（P4 今日卡片）：今日排期 + 容量 + 到期复习 + 大循环决策 + 滞后窗口 */
+  const todayBrief = useQuery({
+    queryKey: queryKeys.schedulerTodayBrief(),
+    queryFn: () => orchestratorApi.getTodayBrief(),
+    staleTime: 1000 * 60 * 2,
+    refetchInterval: 1000 * 60 * 5,
+  });
+
   return {
     startLearningLoop,
     advanceLearningLoop,
@@ -66,5 +74,6 @@ export function useSchedulerOrchestrator() {
     startLearningWithTask,
     startLearningForGraph,
     nextStep,
+    todayBrief,
   };
 }

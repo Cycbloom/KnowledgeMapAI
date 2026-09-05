@@ -69,6 +69,16 @@ export class LearningPathDailyPlan {
     userId: string,
     planDate: string,
   ): Promise<LearningPlan | null> {
+    // 统一日计划（P1）：优先由排期表（learning_path_schedule）派生；
+    // 当日无排期时回退到手动计划行（learning_path_progress）
+    const schedulePlan = await this.getSchedulePlanForDate(
+      supabase,
+      pathId,
+      userId,
+      planDate,
+    );
+    if (schedulePlan) return schedulePlan;
+
     const { data, error } = await supabase
       .from("learning_path_progress")
       .select("*")
@@ -114,7 +124,130 @@ export class LearningPathDailyPlan {
       throw error;
     }
 
-    return data || [];
+    // 统一日计划（P1）：排期表是日历的事实源；有排期的日期以排期派生计划为准，
+    // 手动计划行仅覆盖没有排期的日期
+    const schedulePlans = await this.getSchedulePlans(
+      supabase,
+      pathId,
+      userId,
+      startDate,
+      endDate,
+    );
+    const scheduleDates = new Set(schedulePlans.map((p) => p.started_at));
+    const manualPlans = (data || []).filter(
+      (p: LearningPlan) =>
+        Array.isArray(p.planned_nodes) &&
+        p.planned_nodes.length > 0 &&
+        !scheduleDates.has(p.started_at),
+    );
+
+    return [...schedulePlans, ...manualPlans].sort((a, b) =>
+      (a.started_at ?? "").localeCompare(b.started_at ?? ""),
+    );
+  }
+
+  /** 从排期表构建某日期的派生日计划（无排期返回 null） */
+  private async getSchedulePlanForDate(
+    supabase: SupabaseClient,
+    pathId: string,
+    userId: string,
+    planDate: string,
+  ): Promise<LearningPlan | null> {
+    const plans = await this.getSchedulePlans(
+      supabase,
+      pathId,
+      userId,
+      planDate,
+      planDate,
+    );
+    return plans[0] ?? null;
+  }
+
+  /**
+   * 从 learning_path_schedule 派生日计划列表。
+   * 排期主体是知识点（跨路径合并），这里把知识点映射回本路径的节点 id；
+   * 只统计本路径发起或参与的排期（path_id 或 source_path_ids 命中）。
+   */
+  private async getSchedulePlans(
+    supabase: SupabaseClient,
+    pathId: string,
+    userId: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<LearningPlan[]> {
+    let query = supabase
+      .from("learning_path_schedule")
+      .select("id, knowledge_point_id, scheduled_date, estimated_time, status")
+      .eq("user_id", userId)
+      .in("status", ["scheduled", "completed"])
+      .or(`path_id.eq.${pathId},source_path_ids.cs.{${pathId}}`)
+      .order("scheduled_date", { ascending: true });
+
+    if (startDate) {
+      query = query.gte("scheduled_date", startDate);
+    }
+    if (endDate) {
+      query = query.lte("scheduled_date", endDate);
+    }
+
+    const { data: scheduleRows, error } = await query;
+    if (error) {
+      logger.warn("getSchedulePlans error:", { error: error.message });
+      return [];
+    }
+    if (!scheduleRows || scheduleRows.length === 0) return [];
+
+    // 知识点 → 本路径节点 id 映射（同一知识点可能对应多个节点，全部纳入）
+    const { data: nodes, error: nodesError } = await supabase
+      .from("learning_path_nodes")
+      .select("id, knowledge_point_id")
+      .eq("path_id", pathId);
+    if (nodesError) {
+      logger.warn("getSchedulePlans nodes error:", { error: nodesError.message });
+    }
+    const nodesByKp = new Map<string, string[]>();
+    for (const n of nodes ?? []) {
+      if (!n.knowledge_point_id) continue;
+      const list = nodesByKp.get(n.knowledge_point_id) ?? [];
+      list.push(n.id as string);
+      nodesByKp.set(n.knowledge_point_id, list);
+    }
+
+    const byDate = new Map<string, typeof scheduleRows>();
+    for (const row of scheduleRows) {
+      const date = row.scheduled_date as string;
+      const list = byDate.get(date) ?? [];
+      list.push(row);
+      byDate.set(date, list);
+    }
+
+    const now = new Date().toISOString();
+    const plans: LearningPlan[] = [];
+    for (const [date, rows] of byDate) {
+      const nodeIds = rows.flatMap((r) => {
+        const kpId = r.knowledge_point_id as string;
+        return nodesByKp.get(kpId) ?? [kpId];
+      });
+      const allCompleted = rows.every((r) => r.status === "completed");
+      plans.push({
+        id: `schedule-${pathId}-${date}`,
+        user_id: userId,
+        path_id: pathId,
+        node_id: nodeIds[0],
+        status: allCompleted ? "completed" : "pending",
+        progress_percentage: 0,
+        time_spent: 0,
+        planned_nodes: nodeIds,
+        planned_duration: rows.reduce(
+          (sum, r) => sum + (Number(r.estimated_time) || 0),
+          0,
+        ),
+        started_at: date,
+        created_at: now,
+        updated_at: now,
+      });
+    }
+    return plans;
   }
 
   async updatePlanStatus(

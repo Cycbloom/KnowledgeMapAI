@@ -160,6 +160,10 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
         return "bg-primary-500";
       case "review":
         return "bg-green-500";
+      case "path_schedule":
+        return "bg-purple-500";
+      case "review_projection":
+        return "bg-orange-500";
       default:
         return "bg-gray-500";
     }

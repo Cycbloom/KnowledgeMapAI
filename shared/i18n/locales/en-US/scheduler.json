@@ -1717,7 +1717,9 @@
     "executionSummary": "✓ {{title}}",
     "executionDescription": "Actual execution time: {{minutes}} minutes",
     "pathSchedule": "Path Schedule",
-    "pathScheduleDesc": "Path schedule · {{count}} learning goal(s)"
+    "pathScheduleDesc": "Path schedule · {{count}} learning goal(s)",
+    "reviewProjection": "Review due",
+    "reviewProjectionDesc": "~{{count}} cards due · about {{minutes}} min"
   },
   "systemTask": {
     "errors": {
@@ -1760,5 +1762,18 @@
       "knowledgePointNeedsReview": "Knowledge point needs review: mastery has dropped to {{mastery}}%",
       "quizTitle": "Quiz: {{title}}"
     }
+  },
+  "todayBrief": {
+    "title": "What to learn today",
+    "noSchedule": "Nothing scheduled today — plan something in Calendar or Paths",
+    "untitledNode": "Untitled knowledge point",
+    "minutes": "{{count}} min",
+    "capacityLabel": "Today's capacity",
+    "capacityValue": "{{scheduled}} / {{capacity}} min scheduled · {{completed}} done",
+    "overdueBadge": "{{count}} overdue reviews",
+    "bigLoopReview": "{{count}} knowledge points overdue for review — review first",
+    "bigLoopGraph": "Current graph: {{graph}}",
+    "bigLoopEmpty": "No active learning task",
+    "laggingTitle": "{{count}} learning window(s) past due"
   }
 }

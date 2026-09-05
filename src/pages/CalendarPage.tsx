@@ -8,6 +8,7 @@ import {
   useCalendarNavigation,
   useCalendarEvents,
   useCalendarScheduleEvents,
+  useCalendarReviewProjections,
   useCalendarExecutions,
   useCalendarActivityStats,
   useCalendarDailyActivities,
@@ -68,11 +69,16 @@ export const CalendarPage: React.FC = () => {
     startDate,
     endDate,
   );
+  const { data: reviewProjections = [] } = useCalendarReviewProjections(
+    calendarMode,
+    startDate,
+    endDate,
+  );
   const { data: executions = [] } = useCalendarExecutions();
 
-  // 合并路径排课图层（path_schedule）
+  // 合并路径排课（path_schedule）与复习到期预测（review_projection）图层
   const combinedEvents = calendarMode === "plan"
-    ? [...events, ...scheduleEvents]
+    ? [...events, ...scheduleEvents, ...reviewProjections]
     : events;
 
   const { data: activityStats = [] } = useCalendarActivityStats(
@@ -102,7 +108,7 @@ export const CalendarPage: React.FC = () => {
   );
 
   const handleEventClick = useCallback((event: CalendarEvent) => {
-    if (event.type === "path_schedule") {
+    if (event.type === "path_schedule" || event.type === "review_projection") {
       if (event.knowledgePointId) {
         routerNavigate(`/study?node_id=${encodeURIComponent(event.knowledgePointId)}`);
       }
@@ -137,6 +143,10 @@ export const CalendarPage: React.FC = () => {
 
   const handleEventDrop = useCallback(
     async (dropInfo: EventDropInfo) => {
+      // 复习到期预测是只读投影（随评分自变），不支持拖动改期
+      if (dropInfo.eventId.startsWith("review-")) {
+        return;
+      }
       // 路径排课事件：手动改期
       if (dropInfo.eventId.startsWith("schedule-")) {
         const scheduleId = dropInfo.eventId.slice("schedule-".length);

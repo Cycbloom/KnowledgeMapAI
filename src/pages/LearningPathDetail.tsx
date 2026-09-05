@@ -4,9 +4,9 @@ import { useNavigateBack } from "../hooks/common/useNavigateBack";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Route } from "lucide-react";
-import { learningPathsApi, NodeStatus } from "../services/api/learningPaths";
+import { learningPathsApi, NodeStatus, type LearningPlanResponse } from "../services/api/learningPaths";
 import { pathTasksApi } from "../services/api/modules/scheduler";
-import { learningPathKeys } from "../hooks/queries/useLearningPathQueries";
+import { learningPathKeys, useLearningPathPlans } from "../hooks/queries/useLearningPathQueries";
 import { useError } from "../hooks";
 import { useDocumentTitle } from "../hooks/common/useDocumentTitle";
 import PathHeaderSection from "../components/LearningPath/PathHeaderSection";
@@ -20,6 +20,7 @@ import type {
   LearningPathDetail,
   ApiLearningPathNode,
   LearningPathNode,
+  LearningPathPlan,
 } from "../components/LearningPath/types";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { SkeletonCard } from "@/components/common";
@@ -122,6 +123,22 @@ const LearningPathDetailPage: React.FC = () => {
   });
 
   useDocumentTitle(pathDetail?.title, t("documentTitle.suffix"));
+
+  // 统一日计划：日历排期（learning_path_schedule）是事实源，此处直接消费派生日计划
+  const { data: schedulePlansData } = useLearningPathPlans(pathId ?? "");
+  const plans: LearningPathPlan[] = useMemo(() => {
+    const derived = ((schedulePlansData ?? []) as LearningPlanResponse[]).map(
+      (p) => ({
+        id: p.id,
+        date: (p.started_at ?? "").slice(0, 10),
+        planned_nodes: p.planned_nodes ?? [],
+        estimated_minutes: p.planned_duration,
+        completed: p.status === "completed",
+      }),
+    );
+    if (derived.length > 0) return derived;
+    return pathDetail?.plans ?? [];
+  }, [schedulePlansData, pathDetail]);
 
   const handleUpdateNodeStatus = async (nodeId: string, status: NodeStatus) => {
     if (!pathId) return;
@@ -402,7 +419,7 @@ const LearningPathDetailPage: React.FC = () => {
             />
 
             <PathPlansSection
-              plans={pathDetail.plans ?? []}
+              plans={plans}
               expandedSections={expandedSections}
               onToggleSection={toggleSection}
             />

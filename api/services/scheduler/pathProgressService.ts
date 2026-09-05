@@ -1,6 +1,8 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
+import { logger } from "../../utils/logger";
+import { scheduleSyncService } from "./planning/scheduleSyncService";
 
 export interface PathProgressRecord {
   id: string;
@@ -283,6 +285,36 @@ export class PathProgressService {
     }
 
     await this.updateNodeStatus(client, pathNodeTask.node_id, "completed", completionTime);
+
+    // P4 完成闭环：任务完成 → 知识点全局同步（排期行收口 + 跨路径节点同步）。
+    // 同步失败不影响任务完成链路本身。
+    const { data: completedNode } = await client
+      .from("learning_path_nodes")
+      .select("knowledge_point_id")
+      .eq("id", pathNodeTask.node_id)
+      .maybeSingle();
+    if (completedNode?.knowledge_point_id) {
+      try {
+        await scheduleSyncService.syncKnowledgePointCompleted(
+          client,
+          userId,
+          completedNode.knowledge_point_id,
+          {
+            excludePathId: pathNodeTask.path_id,
+            now: new Date(completionTime),
+          },
+        );
+      } catch (syncError) {
+        logger.warn("[PathProgress] syncKnowledgePointCompleted failed", {
+          taskId,
+          nodeId: pathNodeTask.node_id,
+          error:
+            syncError instanceof Error
+              ? syncError.message
+              : String(syncError),
+        });
+      }
+    }
 
     const pathProgress = await this.getPathProgressSummary(client, userId, pathNodeTask.path_id);
 

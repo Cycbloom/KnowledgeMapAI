@@ -68,6 +68,7 @@ export const ErrorCodes = {
   SCHEDULER_TASK_EXECUTION_FAILED: "SCHEDULER_TASK_EXECUTION_FAILED",
   SCHEDULER_DEPENDENCY_ERROR: "SCHEDULER_DEPENDENCY_ERROR",
   SCHEDULER_QUEUE_ERROR: "SCHEDULER_QUEUE_ERROR",
+  SCHEDULER_CAPACITY_EXCEEDED: "SCHEDULER_CAPACITY_EXCEEDED",
 
   FILE_TOO_LARGE: "FILE_TOO_LARGE",
   FILE_INVALID_TYPE: "FILE_INVALID_TYPE",
@@ -164,6 +165,8 @@ export const ErrorCodeMessageKeys: Record<ErrorCode, string> = {
     "errors.errorCodes.schedulerTaskExecutionFailed",
   SCHEDULER_DEPENDENCY_ERROR: "errors.errorCodes.schedulerDependencyError",
   SCHEDULER_QUEUE_ERROR: "errors.errorCodes.schedulerQueueError",
+  SCHEDULER_CAPACITY_EXCEEDED:
+    "errors.errorCodes.schedulerCapacityExceeded",
 
   FILE_TOO_LARGE: "errors.errorCodes.fileTooLarge",
   FILE_INVALID_TYPE: "errors.errorCodes.fileInvalidType",
@@ -254,6 +257,7 @@ export const ErrorCodeStatus: Record<ErrorCode, number> = {
   SCHEDULER_TASK_EXECUTION_FAILED: 500,
   SCHEDULER_DEPENDENCY_ERROR: 400,
   SCHEDULER_QUEUE_ERROR: 500,
+  SCHEDULER_CAPACITY_EXCEEDED: 429,
 
   FILE_TOO_LARGE: 413,
   FILE_INVALID_TYPE: 415,

@@ -8,6 +8,8 @@ import { subtaskStateMachine } from "./subtaskStateMachine";
 import { executionService } from "./executionService";
 import { smartTaskLinker } from "./smartTaskLinker";
 import { crossGraphLearningPathService } from "../study/crossGraphLearningPathService";
+import { stageWindowPlannerService } from "./planning/stageWindowPlannerService";
+import { CROSS_GRAPH_COMPLETION_THRESHOLD } from "../study/crossGraphPathAlgorithms";
 import { resolveLocalizedText } from "../../../shared/utils/localization";
 import type { StateHistoryEntry } from "../../../shared/types/scheduler";
 import { notDeleted } from "../common/softDeleteHelper";
@@ -648,6 +650,7 @@ class SchedulerDecisionService {
     const crossGraphTask = await this.pickFromCrossGraphPath(
       supabase,
       userId,
+      now,
     );
     if (crossGraphTask) return crossGraphTask;
 
@@ -742,13 +745,54 @@ class SchedulerDecisionService {
   }
 
   /**
-   * 大循环：优先按「跨图谱学习路径」推进——取路径中下一个未完成的图谱，
-   * 确保其 graph_learning 大任务存在后作为大循环目标返回。
+   * 大循环：优先按「跨图谱学习路径」推进。
+   * P2 两级排课：若本周有 stage 周窗口（大路径粒度=周），优先推进窗口对应的图
+   * （该图已完成度达阈值时视为提前完成，回退到路径顺序）；无窗口数据时回退到
+   * 路径顺序的下一个未完成图谱。确保图谱的 graph_learning 大任务存在后返回。
    */
   private async pickFromCrossGraphPath(
     supabase: SupabaseClient,
     userId: string,
+    now: Date = new Date(),
   ): Promise<NonNullable<BigLoopDecision["graphTask"]> | null> {
+    // P2：本周 stage 周窗口优先（大路径按周推进）
+    const weekWindow = await this.getCurrentWeekWindowGraph(
+      supabase,
+      userId,
+      now,
+    );
+    if (weekWindow) {
+      const completions = await crossGraphLearningPathService.computeGraphCompletions(
+        supabase,
+        userId,
+        [weekWindow.graphId],
+      );
+      const completion = completions.get(weekWindow.graphId) ?? 0;
+      if (completion < CROSS_GRAPH_COMPLETION_THRESHOLD) {
+        try {
+          const info = await smartTaskLinker.getOrCreateTaskForGraph(
+            supabase,
+            userId,
+            weekWindow.graphId,
+          );
+          return {
+            taskId: info.mainTaskId,
+            taskTitle: info.graphName,
+            graphId: weekWindow.graphId,
+            queueLevel: 1,
+            priority: 1,
+            deadline: undefined,
+            score: 100,
+          };
+        } catch (error) {
+          logger.warn("[SchedulerDecision] week window pick failed", {
+            graphId: weekWindow.graphId,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+    }
+
     const next = await crossGraphLearningPathService.getNextGraphInPath(
       supabase,
       userId,
@@ -773,6 +817,31 @@ class SchedulerDecisionService {
     } catch (error) {
       logger.warn("[SchedulerDecision] pickFromCrossGraphPath failed", {
         graphId: next.graphId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return null;
+    }
+  }
+
+  /**
+   * P2：查询本周（含今天）的 stage 周窗口，按路径优先级排序，
+   * 返回第一个有 graph_id 的窗口；无窗口或查询失败返回 null。
+   */
+  private async getCurrentWeekWindowGraph(
+    supabase: SupabaseClient,
+    userId: string,
+    now: Date = new Date(),
+  ): Promise<{ graphId: string } | null> {
+    try {
+      const windows = await stageWindowPlannerService.getCurrentWeekWindows(
+        supabase,
+        userId,
+        now,
+      );
+      const withGraph = windows.find((w) => !!w.graphId && w.status !== "skipped");
+      return withGraph?.graphId ? { graphId: withGraph.graphId } : null;
+    } catch (error) {
+      logger.warn("[SchedulerDecision] getCurrentWeekWindowGraph failed", {
         error: error instanceof Error ? error.message : String(error),
       });
       return null;

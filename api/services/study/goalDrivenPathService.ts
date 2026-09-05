@@ -24,6 +24,7 @@ import {
   type CrossGraphStage,
 } from "./crossGraphPathAlgorithms";
 import { searchSimilarGraphs } from "../../utils/similaritySearch";
+import { stageWindowPlannerService } from "../scheduler/planning/stageWindowPlannerService";
 import { getAIProvider, getAIProviderForTask } from "../ai/factory";
 import { promptService } from "../ai/promptService";
 import { chatService } from "../ai/chatService";
@@ -627,6 +628,16 @@ ${domainSummary}
       archivedOld,
       stageCount: stages.length,
     });
+
+    // P2 两级排课：大路径保存后自动排周窗口（失败不阻塞保存）
+    stageWindowPlannerService
+      .planStageWindows(supabase, userId, savedPath.id)
+      .catch((err: unknown) => {
+        logger.warn("[GoalDrivenPath] plan stage windows failed", {
+          pathId: savedPath.id,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      });
 
     return {
       pathId: savedPath.id,

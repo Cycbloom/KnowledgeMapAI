@@ -97,6 +97,10 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
         return "bg-primary-500 border-primary-600";
       case "review":
         return "bg-green-500 border-green-600";
+      case "path_schedule":
+        return "bg-purple-500 border-purple-600";
+      case "review_projection":
+        return "bg-orange-500 border-orange-600";
       default:
         return "bg-gray-500 border-gray-600";
     }

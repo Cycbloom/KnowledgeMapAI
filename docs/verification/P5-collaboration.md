@@ -1,6 +1,8 @@
 # P5 协作与同步全流程验证报告
 
-> 对应 spec：`.trae/specs/verify-app-running-p5-collaboration/`
+> **📄 历史快照（2026-08-10）**：本文为一次性验证报告。第 3 节端点清单与第 4 节决策记录仍有参考价值；统计数字为当日快照。注：修复记录中的 `14_functions.sql` 已在 2026-09-05 迁移重整中并入 `31_functions.sql`；当时为 45 个迁移文件，现为 46 个；`.trae/specs/` 规格文件已随仓库清理删除。
+
+> 对应 spec：`.trae/specs/verify-app-running-p5-collaboration/`（已删除）
 > 验证日期：2026-08-10
 > 目标：验证协作与同步能力——图谱分享、版本与快照（创建/回滚/分支/合并预览）以及实时同步（SSE）。本报告覆盖**测试用例编写**阶段，并已完成 E2E 实际执行（chromium 项目）。
 

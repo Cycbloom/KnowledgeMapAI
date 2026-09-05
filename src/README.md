@@ -11,21 +11,29 @@ src/
 │
 ├── assets/             # 静态资源（图片、字体等）
 │
-├── components/         # UI 组件
+├── components/         # UI 组件（按域分组，30+ 目录）
 │   ├── common/         # 通用组件（Button、Loading、Modal 等）
 │   ├── Layout/         # 布局组件
 │   ├── AutoGraph/      # 自动建图
+│   ├── Calendar/       # 日历视图
 │   ├── Console/        # 控制台/命令行
 │   ├── Dashboard/      # 仪表盘
+│   ├── Graph/          # 图谱通用组件
+│   ├── GraphEditor/    # 图谱编辑器组件
 │   ├── GraphMap/       # 图谱地图
+│   ├── Learning/       # 学习模块组件
+│   ├── LearningPath/   # 学习路径组件
 │   ├── Notes/          # 笔记编辑
 │   ├── PromptConfig/   # Prompt 配置
 │   ├── Quiz/           # 测验
 │   ├── RAGChat/        # RAG 聊天
 │   ├── Scheduler/      # 调度模块
 │   ├── Settings/       # 设置
+│   ├── Statistics/     # 统计组件
 │   ├── Study/          # 学习模块
 │   └── Workbench/      # 工作台
+│   └── ...             # 其余（Achievements, CombinedView, Notifications,
+│                       #   PluginMarketplace, LiteratureExtract 等）以目录为准
 │
 ├── config/             # 前端配置
 │   ├── authConfig.ts
@@ -51,6 +59,8 @@ src/
 │   ├── common/         # 通用 hooks（useAutoSave, useTheme, useWorker 等）
 │   ├── console/        # 控制台 hooks
 │   ├── dashboard/      # 仪表盘 hooks
+│   ├── electron/       # Electron 集成 hooks（useAppBadge 等）
+│   ├── gesture/        # 移动端手势 hooks（useSwipeBack 等）
 │   ├── graphAI/        # 图谱 AI 相关 hooks
 │   ├── graphEditor/    # 图谱编辑器 hooks
 │   ├── mobile/         # 移动端 hooks
@@ -59,10 +69,11 @@ src/
 │   ├── queries/        # React Query 查询
 │   ├── quiz/           # 测验 hooks
 │   ├── scheduler/      # 调度 hooks
-│   └── study/          # 学习 hooks
+│   ├── study/          # 学习 hooks
+│   └── templates/      # 模板 hooks
 │
 ├── i18n/               # 国际化
-│   ├── locales/        # 语言包（en-US/、zh-CN/）
+│   ├── locales/        # 语言包
 │   │   ├── en-US/      # 英文翻译
 │   │   └── zh-CN/      # 中文翻译
 │   ├── i18n.d.ts       # i18n 类型声明
@@ -78,6 +89,7 @@ src/
 │   ├── Dashboard.tsx
 │   ├── GraphEditor.tsx
 │   ├── GraphMap.tsx
+│   ├── GraphsPage.tsx
 │   ├── LearningMode.tsx
 │   ├── LearningPathDetail.tsx
 │   ├── LearningPaths.tsx
@@ -98,15 +110,21 @@ src/
 │   └── Templates.tsx
 │
 ├── services/           # API 服务
-│   ├── api/            # API 客户端模块
+│   ├── api/            # API 客户端模块（30+ 资源模块）
 │   │   ├── contracts/  # 接口契约
 │   │   ├── mobile/     # 移动端 API
+│   │   ├── modules/    # 复杂域模块（scheduler/ 编排器等）
 │   │   ├── client.ts
 │   │   ├── createApiClient.ts
-│   │   └── ...         # 各模块 API 定义
+│   │   └── ...         # 各资源 API 定义（graphs, notes, tasks, tags...）
+│   ├── ai/             # 前端 AI 服务
 │   ├── console/        # 控制台服务
 │   ├── kernel/         # 前端内核
 │   ├── mobile/         # 移动端服务
+│   ├── prompt/         # 提示模板服务
+│   ├── settings/       # 设置服务
+│   ├── sync/           # 同步服务
+│   ├── timer/          # 计时服务
 │   ├── api.ts
 │   ├── backboneValidator.ts
 │   ├── celebrationService.ts
@@ -117,19 +135,17 @@ src/
 │   └── utils/
 │       └── validators.ts
 │
-├── store/              # 状态管理 (Zustand)
-│   ├── createPersistedStore.ts
-│   ├── storeIntegrations.ts
-│   ├── useConsoleStore.ts
-│   ├── useFocusStore.ts
-│   ├── useNoiseStore.ts
-│   ├── useNotificationsStore.ts
-│   ├── usePerformanceStore.ts
-│   ├── usePreferencesStore.ts
-│   ├── useShortcutStore.ts
-│   ├── useStore.ts
-│   ├── useThemeStore.ts
-│   └── useTimerStore.ts
+├── store/              # 状态管理 (Zustand，24+ store)
+│   ├── createPersistedStore.ts   # 持久化辅助器
+│   ├── storeIntegrations.ts      # store 间联动
+│   ├── useStore.ts               # 用户认证
+│   ├── useThemeStore.ts          # 主题
+│   ├── useFocusStore.ts          # 专注模式
+│   ├── useTimerStore.ts          # 番茄钟
+│   ├── usePreferencesStore.ts    # 用户偏好
+│   └── ...             # 其余按域拆分（useLearningSettingsStore,
+│                       #   useGraphMapLayoutStore, useQuizUiStore,
+│                       #   useExecutionSessionStore 等）以目录为准
 │
 ├── styles/             # 样式文件
 │   └── scheduler.css

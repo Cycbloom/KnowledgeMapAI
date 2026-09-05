@@ -5,14 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.1] - 2026-07-09
+## [Unreleased]
+
+### Added
+
+- 目标驱动跨图谱 AI 学习路径：输入学习目标由 AI 生成候选路径与变体，后台生成 + SSE 恢复选择，按目标相关性排序候选图谱
+- 统一计划体系：学习路径按阶段窗口排上日历（`/api/v1/calendar`），每日学习容量预算控制，阶段窗口显示为日历事件，新增今日学习简报（today brief）
+- RAG 稀疏检索：查询改写 + SPLADE 式稀疏向量 + Contextual Retrieval（分块上下文前缀），稀疏/稠密混合检索
+- 图谱星图（Graph Map）：AI 后台智能扩展（深度/宽度）与完成通知，域光环空间分区与间距优化
+- 移动端构建模式（`npm run mobile:*`）与移动端今日首页仪表盘
+- 首页（Dashboard）学习路径排序与逐项启动
 
 ### Changed
 
-- 移除 Vercel 部署相关配置（vercel.json / .vercelignore / VERCEL_ENV_SETUP.md），项目改为纯 Electron 桌面应用分发
-- 从 `package.json` 的 `build.extraResources` 移除 `.env.production` 条目，避免构建时因文件缺失而失败
-- 移除 `api/app.ts` 中 CORS 允许列表的 Vercel 预览域名正则
-- 更新 `.env.example` 注释，移除 Vercel 相关示例
+- 数据库迁移重排为"域文件在前、横切归拢"布局（29–33 为索引/RLS/函数/触发器/授权，34 为调度容量），编号连续
+- 学习路径列表/编辑 UI 增强；列表卡片操作改为下拉菜单；删除学习路径改为永久删除
+- 调度器默认每日学习容量提升，子任务绑定 `knowledge_point_id`
+
+### Fixed
+
+- E2E 稳定性与 CI 修复：Node 22、better-sqlite3 Node-ABI 预编译、超时调整、若干断言去 flake
 
 ## [1.1.0] - 2026-08-06
 
@@ -32,6 +44,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 移除独立的 `supabase-db` 容器（PostgreSQL），由宿主机 Supabase CLI 管理数据库
 - 移除 `docker/dev/init.sh` 数据库初始化脚本（不再需要）
 - 移除 `docker/dev/.env.example` 过时配置
+
+## [1.0.1] - 2026-07-09
+
+### Changed
+
+- 移除 Vercel 部署相关配置（vercel.json / .vercelignore / VERCEL_ENV_SETUP.md），项目改为纯 Electron 桌面应用分发
+- 从 `package.json` 的 `build.extraResources` 移除 `.env.production` 条目，避免构建时因文件缺失而失败
+- 移除 `api/app.ts` 中 CORS 允许列表的 Vercel 预览域名正则
+- 更新 `.env.example` 注释，移除 Vercel 相关示例
 
 ## [1.0.0] - 2025-03-15
 

@@ -1,6 +1,8 @@
 # P3 复习流程验证报告
 
-> 对应 spec：`.trae/specs/verify-app-running-p3-review-flow/`
+> **📄 历史快照（2026-08-10）**：本文为一次性验证报告。第 2 节端点/字段表仍有参考价值；文中源码行号（如 L15、L178-183）与统计数字均为当日快照，会随代码漂移。文中迁移文件编号已按 2026-09-05 迁移重整更新；`.trae/specs/` 规格文件已随仓库清理删除。
+
+> 对应 spec：`.trae/specs/verify-app-running-p3-review-flow/`（已删除）
 > 验证日期：2026-08-10
 > 目标：验证复习流程核心闭环——卡片生成 → 待复习卡片拉取 → 提交作答（FSRS 进度更新）→ 复习统计 → FSRS 参数读写，确保 FSRS 学习闭环不回归。
 
@@ -47,7 +49,7 @@
 | 应该能够查询复习统计 | GET `?graph_id=`，断言统计 9 字段完整且数值非负 | ✅ 通过 |
 | 应该能够读写 FSRS 参数 | GET 读取 → PUT 写回（`source`→custom）→ DELETE 重置清理 | ✅ 通过 |
 
-> 清理策略：卡片/图谱节点/学习卡片通过对「知识点」的**硬删除**级联清理（`study_cards.knowledge_point_id`、`graph_nodes.knowledge_point_id` 均为 `ON DELETE CASCADE`，见 `06_study_and_cards.sql`、`04_graph_structure.sql`）；图谱本身由 `testGraph` fixture teardown 永久删除。FSRS 参数写回后以 DELETE 重置，避免污染测试用户设置。
+> 清理策略：卡片/图谱节点/学习卡片通过对「知识点」的**硬删除**级联清理（`study_cards.knowledge_point_id`、`graph_nodes.knowledge_point_id` 均为 `ON DELETE CASCADE`，见 `07_study_and_cards.sql`、`05_graph_structure.sql`）；图谱本身由 `testGraph` fixture teardown 永久删除。FSRS 参数写回后以 DELETE 重置，避免污染测试用户设置。
 
 ## 4. 类型/规范复核
 

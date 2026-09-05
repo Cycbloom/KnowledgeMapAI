@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/knowledgemap/knowledgemap-app)
+[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](https://github.com/Cycbloom/KnowledgeMapAI)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js->=20-green.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
@@ -40,6 +40,9 @@ Knowledge Map 是一个功能丰富的知识管理工具，将知识图谱、AI 
 ### 📚 学习系统
 基于先进的 FSRS 间隔重复算法，支持问答、选择、判断、填空、论述题等多种卡片类型，可视化学习进度追踪和详细的学习数据分析。
 
+### 🗺️ 学习路径与统一计划
+目标驱动的跨图谱 AI 学习路径：输入学习目标后由 AI 生成候选路径，按阶段窗口排上日历（每日学习容量预算控制），与任务调度器、FSRS 复习打断形成统一计划体系。
+
 ### ⏱️ 任务调度器
 三层反馈队列（Q0 专注 / Q1 标准 / Q2 后台），内置番茄钟专注计时器，任务模板快速创建，以及每日、每周、每月周期回顾。
 
@@ -55,8 +58,8 @@ Knowledge Map 是一个功能丰富的知识管理工具，将知识图谱、AI 
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/knowledgemap/knowledgemap-app.git
-cd knowledgemap-app
+git clone https://github.com/Cycbloom/KnowledgeMapAI.git
+cd KnowledgeMapAI
 
 # 2. 安装依赖
 npm install
@@ -99,7 +102,8 @@ docker-compose logs -f
 
 - 前端：http://localhost:5173
 - 后端 API：http://localhost:3001
-- Supabase Studio：http://localhost:54321（宿主机直接访问）
+- Supabase API 网关：http://localhost:54321
+- Supabase Studio：http://localhost:54323（宿主机直接访问）
 - 前端 API 代理：通过 Vite proxy 自动转发 `/api` 请求到后端
 
 **生产环境部署：**
@@ -121,6 +125,7 @@ VITE_SUPABASE_URL=https://你的项目.supabase.co
 | --------------------------------------------- | ---------------------------------------------- |
 | [DEVELOPMENT.md](DEVELOPMENT.md)              | 完整开发指南（环境配置、架构、调试、规范）     |
 | [CONTRIBUTING.md](CONTRIBUTING.md)            | 贡献流程与代码规范                             |
+| [docs/code-wiki.md](docs/code-wiki.md)        | 代码维基（全项目架构、路由表、Schema 总览）    |
 | [docs/testing-guidelines.md](docs/testing-guidelines.md) | 测试规范与最佳实践                   |
 | [.trae/rules/](.trae/rules/)                  | 项目规则（API 命名、数据库规范等）             |
 
@@ -191,7 +196,7 @@ VITE_SUPABASE_URL=https://你的项目.supabase.co
 
 <div align="center">
 
-**Made with ❤️ by [KnowledgeMap Team](https://github.com/knowledgemap)**
+**Made with ❤️ by [KnowledgeMap Team](https://github.com/Cycbloom)**
 
 [⬆ 返回顶部](#knowledge-map)
 

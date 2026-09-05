@@ -6,9 +6,17 @@
 shared/
 ├── constants/              # 常量定义
 │   ├── backboneModulePresets.ts
+│   ├── capture.ts
+│   ├── fonts.ts
 │   ├── masteryThresholds.ts
 │   ├── studyModePresets.ts
-│   └── taskDefaults.ts
+│   ├── taskDefaults.ts
+│   ├── taskTitles.ts
+│   └── ttsVoices.ts
+│
+├── i18n/                   # 共享 i18n 资源
+│   ├── index.ts
+│   └── locales/
 │
 ├── kernel/                 # 内核基础
 │   ├── PluginLifecycleBase.ts
@@ -57,6 +65,7 @@ shared/
 │   ├── graph-literature.ts # 文献类型
 │   ├── graph-node.ts       # 节点类型
 │   ├── graph-template.ts   # 模板类型
+│   ├── learningMaterial.ts # 学习材料类型
 │   ├── scheduler-achievement.ts  # 成就类型
 │   ├── scheduler-core.ts   # 调度核心类型
 │   ├── scheduler-focus.ts  # 专注模式类型
@@ -64,12 +73,20 @@ shared/
 │   └── scheduler-task.ts   # 调度任务类型
 │
 └── utils/                  # 共享工具函数
-    ├── blockRef.ts
+    ├── blockRef.ts         # 笔记块引用解析
+    ├── cards.ts            # 学习卡片辅助
+    ├── dateFormat.ts       # 日期格式化
+    ├── encryption.ts       # 数据加密
+    ├── fsrs/               # FSRS 算法辅助（cardConversion, masteryContract）
     ├── indexMapping.ts
-    ├── markdownParser.ts
-    ├── nodeHelpers.ts
-    ├── retry.ts
-    ├── wikiLink.ts
+    ├── levelUtils.ts       # 节点等级工具
+    ├── localization.ts     # 多语言文本类型
+    ├── markdownParser.ts   # Markdown→图谱结构解析
+    ├── nodeHelpers.ts      # 图节点构建与转换
+    ├── passwordPolicy.ts   # 密码策略校验
+    ├── retry.ts            # 重试机制
+    ├── taskStatusTransitions.ts  # 任务状态机转换表
+    ├── wikiLink.ts         # Wiki 链接解析
     └── __tests__/
 ```
 

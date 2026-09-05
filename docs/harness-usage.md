@@ -1,6 +1,7 @@
 # KnowledgeMap × DSH Harness — 使用指南
 
 > 在 DeepSeek Harness 会话里直接使用 KnowledgeMap 的能力。当前 **10 插件 · 37 工具**运行中；持久化 preset `knowledgemap` 重启后自动加载同一套工具。
+> 界面：常驻融合 UI 由 durable 包 `@knowledgemap/dsh-km-ui` 提供（`.deepseek-harness/knowledgemap/km-ui/`），另有动态插件版备份（`plugin-ui2-host.js` / `plugin-review-ui.js`）。
 >
 > 数据全部落在当前工作区 `<cwd>/.deepseek-harness/knowledgemap/*.json`，可人工编辑、可导出备份。
 
@@ -91,7 +92,7 @@ km_review_rate(card_id=…, rating="good")  → FSRS-6 自动排下次复习
 ### 2.8 面板内直接复习
 
 ```
-打开 run card 仪表盘 → 点「开始复习 (N)」
+打开 run card 仪表盘（或输入栏 🧠 / 会话头部 📊 的常驻融合 UI）→ 点「开始复习 (N)」
 → 逐张：看正面 → 点「显示答案」→ 看背面 → 点 重来/困难/良好/轻松
 → FSRS-6 自动排下次复习，+5 XP/张，连击/成就实时结算
 → 队列清空后显示总结（张数/四档分布/XP/升级/解锁），返回自动刷新统计
@@ -117,7 +118,7 @@ km_review_rate(card_id=…, rating="good")  → FSRS-6 自动排下次复习
 
 ## 4. 持久化（重启后仍可用）
 
-- **动态插件**（本会话）：`kmap-1`(FSRS) `kmapg-2`(图谱) `kmapt-3`(任务) `kmapp-4`(成就) `kmhub-13`(Hub 六域) `kmapui-7`(UI+内联复习) `kmrag-14`(RAG) `kmpath-11`(路径) `kmnote-12`(笔记)
+- **动态插件**（本会话）：`kmap-1`(FSRS) `kmapg-2`(图谱) `kmapt-3`(任务) `kmapp-4`(成就) `kmhub-13`(Hub 六域) `kmapui-7`(UI+内联复习) `kmrag-14`(RAG) `kmpath-11`(路径) `kmnote-12`(笔记)；另有 `plugin-ui2-host.js`（UI v2 动态版备份，未计入上述清单）
 - **持久化 preset**：新建会话时选择 **knowledgemap**，即自动加载同套 **37 工具**（真实 npm 包 `@knowledgemap/dsh-km`），数据文件共用。
 
 ---

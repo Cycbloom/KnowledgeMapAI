@@ -1,6 +1,12 @@
 # P0 标签系统统一管理 — 实施 Spec
 
-> 状态：待实施 | 日期：2026-08-18 | 优先级：P0 | 预计轮次：1 轮 spec（Phase 1+2），Phase 3 可选
+> 状态：✅ **已实施**（2026-08-18 spec，同月内实现完毕；2026-09-05 审计核实） | 优先级：P0 | 预计轮次：1 轮 spec（Phase 1+2），Phase 3 可选
+>
+> **实施结果与偏差**（以代码为准）：
+> - API 契约与 §5 完全一致：`GET /api/v1/tags`、`POST /rename`、`POST /merge`、`DELETE /:name`，由 `CorePlugin` 注册（`api/routes/tags.ts` + `api/services/tags/tagService.ts`）。
+> - Schema 落地于 `03_knowledge_graph.sql`（`knowledge_graphs.tags TEXT[] DEFAULT '{}'`）；迁移编号见 §1.1 修正。
+> - 前端实现与 §4 提议命名有偏差：实际为 `useTagQueries.ts` / `useTagMutations.ts`（非 `useTags.ts`），Dashboard 侧组件为 `GraphTagsEditor.tsx` / `TagCloudSection.tsx`（非 `TagFilterBar.tsx` / `TagEditDialog.tsx`）；未创建 `tagRouteService.ts`（校验内联在路由层）。`TagManagerDialog.tsx`、`src/services/api/tags.ts`（`tagsApi`）按计划落地。
+> - `task_tags` 孤儿表与 Phase 3（任务标签筛选）维持原状，未实施。
 
 ## 1. 背景与现状
 
@@ -8,10 +14,10 @@
 
 | 位置 | 存储形式 | 现有消费方 |
 |---|---|---|
-| `notes.tags` | `TEXT[]`（32_notes.sql:55） | NotesListPage 本地点击筛选 + TagChips 展示 |
-| `user_tasks.tags` | `TEXT[]`（07_scheduler_tasks.sql:37） | 任务数据透传，无筛选 UI |
-| `task_templates.tags` | `TEXT[]`（07:265） | 模板数据透传 |
-| `templates.tags` | `TEXT[]`（10_ai_and_prompts.sql:111） | 图谱模板数据透传 |
+| `notes.tags` | `TEXT[]`（22_notes.sql） | NotesListPage 本地点击筛选 + TagChips 展示 |
+| `user_tasks.tags` | `TEXT[]`（08_scheduler_tasks.sql） | 任务数据透传，无筛选 UI |
+| `task_templates.tags` | `TEXT[]`（08_scheduler_tasks.sql） | 模板数据透传 |
+| `templates.tags` | `TEXT[]`（11_ai_and_prompts.sql） | 图谱模板数据透传 |
 | `knowledge_points.properties->'tags'` | JSONB（节点级） | `get_user_graph_tags` RPC 聚合 → `graphsApi.getTags()` → GraphEditor TagCloud |
 | `task_tags` 表 | 独立注册表（id/name/color/user_id） | **孤儿表**，无任何 API/前端使用 |
 
@@ -47,7 +53,7 @@
 
 ### Phase 1 — 图谱级标签（核心 UX 价值）
 
-**Schema**（`supabase/migrations/02_knowledge_graph.sql`）
+**Schema**（`supabase/migrations/03_knowledge_graph.sql`）
 - `knowledge_graphs` 表增加 `tags TEXT[] DEFAULT '{}'`
 - 变更后运行 `npm run db:gen-types`
 - 远程库：提取该行 SQL 在 Supabase Dashboard 执行
@@ -139,7 +145,7 @@ DELETE /api/v1/tags/:name    → { removed: { ... } }
 ## 10. 涉及文件清单
 
 **修改**
-- `supabase/migrations/02_knowledge_graph.sql`（+1 行）
+- `supabase/migrations/03_knowledge_graph.sql`（+1 行）
 - `api/services/graph/graphService.ts`、`api/routes/graphs/`（tags 透传/校验）
 - `api/services/plugins/CorePlugin.ts`（注册 tags 路由）
 - `src/services/api/graphs.ts`、`contracts/IGraphsApi.ts`、`contracts/IApi.ts`、`src/services/api/index.ts`

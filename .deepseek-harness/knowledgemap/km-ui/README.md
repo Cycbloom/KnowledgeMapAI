@@ -2,6 +2,8 @@
 
 KnowledgeMap × DeepSeek Harness 融合 UI（durable web-profile 包）。
 
+> 载体说明：常驻融合 UI 以本 durable 包为主路径（激活状态以 web profile 的 `dsh.profile.bundles` / `cordis.patch.yml` 为准）；上级目录的 `plugin-ui2-host.js` / `plugin-review-ui.js` 为动态插件版备份，激活需手动审批。
+
 ## 做什么
 
 把 KnowledgeMap 的六域数据（闪卡/图谱/任务/进度/学习路径/笔记）融合进 harness 产品表面，

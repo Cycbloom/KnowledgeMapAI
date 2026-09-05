@@ -2,7 +2,7 @@
 
 > 目标：把 KnowledgeMap 的核心能力（FSRS 间隔重复、知识图谱、任务调度、成就系统）整合为 DeepSeek Harness（DSH）的 Cordis 插件，让用户在对话式 agent 会话里直接使用这些能力。
 >
-> 状态：**进行中（Phase 1）** · 方案定稿于 2026-08-16
+> 状态：**✅ 12 个 Phase 全部交付** · 方案定稿于 2026-08-16 · 本文件同时作为路线图进度账本维护
 
 ---
 
@@ -114,6 +114,8 @@ flowchart TB
 >   从调用方会话 `invocation.agent.session.header.cwd` 读六域 JSON，结果以 JSON 字符串放 `text`
 > - Client 半区：`lib/client.js` 走 `window.__ModuleLoader__.load`，`ctx.remote.commands.execute` 调 RPC，
 >   React 用 `require("react")`，CSS 手动注入 `<style data-plugin>`
+>
+> 注：目录中另有 `plugin-ui2-host.js`（UI 改造 v2 的动态插件版备份，未单独建 Phase 条目）；两条载体的实际激活状态以 DSH web profile 的 `dsh.profile.bundles` / `cordis.patch.yml` 配置为准。
 
 | Slot | 形态 | 作用 |
 | --- | --- | --- |
@@ -228,9 +230,9 @@ boot manifest 含 `@knowledgemap/dsh-km-ui` 条目。**页面刷新后**四 Slot
 - [x] 空队列显示下一张到期时间；RPC 失败内联报错不白屏；评分防重复提交
 - [x] FSRS-6 / 成就块从 plugin-host.js / plugin-progress-host.js 逐字符移植（diff 零漂移）
 - [x] 源码落盘：`.deepseek-harness/knowledgemap/plugin-review-ui.js`
-- [ ] 待用户操作：DSH 会话内 `cordis_stop` kmapui-6 后 `cordis_define` + `cordis_run` kmapui-7（Client half 需手动审批），面板内真实复习一轮做端到端验证
+- [ ] ~~待用户操作：DSH 会话内 `cordis_stop` kmapui-6 后 `cordis_define` + `cordis_run` kmapui-7~~（已由上述 durable 包 `@knowledgemap/dsh-km-ui` 承接；本动态版保留为备用路径，激活需 Client half 手动审批）
 
-> **现状**：10 动态插件 · 37 工具运行中（kmapui-7 取代 kmapui-6 计入）+ 持久化 preset（重启后自动加载 37 工具）+ Client UI 已激活 + 使用指南（docs/harness-usage.md）；六域数据（cards/graphs/tasks/progress/paths/notes）全部可检索、可导出、可总览。
+> **现状**：10 动态插件 · 37 工具运行中（kmapui-7 取代 kmapui-6 计入）+ 持久化 preset（重启后自动加载 37 工具）+ Client UI 已激活（durable 包 `@knowledgemap/dsh-km-ui` 四 Slot 融合 UI + 动态版备用）+ 使用指南（docs/harness-usage.md）；六域数据（cards/graphs/tasks/progress/paths/notes）全部可检索、可导出、可总览。
 
 ---
 

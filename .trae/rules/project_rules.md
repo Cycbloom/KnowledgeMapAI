@@ -26,7 +26,7 @@
 
 ### Schema 迁移规则
 
-* **Schema 文件**：`supabase/migrations/` 下按业务域的模块化 SQL（00-35 Schema，50-99 Seed，编号留有间隔）
+* **Schema 文件**：`supabase/migrations/` 下按业务域的模块化 SQL（00-34 业务域+横切 Schema，50-60 Seed，编号连续，34 为调度容量）
 
 * **迁移文件管理**：所有变更直接修改对应的模块化文件，不创建增量迁移文件
 
@@ -152,7 +152,7 @@ python scripts/webapp_login.py --headless --screenshot /tmp/x.png   # 登录真�
 
 * **类型安全**：禁止 `any`、禁止非空断言（`!`）、使用可选链（`?.`）和空值合并（`??`）
 
-* **错误处理**：使用 `throw new AppError(ErrorCodes.XXX, { context })`，详见 `shared/utils/errors/`
+* **错误处理**：使用 `throw new AppError(ErrorCodes.XXX, { context })`，`AppError` 定义于 `shared/types/appError.ts`，错误码见 `shared/types/errorCodes.ts`
 
 ## AI 服务规范
 
@@ -162,7 +162,7 @@ python scripts/webapp_login.py --headless --screenshot /tmp/x.png   # 登录真�
 
 ## 缓存机制
 
-使用 `cacheService.getOrSet(key, () => fetch(), ttl, [tags])`，详见 `api/services/cache/cacheService.ts`。
+使用 `cacheService.getOrSet(key, () => fetch(), ttl, [tags])`，详见 `api/services/common/cacheService.ts`。
 
 ## 任务调度
 

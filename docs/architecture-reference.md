@@ -80,8 +80,8 @@ api/
 
 ### 2.1 当前版本前缀
 
-- 前端 API 客户端使用 `/api` 前缀
-- 路由路径示例：`/api/graphs`、`/api/auth/login`
+- 前端 API 客户端使用 `/api/v1` 前缀（旧 `/api/*` 路径经 308 重定向到 `/api/v1/*`，确保兼容）
+- 路由路径示例：`/api/v1/graphs`、`/api/v1/auth/login`
 - 后端路由通过 Kernel 插件系统注册，运行时动态挂载
 
 ### 2.2 版本升级策略

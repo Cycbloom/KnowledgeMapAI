@@ -2,7 +2,6 @@
 
 > 本文档定义 KnowledgeMap 项目的测试模型、目录结构、命名约定、断言原则与 mock 使用准则。
 > 所有新增测试 **必须** 遵循本文档。`.trae/rules/project_rules.md` 中的"测试规范"章节是本文档的精简引用。
-> 对应规格：`.trae/specs/rebuild-test-infrastructure/spec.md`
 
 ---
 
@@ -56,7 +55,7 @@ electron/**/__tests__/          # Electron 测试
 shared/**/__tests__/            # 共享层测试
 e2e/                            # Playwright E2E 测试
 ├── *.spec.ts                   # E2E 测试文件
-├── fixtures.ts                 # 共享 Playwright fixtures（规划中）
+├── fixtures.ts                 # 共享 Playwright fixtures
 ├── pages/                      # Page Object
 └── utils/                      # E2E 工具（auth 等）
 ```
@@ -269,21 +268,20 @@ test('应该在图谱列表中显示新建的图谱', async ({ request, page }) 
 
 | 指标 | 当前门禁 | 当前基线 | 目标 | 关键模块 |
 |------|---------|---------|------|---------|
-| Statements | 1% | 1.63% | 70% | 85%+（auth / FSRS / RLS） |
-| Lines | 1% | 1.71% | 70% | 85%+（auth / FSRS / RLS） |
-| Branches | 0% | 0.24% | 65% | 85%+（auth / FSRS / RLS） |
-| Functions | 0% | 0.62% | 65% | 85%+（auth / FSRS / RLS） |
+| Statements | 11% | 12.74% | 70% | 85%+（auth / FSRS / RLS） |
+| Lines | 11% | 12.99% | 70% | 85%+（auth / FSRS / RLS） |
+| Branches | 6% | 7.72% | 65% | 85%+（auth / FSRS / RLS） |
+| Functions | 8% | 9.96% | 65% | 85%+（auth / FSRS / RLS） |
 
-> 基线数据采集日期：2026-07-08（`harden-test-infrastructure` spec 完成后）。
+> 基线数据采集日期：2026-07-17（全量套件）。门禁阈值定义于 `vitest.config.ts`，约为基线以下 1.5-2%，用于拦截回归。
 
 ### 门禁提升计划
 
 | 阶段 | 时机 | Statements / Lines | Branches / Functions | 说明 |
 |------|------|-------------------|---------------------|------|
-| 当前 | 已完成 | 1% | 0% | 捕获回归的最低门禁 |
-| 阶段 1 | 覆盖率达 5% | 5% | 3% | 核心 service 层测试补齐后 |
-| 阶段 2 | 覆盖率达 20% | 20% | 15% | 集成测试主力层补齐后 |
-| 阶段 3 | 覆盖率达 40% | 40% | 30% | 关键模块覆盖完成 |
+| 当前 | 已完成 | 11% | 6% / 8% | 捕获回归（基线以下） |
+| 阶段 1 | 覆盖率达 20% | 20% | 15% | 集成测试主力层补齐后 |
+| 阶段 2 | 覆盖率达 40% | 40% | 30% | 关键模块覆盖完成 |
 | 目标 | 迁移完成 | 70% | 65% | 最终目标 |
 
 - **关键模块 85%+**：认证（auth）、FSRS 算法、RLS 策略，因为这些是 correctness-critical。
@@ -502,7 +500,6 @@ describe('app IPC handlers', () => {
 | `npm test` | watch 模式 | 开发时使用，文件变更自动重跑 |
 | `npm run test:run` | 单次运行 | CI / 本地验证 |
 | `npm run test:unit` | 单元测试 | 排除 e2e 目录 |
-| `npm run test:integration` | 集成测试 | 含真实 DB 的集成用例 |
 | `npm run test:coverage` | 覆盖率 | 生成 HTML / LCOV / JSON 报告，应用门禁 |
 | `npm run test:db` | 数据库测试 | pgTAP SQL 测试，需先启动本地 Supabase |
 | `npm run test:e2e` | E2E 测试 | Playwright 全量 |
@@ -511,7 +508,7 @@ describe('app IPC handlers', () => {
 | `npm run test:e2e:report` | E2E 报告 | 显示上次 HTML 报告 |
 | `npm run test:all` | 全部测试 | Vitest + Playwright |
 | `npm run test:ci` | CI 流程 | `check` + `lint` + `test:coverage` |
-| `npm run test:flaky` | Flaky 检测 | `--repeat-each 3` 重复执行识别 flaky 用例（规划中，对应 rebuild spec Phase 4） |
+| `npm run test:flaky` | Flaky 检测 | `--repeat-each 3` 重复执行识别 flaky 用例 |
 
 ### 前置条件
 
@@ -585,8 +582,6 @@ vi.mocked(factory.getAIProviderForTask).mockResolvedValue(mockProvider);
 
 ## 参考
 
-- 测试套件审计报告：`tests/AUDIT.md`
-- 重建规格：`.trae/specs/rebuild-test-infrastructure/spec.md`
 - 项目规则（含测试规范精简引用）：`.trae/rules/project_rules.md`
-- Vitest 配置：`vite.config.ts` 的 `test` 字段
+- Vitest 配置（含覆盖率门禁阈值）：`vitest.config.ts` 的 `test.coverage` 字段
 - Playwright 配置：`playwright.config.ts`

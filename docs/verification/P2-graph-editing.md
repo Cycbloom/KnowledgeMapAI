@@ -1,6 +1,8 @@
 # P2 建图与图谱编辑全流程验证报告
 
-> 对应 spec：`.trae/specs/verify-app-running-p2-graph-editing/`
+> **📄 历史快照（2026-08-10）**：本文为一次性验证报告，`e2e/graph-node-crud.spec.ts` 仍有效；文中引用的 `.trae/specs/` 规格文件已随仓库清理删除。
+
+> 对应 spec：`.trae/specs/verify-app-running-p2-graph-editing/`（已删除）
 > 验证日期：2026-08-10
 > 目标：补齐"建图与图谱编辑"功能域的 E2E 覆盖，盘点既有覆盖，聚焦缺口（节点增删改），并记录环境限制。
 

@@ -1,6 +1,8 @@
 # P4 笔记与知识沉淀验证报告
 
-> 对应 spec：`.trae/specs/verify-app-running-p4-notes/`
+> **📄 历史快照（2026-08-10）**：本文为一次性验证报告，`e2e/notes-capture.spec.ts` 仍有效；文中引用的 `.trae/specs/` 规格文件已随仓库清理删除。
+
+> 对应 spec：`.trae/specs/verify-app-running-p4-notes/`（已删除）
 > 验证日期：2026-08-10
 > 目标：验证笔记与知识沉淀核心闭环——创建 → 检索 → 编辑 → 删除，补齐 P1 冒烟未覆盖的编辑/删除路径。
 

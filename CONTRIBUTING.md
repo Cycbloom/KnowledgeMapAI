@@ -12,14 +12,14 @@
 2. Clone Fork 后的仓库到本地：
 
    ```bash
-   git clone https://github.com/<你的用户名>/knowledgemap-app.git
-   cd knowledgemap-app
+   git clone https://github.com/<你的用户名>/KnowledgeMapAI.git
+   cd KnowledgeMapAI
    ```
 
 3. 添加上游仓库以便后续同步：
 
    ```bash
-   git remote add upstream https://github.com/knowledgemap/knowledgemap-app.git
+   git remote add upstream https://github.com/Cycbloom/KnowledgeMapAI.git
    ```
 
 ### 1.2 同步上游
@@ -191,7 +191,7 @@ reviewer 会重点关注以下方面：
 
 - 代码是否符合项目规范（见 `.trae/rules/`）
 - 是否存在 `any` 类型、非空断言 `!`、`console.*` 违规
-- 测试覆盖是否充分（关键模块 85%+，整体 70%+）
+- 测试覆盖是否充分（不得低于 `vitest.config.ts` 中的覆盖率门禁阈值；量化提升目标见 [docs/testing-guidelines.md](./docs/testing-guidelines.md) §7）
 - 命名是否符合 [API 命名规范](./.trae/rules/api-naming-conventions.md)
 - 是否有过度工程化（避免不必要的抽象与冗余的错误处理）
 - 是否引入了安全风险（如硬编码密钥、SQL 注入、XSS 等）

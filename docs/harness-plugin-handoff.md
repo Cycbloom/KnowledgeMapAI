@@ -1,7 +1,7 @@
 # KnowledgeMap × DSH Harness 插件开发 — 交接上下文
 
 > **用途**：本文件是给「其他 AI 编程软件 / 新开发会话」的完整上下文交接，使其无需阅读历史会话即可继续 KnowledgeMap 插件开发。
-> 生成时间：2026-08-16（目标达成，12 阶段完成）
+> 生成时间：2026-08-16（目标达成，12 阶段完成）。**冻结快照**：此后 UI 改造演进为 durable 包 `@knowledgemap/dsh-km-ui`（`.deepseek-harness/knowledgemap/km-ui/`，见 `docs/harness-integration.md`「UI 改造」节），动态版 `plugin-ui2-host.js` 为备份；最新进度以 integration 文档为准。
 > 项目根目录：`D:\KnowledgeMap`（KnowledgeMap 全栈应用源码仓库）
 
 ---

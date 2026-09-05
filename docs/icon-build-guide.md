@@ -22,22 +22,28 @@
 
 ## 生成图标的方法
 
-### 方法 1: 使用 electron-icon-builder (推荐)
+### 方法 1: 使用内置脚本 (推荐)
+
+项目自带从 `build/icon.svg` 单一源重新生成全部图标的脚本（sharp 渲染 + png-to-ico）：
 
 ```bash
-# 安装工具
-npm install -D electron-icon-builder
+npm run icons:generate    # 生成 icon.ico 与 build/icons/ 全尺寸 PNG
+```
 
-# 生成图标
+### 方法 2: 使用 electron-icon-builder
+
+`electron-icon-builder` 已在 devDependencies 中，也可直接使用：
+
+```bash
 npx electron-icon-builder --input=build/icon.svg --output=build
 ```
 
-### 方法 2: 在线工具
+### 方法 3: 在线工具
 
 1. 访问 https://www.electronjs.org/docs/latest/tutorial/application-distribution#icon
 2. 使用在线转换工具将 SVG 转换为 ICO 和 ICNS 格式
 
-### 方法 3: 手动创建
+### 方法 4: 手动创建
 
 #### Windows ICO
 使用 ImageMagick 或 GIMP 创建：
@@ -78,34 +84,22 @@ done
 
 ## 当前状态
 
-项目已配置好图标路径，只需将生成的图标文件放入 `build` 目录即可：
+项目已配置好图标路径（2026-09 核对）：
 
 ```
 build/
-├── icon.svg           # 源 SVG 图标 (已创建)
-├── icon.ico           # Windows 图标 (需要生成)
-├── icon.icns          # macOS 图标 (需要生成)
-├── icons/             # Linux 图标目录
-│   ├── 16x16.png
-│   ├── 32x32.png
-│   ├── 48x48.png
-│   ├── 64x64.png
-│   ├── 128x128.png
-│   ├── 256x256.png
-│   └── 512x512.png
+├── icon.svg           # 源 SVG 图标 (已创建，单一源)
+├── icon.ico           # Windows 图标 (已生成)
+├── icons/             # Linux/PWA PNG 图标目录 (已生成，含 16-512 各尺寸)
 ├── entitlements.mac.plist
 ├── entitlements.mac.inherit.plist
 └── installer.nsh
 ```
 
+> 唯一缺失：`build/icon.icns`（macOS 图标）。仅在需要打 macOS 包时生成（方法 3/4）。
+
 ## 快速开始
 
-运行以下命令自动生成所有图标：
-
 ```bash
-# 安装 electron-icon-builder
-npm install -D electron-icon-builder
-
-# 生成图标
-npx electron-icon-builder --input=build/icon.svg --output=build
+npm run icons:generate    # 从 build/icon.svg 重新生成 icon.ico + build/icons/
 ```

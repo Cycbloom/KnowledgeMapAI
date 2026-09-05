@@ -1,4 +1,7 @@
-# 字体文件目录
+# 字体文件目录（API 端 PDF 导出专用）
+
+> 定位说明：本目录供**后端 PDF 导出**（`api/services/common/pdfService.ts` 启动时扫描）加载 TTF/OTF/TTC 中文字体；
+> 前端界面字体请使用 `public/fonts/`（woff2 自托管方案），两者互不相关。
 
 由于中文字体文件较大（通常 >10MB），不便包含在 npm 包或通过简单脚本下载。
 为了使 PDF 导出功能在所有平台（Linux/Docker）上正确显示中文，请手动下载中文字体文件并放置在此目录。

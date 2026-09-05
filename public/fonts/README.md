@@ -15,7 +15,7 @@
 | `jetbrains-mono` | `jetbrains-mono-400.woff2` | `jetbrains-mono-700.woff2` | 代码块字体 |
 
 > **中文字体 Subset 提示**：完整的思源/更纱 SC 通常 > 6MB。若需减小包体，推荐
-> 使用 `fonttools` / `glyhps` 只保留 GB2312 / 常用字 8000 子集，再转 woff2
+> 使用 `fonttools`（`pyftsubset`）只保留 GB2312 / 常用字 8000 子集，再转 woff2
 > 后通常可降到 1.5~2MB。
 
 ## 未放置文件时的行为

@@ -123,7 +123,7 @@ KnowledgeMap/
 │   ├── components/           # 可复用 UI 组件 (按域分组)
 │   ├── hooks/                # 自定义 Hooks (按域分组)
 │   ├── services/             # 服务层 (API客户端 + Mobile + Kernel)
-│   ├── store/                # Zustand 全局状态 (12+ stores)
+│   ├── store/                # Zustand 全局状态 (24+ stores)
 │   ├── utils/                # 前端工具函数
 │   ├── i18n/                 # 国际化 (en-US, zh-CN)
 │   ├── config/               # 前端配置
@@ -148,20 +148,20 @@ KnowledgeMap/
 ├── electron/                 # Electron 主进程
 │   ├── main.ts               # Electron 入口
 │   ├── preload.ts            # 预加载脚本 (contextBridge)
-│   ├── ipc/                  # IPC 处理器 (11个域)
+│   ├── ipc/                  # IPC 处理器 (12个域)
 │   ├── sync/                 # 同步引擎
 │   ├── db/                   # 本地 SQLite 数据库
 │   └── utils/                # 工具 (窗口管理, 托盘, 菜单)
 │
 ├── shared/                   # 共享层 (前后端共用)
-│   ├── types/                # 类型定义 (20+ 文件)
+│   ├── types/                # 类型定义 (40 文件)
 │   ├── utils/                # 工具函数
 │   ├── constants/            # 常量
 │   ├── kernel/               # 插件系统共享类型
 │   └── sync/                 # 同步引擎共享类型
 │
 ├── supabase/                 # 数据库
-│   └── migrations/           # 44 个迁移文件 (00-33 schema, 50-59 seed)
+│   └── migrations/           # 46 个迁移文件 (00-34 schema, 50-60 seed)
 │
 ├── docs/                     # 文档
 ├── e2e/                      # Playwright E2E 测试
@@ -331,6 +331,8 @@ const queryKeys = {
 | `useNoiseStore` | 白噪音 | 是 |
 | `useGraphEditorPreferencesStore` | 图谱编辑器偏好 | 是 |
 
+> 上表为核心 store 示例；持久化统一经 `createPersistedStore.ts` 辅助器实现。完整清单（24+ 个，含 `useExecutionSessionStore`、`useGoalDialogVariantOpenStore`、`useLearningSettingsStore`、`useGraphMapLayoutStore`、`useQuizUiStore` 等新域 store）以 `src/store/` 目录为准。
+
 ### 4.5 前端服务层 (src/services/)
 
 #### API 客户端 (services/api/)
@@ -414,6 +416,8 @@ server.ts bootstrap()
 | `/api/v1/database` | Core | 数据库管理 |
 | `/api/v1/supabase` | Core | Supabase 管理 |
 | `/api/v1/sync` | Core | 数据同步 |
+| `/api/v1/owner-credentials` | Core | 专属用户无感登录凭证 |
+| `/api/v1/tags` | Core | 跨资源标签聚合管理 (列表/重命名/合并/删除) |
 | `/api/v1/graphs` | Graph | 图谱 CRUD + 版本控制 + 关系 + 概念聚合 |
 | `/api/v1/domains` | Graph | 知识域管理 |
 | `/api/v1/knowledge-points` | Graph | 知识点管理 |
@@ -423,7 +427,6 @@ server.ts bootstrap()
 | `/api/v1/combined-view` | Graph | 合并视图 |
 | `/api/v1/graphs/:graphId/regions` | Graph | 区域管理 |
 | `/api/v1/backlinks` | Graph | 反向链接 |
-| `/api/v1/story/:graphId` | Graph | 故事线创作 |
 | `/api/v1` (nodes/relations) | Graph | 图节点、图关系路由 |
 | `/api/v1/ai` | AI | AI 对话/流式生成 |
 | `/api/v1/ai-actions` | AI | AI 动作执行 |
@@ -486,7 +489,19 @@ server.ts bootstrap()
 - 核心指标：`stability` (稳定性)、`difficulty` (难度)、`retrievability` (可检索性)
 
 #### 调度服务 (services/scheduler/)
-涵盖任务调度、队列管理、执行跟踪、进度计划、效率分析、权重自适应等。
+涵盖任务调度、队列管理、执行跟踪、进度计划、效率分析、权重自适应等，共 40+ 服务文件。2026-09 起新增**窗口式排课规划子系统**（`planning/`）：
+
+| 服务 | 职责 |
+|------|------|
+| `planning/pathSchedulerService.ts` | 学习路径在日历上的窗口式排课 |
+| `planning/stageWindowPlannerService.ts` | 跨图谱阶段窗口规划 |
+| `planning/capacityService.ts` | 每日学习容量（预算）计算 |
+| `planning/scheduleSyncService.ts` | 排课结果与日历/子任务同步 |
+| `todayBriefService.ts` | 今日学习简报聚合 |
+| `learningFlowService.ts` | 学习状态机 (learning→review→practice→quiz) |
+| `schedulerDecisionService.ts` | 单一决策点：复习打断 + 队列推进 |
+| `graphLearningLauncherService.ts` | 图谱学习启动串联 |
+| `timeSettlementService.ts` | 计时结算 |
 
 #### 图谱服务 (services/graph/)
 | 服务 | 职责 |
@@ -515,7 +530,6 @@ server.ts bootstrap()
 | `audit/auditService.ts` | 审计日志 |
 | `achievements/` | 成就系统 |
 | `quiz/` | 测验服务 |
-| `story/` | 故事线服务 |
 | `notes/notesService.ts` | 笔记服务 |
 | `asyncTaskService.ts` | 异步任务管理 |
 | `common/cacheStore.ts` | 缓存存储 |
@@ -542,11 +556,17 @@ server.ts bootstrap()
 | `graph-literature.ts` | 文献类型 |
 | `graph-template.ts` | 模板类型 |
 | `graphVersion.ts` | 版本控制类型 |
+| `graph-collaboration.ts` | 图谱协作类型 |
+| `graph-combined-view.ts` | 组合视图与跨图谱连接类型 |
+| `graph-knowledge-point.ts` | 知识点关联类型 |
 | `scheduler.ts` | 调度器主类型 |
 | `scheduler-core.ts` | 调度核心类型 |
 | `scheduler-task.ts` | 任务类型 |
 | `scheduler-focus.ts` | 专注模式类型 |
 | `scheduler-study.ts` | 学习调度类型 |
+| `scheduler-achievement.ts` | 调度成就类型 |
+| `reviewTask.ts` | 复习任务类型 |
+| `learningMaterial.ts` | 学习材料类型 |
 | `quiz.ts` | 测验类型 |
 | `user.ts` | 用户类型 |
 | `note.ts` | 笔记类型 |
@@ -667,10 +687,10 @@ graph_event_type       -- node_created/updated/deleted, edge_created/updated/del
 graph_snapshot_type    -- auto | manual | pre_rollback | pre_ai_expand | pre_batch_delete
 ```
 
-### 8.2 核心表 (44 个迁移文件)
+### 8.2 核心表 (46 个迁移文件)
 
 迁移文件按"域文件在前、横切文件殿后、seed 独立段"组织：
-**00–28** 业务域建表，**29–33** 横切（索引/RLS/函数/触发器/授权），**50–59** 种子数据。
+**00–28** 业务域建表，**29–33** 横切（索引/RLS/函数/触发器/授权），**34** 调度容量，**50–60** 种子数据。
 
 | 迁移文件 | 表/功能 | 说明 |
 |---------|---------|------|
@@ -708,7 +728,8 @@ graph_snapshot_type    -- auto | manual | pre_rollback | pre_ai_expand | pre_bat
 | 31_functions | 数据库函数（全量归拢） | RPC / 触发函数 |
 | 32_triggers | 触发器（全量归拢） | updated_at / 默认数据 |
 | 33_grants | 权限（全量归拢） | 角色授权 |
-| 50-59_seed_* | 种子数据 | 初始/系统数据 |
+| 34_scheduler_capacity | `learning_path_stage_windows` | 学习路径阶段窗口与每日容量排课 |
+| 50-60_seed_* | 种子数据 | 初始/系统数据 |
 
 ---
 
@@ -853,7 +874,7 @@ npm run server:dev             # 仅后端 (Express :3001)
 
 # 方式二：Docker 开发 (Web 模式)
 docker-compose up -d           # 启动前后端容器
-supsabase start                # 宿主机启动 Supabase
+supabase start                 # 宿主机启动 Supabase
 ```
 
 ### 12.2 数据库管理
@@ -1004,5 +1025,5 @@ shared/ (纯类型 + 工具函数，无运行时依赖)
 
 ---
 
-> **文档版本**: 1.0 | **最后更新**: 2026-08-16
+> **文档版本**: 1.1 | **最后更新**: 2026-09-05
 > 本文档覆盖项目全貌，包括架构、模块、数据流、运行方式等关键信息。

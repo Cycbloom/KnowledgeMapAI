@@ -22,8 +22,8 @@
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/knowledgemap/knowledgemap-app.git
-cd knowledgemap-app
+git clone https://github.com/Cycbloom/KnowledgeMapAI.git
+cd KnowledgeMapAI
 
 # 2. 切换 Node 版本（如使用 nvm）
 nvm use
@@ -136,7 +136,8 @@ docker-compose logs -f
 |------|------|------|
 | 前端 | http://localhost:5173 | Vite 开发服务器（HMR 热重载） |
 | 后端 API | http://localhost:3001 | Express API（nodemon 热重载） |
-| Supabase Studio | http://localhost:54321 | 宿主机直接访问（Docker 外） |
+| Supabase API 网关 | http://127.0.0.1:54321 | 宿主机 Supabase API |
+| Supabase Studio | http://127.0.0.1:54323 | 数据库管理界面（宿主机直接访问） |
 
 前端 API 代理：通过 Vite proxy 自动转发 `/api` 请求到后端。
 
@@ -216,8 +217,7 @@ KnowledgeMap/
 │   ├── hooks/             # 自定义 Hooks
 │   ├── services/api/      # API 客户端层（graphsApi、nodesApi 等）
 │   ├── store/             # Zustand 状态管理
-│   ├── lib/               # 前端工具库
-│   └── utils/             # 工具函数
+│   └── utils/             # 工具函数（唯一工具目录，原 lib/ 已并入）
 ├── shared/                # 前后端共享代码（核心模块）
 │   ├── types/             # 共享类型定义（含 database.generated.ts）
 │   ├── sync/              # 同步算法（operationMerger、conflictResolver）
@@ -406,12 +406,14 @@ KnowledgeMap Web 端通过 VitePWA + Workbox 提供 PWA 能力，支持离线访
 
 ### 4.3 覆盖率门禁
 
-| 指标 | 当前门禁 | 当前基线 | 目标 | 关键模块 |
-|------|---------|---------|------|---------|
-| Statements | 1% | ~1.6% | 70% | 85%+（auth / FSRS / RLS） |
-| Branches | 0% | ~0.2% | 65% | 85%+（auth / FSRS / RLS） |
+| 指标 | 当前门禁 | 基线（2026-07） | 长期目标 |
+|------|---------|---------------|---------|
+| Statements | 11% | ~12.7% | 70% |
+| Branches | 6% | ~7.7% | 65% |
+| Functions | 8% | ~10.0% | — |
+| Lines | 11% | ~13.0% | — |
 
-> 覆盖率是门禁，不是 KPI——不要为了达标而写无价值测试。门禁阈值会随测试补齐逐步提升。
+> 覆盖率是门禁，不是 KPI——不要为了达标而写无价值测试。阈值定义于 [`vitest.config.ts`](./vitest.config.ts)（约为基线以下 1.5-2%，拦截回归），随测试补齐逐步提升；阶段性提升计划见 [`docs/testing-guidelines.md`](./docs/testing-guidelines.md) §7。
 
 ### 4.4 共享基础设施（强制）
 
@@ -438,7 +440,7 @@ KnowledgeMap Web 端通过 VitePWA + Workbox 提供 PWA 能力，支持离线访
 
 ### 5.1 VSCode 调试配置
 
-项目支持通过 VSCode 调试 Electron 主进程、渲染进程和 API 服务器。若 `.vscode/launch.json` 不存在，可创建以下配置（含 3 个调试配置）：
+项目支持通过 VSCode 调试 Electron 主进程、渲染进程和 API 服务器。`.vscode/launch.json` 已随仓库提供，包含以下 3 个调试配置（若丢失可按此重建）：
 
 ```json
 {
@@ -530,13 +532,14 @@ KnowledgeMap Web 端通过 VitePWA + Workbox 提供 PWA 能力，支持离线访
 | 00-01 | 扩展、类型与共享函数 | `00_extensions_and_types.sql`、`01_shared_functions.sql` |
 | 02-28 | 业务域建表（表 + 列注释） | `03_knowledge_graph.sql`、`09_learning_paths.sql` |
 | 29-33 | 横切关注点（全量归拢） | `29_indexes.sql`、`30_rls_policies.sql`、`31_functions.sql`、`32_triggers.sql`、`33_grants.sql` |
-| 50-59 | Seed 数据（系统模板、成就、Prompt 等） | `50_seed_app_settings.sql`、`53_seed_prompt_templates.sql` |
+| 34 | 调度容量 | `34_scheduler_capacity.sql`（`learning_path_stage_windows`） |
+| 50-60 | Seed 数据（系统模板、成就、Prompt 等） | `50_seed_app_settings.sql`、`60_seed_chunk_contextualize.sql` |
 
 **迁移文件管理规则**：
 
 - 所有 schema 变更**直接修改对应的模块化文件**，不创建新的增量迁移文件；新字段直接并入该表的 `CREATE TABLE` 语句，禁止新建 `ALTER TABLE ... ADD COLUMN` 增量文件
 - 新索引加入 `29_indexes.sql`，新 RLS 策略加入 `30_rls_policies.sql`，新函数加入 `31_functions.sql`，新触发器加入 `32_triggers.sql`，新授权加入 `33_grants.sql`
-- 新增业务域（建表）时，使用 02-28 中下一个可用序号；新增 seed 数据时使用 50-59 中下一个可用序号
+- 新增业务域（建表）时，在 34 之后使用下一个可用序号新建文件；新增 seed 数据时使用 50-60 中下一个可用序号；横切内容（索引/RLS/函数/触发器/授权）一律并入 29-33 对应文件
 - 文件命名使用 `kebab-case` 或 `snake_case`，与现有文件保持一致
 - 修改后运行 `npm run db:local:reset` 验证迁移能从空库一次性完整跑通
 
@@ -558,8 +561,8 @@ npm run db:check-types
 
 ### 6.4 Seed 数据
 
-- `npm run db:local:reset` 会自动应用所有 `supabase/migrations/` 下编号 50–59 的 SQL seed
-- 业务 seed 数据（成就、模板、Prompt、关系类型）通过 `50-59_seed_*.sql` 注入
+- `npm run db:local:reset` 会自动应用所有 `supabase/migrations/` 下编号 50–60 的 SQL seed
+- 业务 seed 数据（成就、模板、Prompt、关系类型）通过 `50-60_seed_*.sql` 注入
 - 单独插入额外测试数据（5 个演示图谱、30+ 卡片、每日/周期任务、成就、专注统计）：
   ```bash
   npm run db:seed
@@ -908,5 +911,7 @@ npm run test:run       # 单元测试（Vitest 单次运行）
 - [项目规则](./.trae/rules/project_rules.md) - 完整项目规范（数据库、测试、代码、AI 服务、缓存、错误处理、SSE、任务调度等）
 - [API 命名规范](./.trae/rules/api-naming-conventions.md) - API 对象与方法命名规范
 - [测试规范指南](./docs/testing-guidelines.md) - 完整测试模型、目录结构、断言原则、Mock 准则
+- [架构参考](./docs/architecture-reference.md) - 分层架构约定、API 版本策略、命名规范
+- [代码维基](./docs/code-wiki.md) - 全项目架构、路由表、数据库 Schema、插件系统总览
 - [贡献指南](./CONTRIBUTING.md) - Fork 流程、分支策略、Commit 规范、PR 要求、代码审查
 - [README](./README.md) - 项目简介、功能特性、使用指南

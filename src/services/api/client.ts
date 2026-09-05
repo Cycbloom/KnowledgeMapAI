@@ -2,9 +2,8 @@ import { useStore } from '@/store/useStore';
 import { createErrorFromResponse } from '@/utils/errors';
 import { apiClient, getCsrfToken } from './createApiClient';
 import { isElectronProduction, getElectronApiUrl } from '@/config/electronConfig';
+import { getMobileApiBaseUrl } from '@/config/mobileApiConfig';
 import type { Method } from 'axios';
-
-const API_URL = '/api/v1';
 
 export { initCsrf } from './createApiClient';
 export { getCsrfToken };
@@ -122,5 +121,7 @@ export const getApiUrl = async () => {
   if (isElectronProduction()) {
     return await getElectronApiUrl();
   }
-  return API_URL;
+  // 移动端 WebView 与后端不同源：流式/上传类请求必须与 apiClient 使用同一后端地址
+  // （VITE_API_BASE_URL，见 createApiClient），Web 端仍返回相对路径 "/api/v1"。
+  return getMobileApiBaseUrl();
 };

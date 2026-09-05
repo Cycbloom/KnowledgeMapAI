@@ -1,4 +1,5 @@
 import { request, getAIConfig, getApiUrl } from './client';
+import { isCapacitorMobile } from '@/config/mobileApiConfig';
 import { useStore } from '@/store/useStore';
 import { getAILanguage } from '@/hooks/ai/useAILanguage';
 import { logger } from '@/utils/logger';
@@ -85,6 +86,8 @@ export const ragApi = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        // 移动端标识：后端 CSRF 中间件据此豁免（跨源场景 csrf cookie 无法送达）
+        ...(isCapacitorMobile() ? { 'x-mobile-client': 'true' } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify(payload),

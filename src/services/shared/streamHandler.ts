@@ -1,6 +1,7 @@
 import { useStore } from "../../store/useStore";
 import { logger } from "@/utils/logger";
 import { AppError, SharedErrorCodes } from "@/utils/errors";
+import { isCapacitorMobile } from "@/config/mobileApiConfig";
 
 interface StreamHandlerOptions {
   baseUrl?: string;
@@ -22,6 +23,9 @@ export const createStreamHandler = async (
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      // 与 createApiClient 的拦截器一致：移动端请求带此头，后端 CSRF 中间件据此豁免
+      // （手机跨源场景下 SameSite cookie 无法随请求送达，仅靠 csrf 头过不了校验）。
+      ...(isCapacitorMobile() ? { "x-mobile-client": "true" } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
     },

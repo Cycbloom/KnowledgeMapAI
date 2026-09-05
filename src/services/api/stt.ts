@@ -1,4 +1,5 @@
 import { getApiUrl } from './client';
+import { isCapacitorMobile } from '@/config/mobileApiConfig';
 import { useStore } from '@/store/useStore';
 import type { STTResult } from '@shared/types';
 import { AppError, SharedErrorCodes } from "@/utils/errors";
@@ -15,6 +16,8 @@ export const sttApi = {
     const response = await fetch(`${await getApiUrl()}/ai/stt`, {
       method: 'POST',
       headers: {
+        // 移动端标识：后端 CSRF 中间件据此豁免（跨源场景 csrf cookie 无法送达）
+        ...(isCapacitorMobile() ? { 'x-mobile-client': 'true' } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: formData,

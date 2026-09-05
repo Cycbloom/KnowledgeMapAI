@@ -85,7 +85,7 @@ export const aiApi: IAiApi = {
       { ...data, language: data.language || getAILanguage() },
       "text",
     );
-    await createStreamHandler("/ai/generate-content-stream", payload, onChunk);
+    await createApiStreamHandler("/ai/generate-content-stream", payload, onChunk);
   },
 
   annotateTerms: (data: {
@@ -363,7 +363,7 @@ export const aiApi: IAiApi = {
       { ...data, language: data.language || getAILanguage() },
       "text",
     );
-    await createStreamHandler("/ai/tutor-chat", payload, onChunk);
+    await createApiStreamHandler("/ai/tutor-chat", payload, onChunk);
   },
 
   gradeAnswer: (data: {

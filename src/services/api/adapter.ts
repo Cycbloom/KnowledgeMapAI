@@ -1,52 +1,10 @@
-import { isCapacitorMobile, shouldUseSupabaseDirect } from "@/config/mobileApiConfig";
-import { api as webApi } from "./index";
-import type { IApi } from "./contracts/IApi";
+// 三端同构：手机/Web/Electron 共用同一套 webApi（IApi 契约不变）。
+// 历史上有按环境切换 Supabase 直连层的逻辑（preloadMobileApi），
+// 该链路由从未配置的 VITE_MOBILE_USE_SUPABASE_DIRECT 开关控制、整体休眠，
+// 阶段 4 已随 src/services/mobile/ 一并删除，此处收敛为薄转发。
 
-let resolvedApi: IApi | null = null;
-let lastIsMobile: boolean | null = null;
-let lastUseSupabaseDirect: boolean | null = null;
-let mobileApiLoaded: IApi | null = null;
+import { api } from "./index";
 
-export async function preloadMobileApi(): Promise<void> {
-  if (mobileApiLoaded !== null) return;
-  if (isCapacitorMobile() && shouldUseSupabaseDirect()) {
-    const m = await import("../mobile");
-    mobileApiLoaded = m.mobileApi;
-  }
-}
+export { api };
 
-function getResolvedApi(): IApi {
-  const isMobile = isCapacitorMobile();
-  const useSupabaseDirect = shouldUseSupabaseDirect();
-
-  if (resolvedApi === null || lastIsMobile !== isMobile || lastUseSupabaseDirect !== useSupabaseDirect) {
-    lastIsMobile = isMobile;
-    lastUseSupabaseDirect = useSupabaseDirect;
-
-    if (isMobile && useSupabaseDirect) {
-      if (mobileApiLoaded !== null) {
-        // Mobile: use mobileApi for Supabase-direct modules, fall back to webApi for others
-        resolvedApi = {
-          ...webApi,
-          ...mobileApiLoaded,
-        };
-      } else {
-        // 防御性处理：未 preload 时 fallback 到 webApi
-        resolvedApi = webApi;
-      }
-    } else {
-      resolvedApi = webApi;
-    }
-  }
-
-  return resolvedApi;
-}
-
-export const getApi = getResolvedApi;
-
-export const api = new Proxy({} as IApi, {
-  get(_target, prop) {
-    const currentApi = getResolvedApi();
-    return currentApi[prop as keyof IApi];
-  },
-}) as IApi;
+export const getApi = () => api;

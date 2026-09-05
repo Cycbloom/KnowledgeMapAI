@@ -13,7 +13,6 @@ import { unregisterLegacySW } from './utils/serviceWorker'
 import { initPerformanceMonitoring } from './utils/performance'
 import { initErrorReporter, destroyErrorReporter, setUserContext, captureException } from './utils/errorReporter'
 import { initCsrf } from './services/api'
-import { preloadMobileApi } from './services/api/adapter'
 import { initializeEventSubscribers } from './services/FrontendEventSubscribers'
 import { useStore } from './store/useStore'
 import { migrateLegacyKeys } from './store/createPersistedStore'
@@ -162,7 +161,7 @@ const rootElement = document.getElementById('root');
 if (rootElement) {
   const Router = isElectron ? HashRouter : BrowserRouter;
   void (async () => {
-    await Promise.all([preloadMobileApi(), i18nReady]);
+    await i18nReady;
     createRoot(rootElement).render(
       <StrictMode>
         <QueryClientProvider client={queryClient}>

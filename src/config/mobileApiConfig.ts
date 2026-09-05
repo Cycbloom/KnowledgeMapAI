@@ -72,7 +72,3 @@ export function getMobileApiBaseUrl(): string {
   }
   return "/api/v1";
 }
-
-export function shouldUseSupabaseDirect(): boolean {
-  return import.meta.env.VITE_MOBILE_USE_SUPABASE_DIRECT === "true";
-}

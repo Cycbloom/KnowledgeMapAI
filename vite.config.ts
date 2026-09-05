@@ -15,12 +15,10 @@ function getChunkStrategy(id: string): string | undefined {
   // node_modules 合并为单一 vendor chunk，从根上消除 chunk 间循环初始化。
   if (process.env.MOBILE_BUILD === "true") {
     if (id.includes("node_modules")) return "vendor";
-    if (id.includes("src/services/mobile")) return "mobile-only";
     return undefined;
   }
 
   if (!id.includes("node_modules")) {
-    if (id.includes("src/services/mobile")) return "mobile-only";
     return undefined;
   }
 

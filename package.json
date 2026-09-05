@@ -93,7 +93,7 @@
     "electron:build:linux": "npm run build:electron && electron-builder --linux",
     "rebuild:electron": "electron-rebuild",
     "# Mobile": "",
-    "mobile:build": "cross-env MOBILE_BUILD=true vite build",
+    "mobile:build": "cross-env MOBILE_BUILD=true vite build --mode mobile",
     "mobile:sync": "npm run mobile:build && npx cap sync",
     "mobile:open": "npx cap open android",
     "mobile:run": "npm run mobile:build && npx cap run android",
@@ -141,6 +141,7 @@
   "devDependencies": {
     "@capacitor/android": "^8.5.0",
     "@capacitor/app": "^8.1.1",
+    "@capacitor/cli": "^8.5.1",
     "@capacitor/core": "^8.5.0",
     "@capacitor/network": "^8.0.1",
     "@capacitor/splash-screen": "^8.0.2",

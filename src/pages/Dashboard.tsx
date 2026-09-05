@@ -23,6 +23,7 @@ import {
 import { TodayReview } from "../components/capture/TodayReview";
 import { EmptyState } from "../components/common";
 import { TodayBriefCard } from "../components/Dashboard/TodayBriefCard";
+import { MobileTodayHome } from "../components/Dashboard/MobileTodayHome";
 import { learningPathsApi, type LearningPathResponse } from "../services/api/learningPaths";
 import { message } from "../utils/messageHelper";
 import { getErrorMessage } from "../utils/errors";
@@ -233,6 +234,11 @@ export const Dashboard = () => {
       </button>
     </li>
   );
+
+  // 移动端首屏：以「今日该学什么」为主线的单列精简视图
+  if (isMobile) {
+    return <MobileTodayHome />;
+  }
 
   return (
     <div

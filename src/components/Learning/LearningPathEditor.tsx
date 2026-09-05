@@ -339,7 +339,7 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
     try {
       if (learningPath) {
         try {
-          await api.learningPaths.delete(learningPath.id);
+          await api.learningPaths.delete(learningPath.id, false);
         } catch (e) {
           console.warn('Failed to delete old path:', e);
         }

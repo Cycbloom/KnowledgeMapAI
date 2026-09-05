@@ -72,7 +72,7 @@ export interface ILearningPathsApi {
   get(id: string): Promise<unknown>;
   create(data: CreateLearningPathInput): Promise<unknown>;
   update(id: string, data: UpdateLearningPathInput): Promise<unknown>;
-  delete(id: string): Promise<unknown>;
+  delete(id: string, hard?: boolean): Promise<unknown>;
   addNode(pathId: string, data: AddNodeInput): Promise<unknown>;
   updateNodeStatus(pathId: string, nodeId: string, status: NodeStatus): Promise<unknown>;
   reorderNodes(pathId: string, nodeIds: string[]): Promise<unknown>;

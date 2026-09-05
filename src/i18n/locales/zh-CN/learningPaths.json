@@ -52,7 +52,7 @@
   "messages": {
     "createSuccess": "学习路径创建成功！",
     "createFailed": "创建学习路径失败",
-    "deleteConfirm": "确定要删除学习路径 \"{{title}}\" 吗？",
+    "deleteConfirm": "确定要永久删除学习路径 \"{{title}}\" 吗？此操作将删除该路径及其所有学习记录，无法恢复。",
     "deleteSuccess": "学习路径已删除",
     "deleteFailed": "删除学习路径失败",
     "statusUpdated": "状态已更新",
@@ -60,7 +60,7 @@
   },
   "detail": {
     "deletePathTitle": "删除学习路径",
-    "deletePathConfirm": "确定要删除此学习路径吗？此操作不可恢复。",
+    "deletePathConfirm": "确定要永久删除此学习路径吗？此操作将删除该路径及其所有学习记录，无法恢复。",
     "fetchDetailFailed": "获取学习路径详情失败",
     "nodeStatusUpdated": "节点状态已更新",
     "updateNodeStatusFailed": "更新节点状态失败",

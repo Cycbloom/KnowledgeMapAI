@@ -291,8 +291,10 @@ export const learningPathsApi = {
       body: JSON.stringify(data),
     }),
 
-  delete: (id: string) =>
-    request<{ message: string }>(`/learning-paths/${id}`, { method: "DELETE" }),
+  delete: (id: string, hard = true) =>
+    request<{ message: string }>(`/learning-paths/${id}${hard ? "?hard=true" : ""}`, {
+      method: "DELETE",
+    }),
 
   addNode: (pathId: string, data: AddNodeInput) =>
     request<LearningPathNodeResponse>(`/learning-paths/${pathId}/nodes`, {

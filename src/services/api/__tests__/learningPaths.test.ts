@@ -77,8 +77,15 @@ describe('learningPathsApi', () => {
   });
 
   describe('delete - 删除学习路径', () => {
-    it('应该调用 delete 以 DELETE 请求 /learning-paths/{id}', async () => {
+    it('应该调用 delete 以 DELETE 请求 /learning-paths/{id}?hard=true（默认永久删除）', async () => {
       await learningPathsApi.delete('path-1');
+      expect(request).toHaveBeenCalledWith('/learning-paths/path-1?hard=true', {
+        method: 'DELETE',
+      });
+    });
+
+    it('hard 传 false 时使用软删除（归档）', async () => {
+      await learningPathsApi.delete('path-1', false);
       expect(request).toHaveBeenCalledWith('/learning-paths/path-1', {
         method: 'DELETE',
       });

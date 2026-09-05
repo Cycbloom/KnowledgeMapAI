@@ -52,7 +52,7 @@
   "messages": {
     "createSuccess": "Learning path created successfully!",
     "createFailed": "Failed to create learning path",
-    "deleteConfirm": "Are you sure you want to delete the learning path \"{{title}}\"?",
+    "deleteConfirm": "Are you sure you want to permanently delete the learning path \"{{title}}\"? This will remove the path and all its learning records and cannot be undone.",
     "deleteSuccess": "Learning path deleted",
     "deleteFailed": "Failed to delete learning path",
     "statusUpdated": "Status updated",
@@ -60,7 +60,7 @@
   },
   "detail": {
     "deletePathTitle": "Delete Learning Path",
-    "deletePathConfirm": "Are you sure you want to delete this learning path? This action cannot be undone.",
+    "deletePathConfirm": "Are you sure you want to permanently delete this learning path? This will remove the path and all its learning records and cannot be undone.",
     "fetchDetailFailed": "Failed to fetch learning path details",
     "nodeStatusUpdated": "Node status updated",
     "updateNodeStatusFailed": "Failed to update node status",

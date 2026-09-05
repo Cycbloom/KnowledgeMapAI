@@ -15,6 +15,65 @@ import { z } from "zod";
 
 const router = Router();
 
+const listSourcesSchema = z.object({
+  graph_id: z.string().uuid(),
+});
+
+// 文献来源列表（P5 收敛：GraphOutline 原直查 Supabase literature_sources，
+// 统一走后端 API，RLS 保证仅返回当前用户图谱的文献行）
+router.get(
+  "/sources",
+  requireAuth,
+  validate({ query: listSourcesSchema }),
+  async (req: AuthedRequest, res: Response) => {
+    const { graph_id } = req.query;
+    const supabase = req.supabase;
+
+    const { data, error } = await supabase
+      .from("literature_sources")
+      .select("*")
+      .eq("graph_id", graph_id as string)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      logger.warn("Failed to fetch literature sources", {
+        graphId: graph_id,
+        error: error.message,
+      });
+      throw new AppError(
+        "文献来源查询失败",
+        500,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
+      );
+    }
+
+    res.json({
+      sources: (data ?? []).map((row) => ({
+        id: row.id,
+        graphId: row.graph_id,
+        title: row.title,
+        authors: row.authors ?? [],
+        year: row.year ?? undefined,
+        type: row.type ?? "document",
+        journal: row.journal ?? undefined,
+        doi: row.doi ?? undefined,
+        url: row.url ?? undefined,
+        fileName: row.file_name ?? undefined,
+        keywords: row.keywords ?? [],
+        abstract: row.abstract ?? undefined,
+        volume: row.volume ?? undefined,
+        issue: row.issue ?? undefined,
+        pages: row.pages ?? undefined,
+        publisher: row.publisher ?? undefined,
+        notes: row.notes ?? undefined,
+        processedAt: row.processed_at,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      })),
+    });
+  },
+);
+
 const metadataRequestSchema = z.object({
   content: z.string().max(100000).optional(),
   url: z

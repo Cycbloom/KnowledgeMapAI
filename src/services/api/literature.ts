@@ -6,9 +6,15 @@ import type {
   LiteratureApplyResponse,
   LiteratureMetadata,
   LiteratureInfo,
+  LiteratureSourceDB,
 } from "@shared/types/graph";
 
 export const literatureApi = {
+  /** 某图谱的文献来源列表（P5 收敛：原 GraphOutline 直查 Supabase） */
+  listSources: (graphId: string): Promise<LiteratureSourceDB[]> =>
+    request<{ sources: LiteratureSourceDB[] }>(
+      `/literature/sources?graph_id=${encodeURIComponent(graphId)}`,
+    ).then((res) => res.sources),
   extractMetadata: async (data: {
     content?: string;
     url?: string;

@@ -25,7 +25,6 @@ import {
   Palette,
 } from "lucide-react";
 import { Node, Edge, type NodeStatus } from "../../../types";
-import { createClient } from "@supabase/supabase-js";
 import { useDebouncedSearch } from "../../../hooks/common/useDebouncedSearch";
 import {
   GenerateCardsModal,
@@ -42,6 +41,7 @@ import {
 import { GraphStatsSummary } from "../shared/GraphStatsSummary";
 import { getLevelColors } from "../../../config/learningStatusColors";
 import { useTranslation } from "react-i18next";
+import { api } from "../../../services/api";
 import { asyncConfirm } from "../../../utils/asyncConfirm";
 import { BackboneNodeIcon } from "../BackboneNodeIcon";
 import { LiteratureHoverCard } from "../LiteratureHoverCard";
@@ -121,27 +121,11 @@ export const GraphOutline = React.memo(function GraphOutline({
 
     const fetchLiteratureSources = async () => {
       try {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-        if (!supabaseUrl || !supabaseAnonKey) return;
-
-        const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-        const { data, error } = await supabase
-          .from("literature_sources")
-          .select("*")
-          .eq("graph_id", graphId);
-
-        if (error) {
-          console.error("Failed to fetch literature sources:", error);
-          return;
-        }
-
-        if (data && data.length > 0) {
+        const sources = await api.literature.listSources(graphId);
+        if (sources.length > 0) {
           const map = new Map<string, LiteratureSourceDB>();
-          data.forEach((source) => {
-            map.set(source.title, source as LiteratureSourceDB);
+          sources.forEach((source) => {
+            map.set(source.title, source);
           });
           setLiteratureSourcesMap(map);
         }

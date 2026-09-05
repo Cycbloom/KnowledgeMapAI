@@ -1,5 +1,4 @@
-import { request } from './client';
-import { AppError, SharedErrorCodes } from "@/utils/errors";
+import { request, requestBlob } from './client';
 import type { Task } from '@shared/types';
 
 export const tasksApi = {
@@ -30,24 +29,8 @@ export const searchApi = {
 };
 
 export const dataApi = {
-  export: async (graphId: string, format: 'json' | 'pdf' | 'markdown') => {
-    const { getApiUrl } = await import('./client');
-    const token = (await import('../../store/useStore')).useStore.getState().token;
-    return fetch(`${await getApiUrl()}/data/export/${encodeURIComponent(format)}?graph_id=${encodeURIComponent(graphId)}`, {
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      }
-    }).then(async res => {
-      if (!res.ok) {
-        if (res.status === 401) {
-          (await import('../../store/useStore')).useStore.getState().setUser(null, null);
-        }
-        const text = await res.text();
-        throw new AppError(text || 'Export failed', SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
-      }
-      return res.blob();
-    });
-  },
-  
+  export: (graphId: string, format: 'json' | 'pdf' | 'markdown') =>
+    requestBlob(`/data/export/${encodeURIComponent(format)}?graph_id=${encodeURIComponent(graphId)}`),
+
   import: (data: unknown) => request<unknown>('/data/import', { method: 'POST', body: JSON.stringify(data) }),
 };

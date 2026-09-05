@@ -1,6 +1,4 @@
-import { request, getApiUrl, handleResponse, getCsrfToken } from './client';
-import { useStore } from '@/store/useStore';
-import { isElectronProduction } from '@/config/electronConfig';
+import { request, requestUpload } from './client';
 import type {
   Note,
   NoteTemplate,
@@ -150,27 +148,13 @@ export const notesApi: INotesApi = {
   // 此处参照 ai.documentToGraph / stt.transcribe 的 fetch 直传模式:
   // 由浏览器自动设置 multipart/form-data 边界,手动注入 auth/csrf 头。
 
-  uploadImage: async (
-    noteId: string,
-    file: File,
-  ): Promise<UploadImageResponse> => {
-    const token = useStore.getState().token;
-    const csrfToken = !isElectronProduction() ? getCsrfToken() : null;
+  // multipart 直传统一走 requestUpload：鉴权/CSRF/移动端头由 apiClient 拦截器补齐，
+  // Content-Type 由浏览器按 multipart 自动设置。
+
+  uploadImage: (noteId: string, file: File): Promise<UploadImageResponse> => {
     const formData = new FormData();
     formData.append('file', file);
-
-    const apiUrl = await getApiUrl();
-    const response = await fetch(`${apiUrl}/notes/${encodeURIComponent(noteId)}/upload-image`, {
-      method: 'POST',
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
-        ...(isElectronProduction() ? { 'x-electron-client': 'true' } : {}),
-      },
-      credentials: 'include',
-      body: formData,
-    });
-    return handleResponse<UploadImageResponse>(response);
+    return requestUpload<UploadImageResponse>(`/notes/${encodeURIComponent(noteId)}/upload-image`, formData);
   },
 
   // ----- P2: 写作辅助与刷新聚合 -----

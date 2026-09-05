@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Network } from '@capacitor/network';
-import { isElectronProduction, getElectronApiUrl } from '../../config/electronConfig';
+import { getApiUrl } from '../../services/api/client';
 
 interface NetworkInformation extends EventTarget {
   effectiveType?: string;
@@ -81,13 +81,7 @@ export function useNetworkStatus(options: NetworkStatusOptions = {}): NetworkSta
     try {
       const startTime = Date.now();
 
-      let healthUrl: string;
-      if (isElectronProduction()) {
-        const electronApiUrl = await getElectronApiUrl();
-        healthUrl = `${electronApiUrl}/health/system`;
-      } else {
-        healthUrl = '/api/v1/health/system';
-      }
+      const healthUrl = (await getApiUrl()) + '/health/system';
 
       const response = await fetch(healthUrl, {
         method: 'HEAD',

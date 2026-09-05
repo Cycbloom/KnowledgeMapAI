@@ -2,6 +2,7 @@ import React, { useState, useEffect, useId, useRef, type KeyboardEvent as ReactK
 import { useTranslation } from 'react-i18next';
 import { X, Globe, Lock, Copy, Check, ExternalLink, Users, UserPlus, Link as LinkIcon } from 'lucide-react';
 import { api } from '../../../services/api';
+import { request } from '../../../services/api/client';
 import { message } from "../../../utils/messageHelper";
 import type { CollaboratorRole, CollaboratorWithUser } from '@shared/types';
 import { useStore } from '../../../store/useStore';
@@ -95,13 +96,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const fetchCollaborators = async () => {
     setCollaboratorsLoading(true);
     try {
-      const response = await fetch(`/api/v1/collaborations/graphs/${encodeURIComponent(graphId)}/collaborators`, {
-        credentials: 'include',
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setCollaborators(data || []);
-      }
+      const data = await request<CollaboratorWithUser[]>(
+        `/collaborations/graphs/${encodeURIComponent(graphId)}/collaborators`
+      );
+      setCollaborators(data || []);
     } catch (error) {
       console.error('获取协作者失败:', error);
       message.error(t('graphEditor.share.fetchCollaboratorsFailed'));
@@ -139,21 +137,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     
     setInviteLoading(true);
     try {
-      const response = await fetch(`/api/v1/collaborations/graphs/${encodeURIComponent(graphId)}/collaborators`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
-      });
-      
-      if (response.ok) {
-        message.success(t('graphEditor.share.inviteSent'));
-        setInviteEmail('');
-        fetchCollaborators();
-      } else {
-        const data = await response.json();
-        message.error(data.error || t('graphEditor.share.inviteFailed'));
-      }
+      await request(
+        `/collaborations/graphs/${encodeURIComponent(graphId)}/collaborators`,
+        { method: 'POST', body: JSON.stringify({ email: inviteEmail, role: inviteRole }) }
+      );
+      message.success(t('graphEditor.share.inviteSent'));
+      setInviteEmail('');
+      fetchCollaborators();
     } catch (error) {
       console.error('邀请失败:', error);
       message.error(t('graphEditor.share.inviteFailedRetry'));
@@ -170,18 +160,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     })) return;
     
     try {
-      const response = await fetch(`/api/v1/collaborations/graphs/${encodeURIComponent(graphId)}/collaborators/${encodeURIComponent(collaboratorUserId)}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      
-      if (response.ok) {
-        message.success(t('graphEditor.share.collaboratorRemoved'));
-        fetchCollaborators();
-      } else {
-        const data = await response.json();
-        message.error(data.error || t('graphEditor.share.removeFailed'));
-      }
+      await request(
+        `/collaborations/graphs/${encodeURIComponent(graphId)}/collaborators/${encodeURIComponent(collaboratorUserId)}`,
+        { method: 'DELETE' }
+      );
+      message.success(t('graphEditor.share.collaboratorRemoved'));
+      fetchCollaborators();
     } catch (error) {
       console.error('移除失败:', error);
       message.error(t('graphEditor.share.removeFailedRetry'));
@@ -190,21 +174,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
   const handleGenerateShareLink = async () => {
     try {
-      const response = await fetch(`/api/v1/collaborations/graphs/${encodeURIComponent(graphId)}/share`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ role: 'viewer' }),
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setShareToken(data.invitationToken);
-        message.success(t('graphEditor.share.linkGenerated'));
-      } else {
-        const data = await response.json();
-        message.error(data.error || t('graphEditor.share.linkGenerateFailed'));
-      }
+      const data = await request<{ invitationToken: string }>(
+        `/collaborations/graphs/${encodeURIComponent(graphId)}/share`,
+        { method: 'POST', body: JSON.stringify({ role: 'viewer' }) }
+      );
+      setShareToken(data.invitationToken);
+      message.success(t('graphEditor.share.linkGenerated'));
     } catch (error) {
       console.error('生成链接失败:', error);
       message.error(t('graphEditor.share.linkGenerateFailedRetry'));

@@ -15,29 +15,16 @@ import type {
 // Mock request 及 client 中 uploadImage 使用的辅助函数
 vi.mock('../client', () => ({
   request: vi.fn(),
+  requestUpload: vi.fn(),
   getApiUrl: vi.fn(),
   handleResponse: vi.fn(),
   getCsrfToken: vi.fn(),
 }));
 
-// Mock useStore(仅 uploadImage 使用)— 使用相对路径确保 vitest mock 解析正确
-vi.mock('../../../store/useStore', () => ({
-  useStore: {
-    getState: vi.fn(() => ({ token: 'token-123' })),
-  },
-}));
-
-// Mock isElectronProduction(仅 uploadImage 使用)
-vi.mock('../../../config/electronConfig', () => ({
-  isElectronProduction: vi.fn(() => false),
-}));
-
 // --- Imports (must be after vi.mock declarations) ---
 
 import { notesApi } from '../notes';
-import { request, getApiUrl, handleResponse, getCsrfToken } from '../client';
-import { useStore } from '../../../store/useStore';
-import { isElectronProduction } from '../../../config/electronConfig';
+import { request, requestUpload } from '../client';
 
 // --- Test data ---
 
@@ -412,50 +399,21 @@ describe('notesApi', () => {
   // ============================================================
 
   describe('uploadImage', () => {
-    let fetchSpy: ReturnType<typeof vi.spyOn>;
-
-    beforeEach(() => {
-      vi.mocked(getApiUrl).mockResolvedValue('/api/v1');
-      vi.mocked(getCsrfToken).mockReturnValue('csrf-abc');
-      vi.mocked(isElectronProduction).mockReturnValue(false);
-      vi.mocked(handleResponse).mockResolvedValue({ url: 'http://img.png' });
-      vi.mocked(useStore.getState).mockReturnValue({
-        user: null,
-        token: 'token-123',
-        refreshToken: null,
-        setUser: () => {},
-        clearAuth: () => {},
-      });
-      fetchSpy = vi.spyOn(globalThis, 'fetch');
-    });
-
-    afterEach(() => {
-      fetchSpy.mockRestore();
-    });
-
-    it('应该通过 POST /notes/:noteId/upload-image 上传图片(含 auth/csrf 头)', async () => {
-      const mockResponse = new Response('{}', { status: 200 });
-      fetchSpy.mockResolvedValue(mockResponse);
+    it('应该通过 requestUpload 以 POST /notes/:noteId/upload-image 上传图片(FormData)', async () => {
+      vi.mocked(requestUpload).mockResolvedValue({ url: 'http://img.png' });
 
       const file = new File(['image-content'], 'test.png', {
         type: 'image/png',
       });
       const result = await notesApi.uploadImage('note-1', file);
 
-      expect(fetchSpy).toHaveBeenCalledWith(
-        '/api/v1/notes/note-1/upload-image',
-        expect.objectContaining({
-          method: 'POST',
-          headers: {
-            Authorization: 'Bearer token-123',
-            'x-csrf-token': 'csrf-abc',
-          },
-          credentials: 'include',
-        }),
+      expect(requestUpload).toHaveBeenCalledTimes(1);
+      expect(requestUpload).toHaveBeenCalledWith(
+        '/notes/note-1/upload-image',
+        expect.any(FormData),
       );
-      const callArgs = fetchSpy.mock.calls[0];
-      expect(callArgs?.[1]?.body).toBeInstanceOf(FormData);
-      expect(handleResponse).toHaveBeenCalledWith(mockResponse);
+      const fd = vi.mocked(requestUpload).mock.calls[0][1];
+      expect(fd.get('file')).toBe(file);
       expect(result).toEqual({ url: 'http://img.png' });
     });
   });

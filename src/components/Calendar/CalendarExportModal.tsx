@@ -3,13 +3,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { X, Download, Link2 } from "lucide-react";
 import { useTheme, useFocusTrap, useEscapeKey } from "../../hooks";
-import {
-  isElectronProduction,
-  getElectronApiUrl,
-} from "../../config/electronConfig";
+import { useStore } from "../../store/useStore";
 import { message } from "../../utils/messageHelper";
 import { copyToClipboard } from "@/utils/clipboard";
-import { useStore } from "@/store/useStore";
+import { requestBlob } from '@/services/api/client';
 
 interface CalendarExportModalProps {
   isOpen: boolean;
@@ -28,22 +25,8 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
 
   const handleExportICS = async () => {
     try {
-      const token = useStore.getState().token;
+      const blob = await requestBlob('/calendar/export/ics');
 
-      let exportUrl: string;
-      if (isElectronProduction()) {
-        const electronApiUrl = await getElectronApiUrl();
-        exportUrl = `${electronApiUrl}/calendar/export/ics`;
-      } else {
-        exportUrl = "/api/v1/calendar/export/ics";
-      }
-
-      const response = await fetch(exportUrl, {
-        headers: token
-          ? { Authorization: `Bearer ${token}` }
-          : undefined,
-      });
-      const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;

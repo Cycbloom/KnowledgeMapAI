@@ -95,17 +95,11 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
     }
   }, [isOpen]);
 
-  const getAuthHeaders = () => ({
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${localStorage.getItem('token')}`,
-  });
-
   const fetchRelationshipTypes = async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await request<{ data?: RelationshipTypeConfig[] }>('/relationship-types', {
-        headers: getAuthHeaders(),
+      const data = await request<{ data?: RelationshipTypeConfig[] }>('/relationship-types', {
       });
       setRelationshipTypes(data.data || []);
     } catch (err) {
@@ -120,8 +114,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
     setError(null);
     try {
       await request('/relationship-types', {
-        method: 'POST',
-        headers: getAuthHeaders(),
+        method: 'POST',
         body: JSON.stringify(formData),
       });
       await fetchRelationshipTypes();
@@ -139,9 +132,8 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/v1/relationship-types/${encodeURIComponent(editingType.id)}`, {
+      await request(`/relationship-types/${encodeURIComponent(editingType.id)}`, {
         method: 'PUT',
-        headers: getAuthHeaders(),
         body: JSON.stringify({
           display_name: formData.display_name,
           category: formData.category,
@@ -150,10 +142,6 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
           show_arrow: formData.show_arrow,
         }),
       });
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || 'Failed to update relationship type');
-      }
       await fetchRelationshipTypes();
       setEditingType(null);
       setFormData(initialFormData);
@@ -173,14 +161,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/v1/relationship-types/${encodeURIComponent(id)}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      });
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || 'Failed to delete relationship type');
-      }
+      await request(`/relationship-types/${encodeURIComponent(id)}`, { method: 'DELETE' });
       await fetchRelationshipTypes();
     } catch (err) {
       setError(err instanceof Error ? err.message : t('graphEditor.relationshipType.deleteFailed'));

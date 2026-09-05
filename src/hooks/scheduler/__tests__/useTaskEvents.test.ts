@@ -40,9 +40,8 @@ vi.mock("../../../store/useStore", () => ({
   useStore: <T,>(selector: (state: typeof useStoreState) => T) => selector(useStoreState),
 }));
 
-vi.mock("../../../config/electronConfig", () => ({
-  isElectronProduction: () => false,
-  getElectronApiUrl: async () => "/api",
+vi.mock("../../../services/api/client", () => ({
+  getApiUrl: async () => "/api/v1",
 }));
 
 vi.mock("../../../config/mobileApiConfig", () => ({
@@ -109,18 +108,20 @@ describe("useTaskEvents - task_update handler", () => {
     vi.clearAllMocks();
   });
 
-  function mountAndWaitForConnection() {
+  async function mountAndWaitForConnection() {
     const wrapper = createWrapper(queryClient);
     renderHook(() => useTaskEvents(), { wrapper });
+    // getApiUrl().then(setApiUrl) 是微任务：act 内冲刷后 SSE 才会建立连接
+    await act(async () => {});
     return messageHandlerRef.current;
   }
 
-  it("写入 runtime_progress 到所有匹配的 tasks 列表分页缓存", () => {
+  it("写入 runtime_progress 到所有匹配的 tasks 列表分页缓存", async () => {
     // 两个分页变体（不同 status/limit/offset），都应被更新
     queryClient.setQueryData(queryKeys.tasks("all", 20, 0), makeTasksPage([makeTask({ id: "t-1" })]));
     queryClient.setQueryData(queryKeys.tasks("in_progress", 50, 0), makeTasksPage([makeTask({ id: "t-1" })]));
 
-    const handler = mountAndWaitForConnection();
+    const handler = await mountAndWaitForConnection();
     expect(handler).not.toBeNull();
 
     act(() => {
@@ -150,11 +151,11 @@ describe("useTaskEvents - task_update handler", () => {
     });
   });
 
-  it("不命中不匹配的任务 ID 时不动其他任务的 runtime_progress", () => {
+  it("不命中不匹配的任务 ID 时不动其他任务的 runtime_progress", async () => {
     const other = makeTask({ id: "t-other" });
     queryClient.setQueryData(queryKeys.tasks("all", 20, 0), makeTasksPage([other]));
 
-    const handler = mountAndWaitForConnection();
+    const handler = await mountAndWaitForConnection();
 
     act(() => {
       handler!({ data: JSON.stringify({
@@ -170,10 +171,10 @@ describe("useTaskEvents - task_update handler", () => {
     expect(page?.tasks[0]?.runtime_progress).toBeUndefined();
   });
 
-  it("progress 字段缺失时不写入 runtime_progress", () => {
+  it("progress 字段缺失时不写入 runtime_progress", async () => {
     queryClient.setQueryData(queryKeys.tasks("all", 20, 0), makeTasksPage([makeTask({ id: "t-1" })]));
 
-    const handler = mountAndWaitForConnection();
+    const handler = await mountAndWaitForConnection();
 
     act(() => {
       handler!({ data: JSON.stringify({
@@ -188,10 +189,10 @@ describe("useTaskEvents - task_update handler", () => {
     expect(page?.tasks[0]?.runtime_progress).toBeUndefined();
   });
 
-  it("状态从 in_progress 变化时发布 scheduler_task_status_changed 事件", () => {
+  it("状态从 in_progress 变化时发布 scheduler_task_status_changed 事件", async () => {
     queryClient.setQueryData(queryKeys.tasks("all", 20, 0), makeTasksPage([makeTask({ id: "t-1", status: "in_progress" })]));
 
-    const handler = mountAndWaitForConnection();
+    const handler = await mountAndWaitForConnection();
 
     act(() => {
       handler!({ data: JSON.stringify({
@@ -215,9 +216,9 @@ describe("useTaskEvents - task_update handler", () => {
     });
   });
 
-  it("缓存中找不到任务时不应发布状态变化事件", () => {
+  it("缓存中找不到任务时不应发布状态变化事件", async () => {
     // 缓存为空
-    const handler = mountAndWaitForConnection();
+    const handler = await mountAndWaitForConnection();
 
     act(() => {
       handler!({ data: JSON.stringify({
@@ -234,7 +235,7 @@ describe("useTaskEvents - task_update handler", () => {
     expect(statusChangeCalls.length).toBe(0);
   });
 
-  it("写入 runtime_progress 到 useInfiniteQuery 的真实 pages 缓存结构", () => {
+  it("写入 runtime_progress 到 useInfiniteQuery 的真实 pages 缓存结构", async () => {
     // useTasks 用的是 useInfiniteQuery，缓存的 query data 是 InfiniteData：
     //   { pages: [{ tasks, total, offset, limit }], pageParams }
     // 而非扁平 { tasks, ... }。这个用例复现并守住"扁平化读取导致
@@ -247,7 +248,7 @@ describe("useTaskEvents - task_update handler", () => {
       },
     );
 
-    const handler = mountAndWaitForConnection();
+    const handler = await mountAndWaitForConnection();
 
     act(() => {
       handler!({ data: JSON.stringify({

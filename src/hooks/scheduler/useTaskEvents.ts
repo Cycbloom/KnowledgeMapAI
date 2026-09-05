@@ -4,10 +4,7 @@ import { EventSourcePolyfill } from "event-source-polyfill";
 import { useStore } from "../../store/useStore";
 import { queryKeys } from "../queries/config";
 import { Task, TaskRuntimeProgress } from "../../types";
-import {
-  isElectronProduction,
-  getElectronApiUrl,
-} from "../../config/electronConfig";
+import { getApiUrl } from "../../services/api/client";
 import { isCapacitorMobile } from "../../config/mobileApiConfig";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 
@@ -145,15 +142,9 @@ export const useTaskEvents = () => {
       return;
     }
 
-    const initApiUrl = async () => {
-      if (isElectronProduction()) {
-        const url = await getElectronApiUrl();
-        setApiUrl(url);
-      } else {
-        setApiUrl("/api");
-      }
-    };
-    initApiUrl();
+    // SSE 基址统一经 getApiUrl()（/api/v1/tasks/events 与后端挂载一致；
+    // 此前 Web 端硬编码 "/api" 少了 /v1，SSE 一直 404）
+    getApiUrl().then(setApiUrl);
   }, []);
 
   const cleanup = useCallback(() => {

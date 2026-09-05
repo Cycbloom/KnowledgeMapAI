@@ -1,9 +1,6 @@
-import { request, getAIConfig, getApiUrl } from './client';
-import { isCapacitorMobile } from '@/config/mobileApiConfig';
-import { useStore } from '@/store/useStore';
+import { request, getAIConfig } from './client';
 import { getAILanguage } from '@/hooks/ai/useAILanguage';
-import { logger } from '@/utils/logger';
-import { AppError, SharedErrorCodes } from "@/utils/errors";
+import { createStreamHandler } from '../shared/streamHandler';
 
 interface Source {
   id: string;
@@ -80,62 +77,19 @@ export const ragApi = {
     if (!payload.provider && config.provider) payload.provider = config.provider;
     if (!payload.model && config.model) payload.model = config.model;
 
-    const token = useStore.getState().token;
-    const apiUrl = await getApiUrl();
-    const response = await fetch(`${apiUrl}/rag/chat/stream`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        // 移动端标识：后端 CSRF 中间件据此豁免（跨源场景 csrf cookie 无法送达）
-        ...(isCapacitorMobile() ? { 'x-mobile-client': 'true' } : {}),
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    await createStreamHandler(
+      "/rag/chat/stream",
+      payload,
+      onChunk,
+      {
+        signal,
+        onEvent: (event) => {
+          if (event.sources && onSources) onSources(event.sources as Source[]);
+        },
       },
-      body: JSON.stringify(payload),
-      ...(signal ? { signal } : {}),
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        useStore.getState().setUser(null, null);
-      }
-      const errorText = await response.text();
-      throw new AppError(errorText || 'RAG Chat Stream failed', SharedErrorCodes.AI_PROVIDER_ERROR, 502);
-    }
-
-    const reader = response.body?.getReader();
-    const decoder = new TextDecoder();
-    if (!reader) return;
-
-    let buffer = '';
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n\n');
-      buffer = lines.pop() || '';
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const dataStr = line.replace('data: ', '');
-          if (dataStr === '[DONE]') return;
-          try {
-            const parsed = JSON.parse(dataStr);
-            if (parsed.content) onChunk(parsed.content);
-            if (parsed.sources && onSources) onSources(parsed.sources as Source[]);
-            if (parsed.error) throw new AppError(parsed.error, SharedErrorCodes.AI_INVALID_RESPONSE, 502);
-          } catch (e) {
-            if (signal?.aborted) {
-              throw e;
-            }
-            logger.error('Stream parse error:', e);
-          }
-        }
-      }
-    }
+    );
   },
-  
-  search: (data: {
+    search: (data: {
     query: string;
     graph_id?: string;
     match_threshold?: number;

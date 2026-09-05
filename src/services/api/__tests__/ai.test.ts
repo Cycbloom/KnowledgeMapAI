@@ -9,6 +9,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // document upload) run without hitting real network code.
 vi.mock('../client', () => ({
   request: vi.fn(),
+  requestUpload: vi.fn(),
   injectAIConfig: vi.fn((data: unknown) => data),
   getAIConfig: vi.fn(() => ({ provider: 'p', model: 'm' })),
   getApiUrl: vi.fn(async () => 'http://api.test'),
@@ -32,7 +33,7 @@ vi.mock('@/hooks/ai/useAILanguage', () => ({
 // --- Imports (must be after vi.mock declarations) ---
 
 import { aiApi, aiActionsApi } from '../ai';
-import { request, handleResponse } from '../client';
+import { request, requestUpload } from '../client';
 import { createStreamHandler } from '../../shared/streamHandler';
 import { getAILanguage } from '@/hooks/ai/useAILanguage';
 
@@ -302,45 +303,32 @@ describe('aiApi', () => {
   });
 
   describe('documentToGraph', () => {
-    it('应该以 POST 方式调用 fetch /ai/document-to-graph 并将响应交由 handleResponse 处理', async () => {
-      const mockResponse = { ok: true, status: 200 } as Response;
-      const fetchSpy = vi
-        .spyOn(globalThis, 'fetch')
-        .mockResolvedValue(mockResponse);
-      vi.mocked(handleResponse).mockResolvedValue({ ok: true });
+    it('应该以 POST /ai/document-to-graph 经 requestUpload 上传 FormData', async () => {
+      vi.mocked(requestUpload).mockResolvedValue({ ok: true });
 
       const file = new File(['content'], 'doc.pdf', {
         type: 'application/pdf',
       });
-      const data = { graph_id: 'g1', file };
+      const data = { graph_id: 'g1', file, language: 'zh-CN' };
 
       await aiApi.documentToGraph(data);
 
-      expect(fetchSpy).toHaveBeenCalledWith(
-        'http://api.test/ai/document-to-graph',
-        expect.objectContaining({
-          method: 'POST',
-          credentials: 'include',
-          body: expect.any(FormData),
-        }),
-      );
-      expect(handleResponse).toHaveBeenCalledWith(mockResponse);
-
-      fetchSpy.mockRestore();
+      expect(requestUpload).toHaveBeenCalledTimes(1);
+      expect(requestUpload).toHaveBeenCalledWith('/ai/document-to-graph', expect.any(FormData));
+      const fd = vi.mocked(requestUpload).mock.calls[0][1];
+      expect(fd.get('graph_id')).toBe('g1');
+      expect(fd.get('file')).toBe(file);
     });
   });
 
   describe('imageToGraph', () => {
-    it('应该以 POST 方式调用 /ai/image-to-graph，body 为 FormData', () => {
+    it('应该以 POST /ai/image-to-graph 经 requestUpload 上传 FormData', () => {
       const formData = new FormData();
       formData.append('file', 'dummy');
 
       aiApi.imageToGraph(formData);
 
-      expect(request).toHaveBeenCalledWith('/ai/image-to-graph', {
-        method: 'POST',
-        body: formData,
-      });
+      expect(requestUpload).toHaveBeenCalledWith('/ai/image-to-graph', formData);
     });
   });
 

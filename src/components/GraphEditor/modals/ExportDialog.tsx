@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { message } from "../../../utils/messageHelper";
 import { LazyImage } from "../../common";
 import { useFocusTrap, useEscapeKey } from "../../../hooks";
+import { requestBlob } from "@/services/api/client";
 
 interface ExportDialogProps {
   isOpen: boolean;
@@ -49,33 +50,22 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, gra
   const handleExport = async () => {
     setLoading(true);
     try {
-      // We need to use fetch directly to handle blob response correctly with POST
-      const authStorage = localStorage.getItem('auth-storage');
-      const token = authStorage
-        ? JSON.parse(authStorage).state?.token
-        : null;
-
-      const response = await fetch(`/api/v1/data/export/pdf?graph_id=${encodeURIComponent(graphId)}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      // 统一出口 requestBlob：基址/鉴权/CSRF 由 apiClient 拦截器处理
+      const blob = await requestBlob(
+        `/data/export/pdf?graph_id=${encodeURIComponent(graphId)}`,
+        {
+          method: 'POST',
+          data: {
+            options: {
+              includeScreenshot,
+              includeStats,
+              includeDetails,
+              screenshotBase64: includeScreenshot ? screenshotPreview : undefined,
+            },
+          },
         },
-        body: JSON.stringify({
-          options: {
-            includeScreenshot,
-            includeStats,
-            includeDetails,
-            screenshotBase64: includeScreenshot ? screenshotPreview : undefined
-          }
-        })
-      });
+      );
 
-      if (!response.ok) {
-        throw new Error('Export failed');
-      }
-
-      const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

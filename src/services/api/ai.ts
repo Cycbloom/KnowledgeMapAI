@@ -1,12 +1,9 @@
 import {
   request,
+  requestUpload,
   getAIConfig,
-  getApiUrl,
-  handleResponse,
   injectAIConfig,
-  getCsrfToken,
 } from "./client";
-import { useStore } from "@/store/useStore";
 import type { AIAction, TutorMode } from "@shared/types";
 import { getAILanguage } from "@/hooks/ai/useAILanguage";
 import { createStreamHandler } from "../shared/streamHandler";
@@ -268,13 +265,11 @@ export const aiApi: IAiApi = {
     });
   },
 
-  documentToGraph: async (data: {
+  documentToGraph: (data: {
     graph_id: string;
     file: File;
     language?: string;
   }) => {
-    const token = useStore.getState().token;
-    const csrfToken = getCsrfToken();
     const config = getAIConfig("text");
     const formData = new FormData();
     formData.append("graph_id", data.graph_id);
@@ -282,22 +277,12 @@ export const aiApi: IAiApi = {
     formData.append("language", data.language || getAILanguage());
     if (config.provider) formData.append("provider", config.provider);
     if (config.model) formData.append("model", config.model);
-
-    const apiUrl = await getApiUrl();
-    const response = await fetch(`${apiUrl}/ai/document-to-graph`, {
-      method: "POST",
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
-      },
-      credentials: "include",
-      body: formData,
-    });
-    return handleResponse(response);
+    // multipart 统一走 requestUpload（此前经 request 会对 FormData 做 JSON.parse 而崩溃）
+    return requestUpload("/ai/document-to-graph", formData);
   },
 
   imageToGraph: (formData: FormData) =>
-    request("/ai/image-to-graph", { method: "POST", body: formData }),
+    requestUpload("/ai/image-to-graph", formData),
 
   urlToText: (url: string) =>
     request("/ai/url-to-text", {

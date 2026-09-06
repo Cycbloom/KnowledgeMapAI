@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { apiClient } from "../services/api/createApiClient";
 import {
@@ -8,7 +8,8 @@ import {
   authConfig,
 } from "../config/authConfig";
 import { getSupabaseClient, resetSupabaseClient } from "../utils/supabase";
-import { restoreSession } from "../utils/silentAuth";
+import { restoreSession, saveOwnerCredentials } from "../utils/silentAuth";
+import { toUser } from "@shared/types/database";
 import { useStore } from "../store/useStore";
 import { useTheme, useFormDraft } from "../hooks";
 import { useKeyboardHandler } from "../hooks/gesture/useKeyboardHandler";
@@ -190,6 +191,13 @@ export const Login = () => {
   const [authenticating, setAuthenticating] = useState(false);
   const [authError, setAuthError] = useState("");
 
+  // 显式登录表单（生产/云端部署：会话恢复失败后不再自动建号，改为邮箱+密码登录）
+  const [needsLogin, setNeedsLogin] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [loginSubmitting, setLoginSubmitting] = useState(false);
+
   // A11y: 生成唯一 id 用于 label/input/error 关联，避免硬编码 id 冲突
   const patErrorId = useId();
   const projectNameInputId = useId();
@@ -300,15 +308,16 @@ export const Login = () => {
 
     if (isSupabaseConfigured()) {
       setDbConnected(true);
-      // Supabase 已配置（env 或本地保存）：先无感恢复/创建专属会话，
+      // Supabase 已配置（env 或本地保存）：先无感恢复会话，
       // 成功即跳转首页；必须等待会话建立后再发认证请求，
       // 避免与配置加载并行导致 AUTH_HEADER_MISSING 401 竞态。
       const sessionReady = await ensureOwnerSession();
       if (sessionReady) {
         return;
       }
-      // 会话建立失败：继续展示设置向导（含数据库状态）
-      checkDatabaseStatus();
+      // 会话恢复失败（无 session 且无有效凭证）：needsLogin 已置位，
+      // 渲染显式登录表单，不再走需鉴权的配置加载。
+      return;
     } else {
       setDbStatus("unknown");
     }
@@ -426,8 +435,8 @@ export const Login = () => {
     }
   };
 
-  // 无感知会话：恢复现有 session → 本地凭证静默重登 → 首次使用自动创建专属用户。
-  // 三级回退全部失败时仅显示错误提示，不再出现账号密码表单。
+  // 无感知会话：恢复现有 session → 本地凭证静默重登（开发/测试环境兜底自动创建专属用户）。
+  // 全部失败时切换为显式登录表单（生产/云端部署下账号由用户自行注册/登录）。
   const ensureOwnerSession = async (): Promise<boolean> => {
     setAuthenticating(true);
     setAuthError("");
@@ -451,17 +460,67 @@ export const Login = () => {
         return true;
       }
 
-      setAuthError(t("configPage.ownerProvisionFailed"));
+      // 无会话且无有效凭证：展示显式登录表单（不再显示无出口的错误提示）
+      setNeedsLogin(true);
       return false;
     } catch (error) {
       logger.warn("Login step failed", {
         step: "ensureOwnerSession",
         error: error instanceof Error ? error.message : String(error),
       });
-      setAuthError(t("configPage.ownerProvisionFailed"));
+      setNeedsLogin(true);
       return false;
     } finally {
       setAuthenticating(false);
+    }
+  };
+
+  // 显式登录：邮箱+密码登录成功后保存凭证到本地（供后续静默重登），并进入首页。
+  const handleLogin = async (e: React.FormEvent): Promise<void> => {
+    e.preventDefault();
+    if (!loginEmail.trim() || !loginPassword) {
+      setLoginError(t("configPage.emailAndPasswordRequired"));
+      return;
+    }
+
+    setLoginSubmitting(true);
+    setLoginError("");
+
+    try {
+      const client = getSupabaseClient();
+      if (!client) {
+        throw new Error(t("configPage.supabaseNotConfigured"));
+      }
+
+      const { data, error } = await client.auth.signInWithPassword({
+        email: loginEmail.trim(),
+        password: loginPassword,
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+      if (!data.session) {
+        throw new Error(t("configPage.invalidCredentials"));
+      }
+
+      saveOwnerCredentials({ email: loginEmail.trim(), password: loginPassword });
+      setUser(
+        toUser(data.session.user),
+        data.session.access_token,
+        data.session.refresh_token,
+      );
+      clearDraft();
+      navigate("/");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      logger.warn("Login failed", {
+        step: "explicitLogin",
+        error: message,
+      });
+      setLoginError(message || t("configPage.loginFailed"));
+    } finally {
+      setLoginSubmitting(false);
     }
   };
 
@@ -1506,6 +1565,87 @@ export const Login = () => {
     </div>
   );
 
+  const renderLoginCard = () => (
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-6 transition-colors max-w-md mx-auto">
+      <div className="flex items-center gap-3 mb-5">
+        <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+          <Lock className="w-5 h-5 text-green-600 dark:text-green-400" />
+        </div>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          {t("configPage.loginTitle")}
+        </h2>
+      </div>
+
+      <form onSubmit={handleLogin} className="space-y-4">
+        <div>
+          <label htmlFor="login-email" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+            {t("configPage.loginEmail")}
+          </label>
+          <input
+            id="login-email"
+            type="email"
+            value={loginEmail}
+            onChange={(e) => setLoginEmail(e.target.value)}
+            autoComplete="email"
+            className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="login-password" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+            {t("configPage.loginPassword")}
+          </label>
+          <input
+            id="login-password"
+            type="password"
+            value={loginPassword}
+            onChange={(e) => setLoginPassword(e.target.value)}
+            autoComplete="current-password"
+            className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+          />
+        </div>
+
+        {loginError && (
+          <p role="alert" className="text-xs text-red-600 dark:text-red-400">
+            {loginError}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={loginSubmitting}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loginSubmitting ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              {t("configPage.authenticating")}
+            </>
+          ) : (
+            t("configPage.loginSubmit")
+          )}
+        </button>
+      </form>
+
+      <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
+        {t("configPage.loginNoAccount")}{" "}
+        <Link to="/register" className="text-primary-600 dark:text-primary-400 underline">
+          {t("configPage.loginRegisterLink")}
+        </Link>
+      </p>
+
+      <div className="mt-4 text-center">
+        <button
+          type="button"
+          onClick={() => setNeedsLogin(false)}
+          className="text-sm text-gray-400 dark:text-gray-500 underline hover:text-gray-600 dark:hover:text-gray-300"
+        >
+          {t("configPage.loginBackToSetup")}
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <main
       id="public-main"
@@ -1519,58 +1659,64 @@ export const Login = () => {
             KnowledgeMap
           </h1>
 
-          <div className="flex justify-center mb-6">
-            <div className="inline-flex rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-800 p-1" role="tablist" aria-label={t("quickSetup.quickSetup")}>
-              {loginTabs.map((tab, index) => {
-                const isActive = draft.activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    ref={(el) => { tabRefs.current[index] = el; }}
-                    role="tab"
-                    id={`${tabIdPrefix}-${tab.id}`}
-                    aria-selected={isActive}
-                    aria-controls={`${panelIdPrefix}-${tab.id}`}
-                    tabIndex={isActive ? 0 : -1}
-                    onClick={() => setDraft((prev) => ({ ...prev, activeTab: tab.id }))}
-                    onKeyDown={(e) => handleTabKeyDown(e, index)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive
-                        ? "bg-primary-600 text-white shadow-sm"
-                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
-                    }`}
-                  >
-                    {tab.id === "quick" ? <Zap className="w-4 h-4" /> : <Settings className="w-4 h-4" />}
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          {needsLogin ? (
+            renderLoginCard()
+          ) : (
+            <>
+              <div className="flex justify-center mb-6">
+                <div className="inline-flex rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-800 p-1" role="tablist" aria-label={t("quickSetup.quickSetup")}>
+                  {loginTabs.map((tab, index) => {
+                    const isActive = draft.activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        ref={(el) => { tabRefs.current[index] = el; }}
+                        role="tab"
+                        id={`${tabIdPrefix}-${tab.id}`}
+                        aria-selected={isActive}
+                        aria-controls={`${panelIdPrefix}-${tab.id}`}
+                        tabIndex={isActive ? 0 : -1}
+                        onClick={() => setDraft((prev) => ({ ...prev, activeTab: tab.id }))}
+                        onKeyDown={(e) => handleTabKeyDown(e, index)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                          isActive
+                            ? "bg-primary-600 text-white shadow-sm"
+                            : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                        }`}
+                      >
+                        {tab.id === "quick" ? <Zap className="w-4 h-4" /> : <Settings className="w-4 h-4" />}
+                        {tab.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
-          {draft.activeTab === "quick" && (
-            <div
-              role="tabpanel"
-              id={`${panelIdPrefix}-quick`}
-              aria-labelledby={`${tabIdPrefix}-quick`}
-              tabIndex={0}
-            >
-              {renderQuickSetup()}
-              <div className="mt-6">{renderAICard()}</div>
-            </div>
-          )}
+              {draft.activeTab === "quick" && (
+                <div
+                  role="tabpanel"
+                  id={`${panelIdPrefix}-quick`}
+                  aria-labelledby={`${tabIdPrefix}-quick`}
+                  tabIndex={0}
+                >
+                  {renderQuickSetup()}
+                  <div className="mt-6">{renderAICard()}</div>
+                </div>
+              )}
 
-          {draft.activeTab === "manual" && (
-            <div
-              role="tabpanel"
-              id={`${panelIdPrefix}-manual`}
-              aria-labelledby={`${tabIdPrefix}-manual`}
-              tabIndex={0}
-              className="grid grid-cols-1 lg:grid-cols-2 gap-6"
-            >
-              {renderSupabaseCard()}
-              {renderAICard()}
-            </div>
+              {draft.activeTab === "manual" && (
+                <div
+                  role="tabpanel"
+                  id={`${panelIdPrefix}-manual`}
+                  aria-labelledby={`${tabIdPrefix}-manual`}
+                  tabIndex={0}
+                  className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+                >
+                  {renderSupabaseCard()}
+                  {renderAICard()}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

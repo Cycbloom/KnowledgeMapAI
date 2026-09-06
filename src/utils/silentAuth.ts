@@ -145,12 +145,32 @@ export const silentSignIn = async (
 };
 
 /**
+ * 构建模式判断：开发/测试环境返回 true。
+ *
+ * 决定会话恢复是否允许「自动创建专属用户」兜底：
+ * - 开发/测试：保留 provisionOwner 自动建号，支撑本地开发与 AI 调试登录链路
+ *   （webapp_login.py 依赖 syncOwnerCredentials 同步的 .dev-owner-credentials.json）。
+ * - 生产（云端部署）：不自动建号，返回 null，由调用方引导显式注册/登录，
+ *   保证手机/桌面/Web 共享同一账号同一数据。
+ */
+export function isDevelopmentMode(): boolean {
+  try {
+    const mode = import.meta.env?.MODE;
+    return mode === "development" || mode === "test";
+  } catch {
+    // import.meta 不可用时回退为开发模式判断
+    return true;
+  }
+}
+
+/**
  * 统一的会话恢复流程（自愈）：
  *
  * 1. 校验本地缓存 session：JWT 可能仍有效但用户已被删除（僵尸 session），
  *    用 getUser 向服务端确认用户真实存在，失效则 signOut 清除本地缓存。
  * 2. 本地凭证静默重登：凭证失效时自动清理（见 silentSignIn）。
- * 3. 兜底：创建新的专属用户。
+ * 3. 兜底：开发/测试环境创建新的专属用户；生产环境返回 null，
+ *    由调用方（Login 页）展示显式登录表单。
  *
  * 数据库重置/用户被删除后，应用走完此链路即可无感恢复，不会卡死在旧凭证上。
  */
@@ -172,5 +192,8 @@ export const restoreSession = async (
   const silentSession = await silentSignIn(client);
   if (silentSession) return silentSession;
 
-  return provisionOwner(client);
+  if (isDevelopmentMode()) {
+    return provisionOwner(client);
+  }
+  return null;
 };

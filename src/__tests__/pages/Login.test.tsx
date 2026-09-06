@@ -167,8 +167,8 @@ describe("Login 页面（无感知会话）", () => {
     expect(mockSignOut).not.toHaveBeenCalled();
   });
 
-  it("专属用户创建失败时显示错误且不跳转", async () => {
-    // signUp 无 session 且 signInWithPassword 回退也失败
+  it("会话恢复失败时展示显式登录表单且不跳转", async () => {
+    // signUp 无 session 且 signInWithPassword 回退也失败 → restoreSession 返回 null → 需要显式登录
     mockSignUp.mockResolvedValue({
       data: { session: null },
       error: { message: "signups not allowed" },
@@ -188,13 +188,74 @@ describe("Login 页面（无感知会话）", () => {
       { timeout: 5000 },
     );
 
-    // 切换到手动设置 tab 查看错误提示
-    fireEvent.click(screen.getByText("手动设置"));
-    await waitFor(() => {
-      expect(
-        screen.getByText("自动创建专属用户失败，请检查数据库认证设置后重试"),
-      ).toBeVisible();
-    });
+    // 不再自动建号：展示显式登录表单（邮箱/密码），不跳转
+    await waitFor(
+      () => {
+        expect(screen.getByLabelText("邮箱")).toBeVisible();
+        expect(screen.getByLabelText("密码")).toBeVisible();
+      },
+      { timeout: 5000 },
+    );
     expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it("显式登录成功后保存凭证并进入首页", async () => {
+    // 先制造会话恢复失败 → 展示登录表单
+    mockSignUp.mockResolvedValue({
+      data: { session: null },
+      error: { message: "signups not allowed" },
+    });
+    mockSignInWithPassword.mockResolvedValue({
+      data: { session: null },
+      error: null,
+    });
+
+    renderWithProviders(<Login />);
+
+    await waitFor(
+      () => {
+        expect(screen.getByLabelText("邮箱")).toBeVisible();
+      },
+      { timeout: 5000 },
+    );
+
+    // 用户填写邮箱密码并提交
+    const mockUser = { id: "user-login", email: "me@example.com" };
+    mockSignInWithPassword.mockResolvedValue({
+      data: {
+        session: {
+          access_token: "access-login",
+          refresh_token: "refresh-login",
+          user: mockUser,
+        },
+        user: mockUser,
+      },
+      error: null,
+    });
+
+    fireEvent.change(screen.getByLabelText("邮箱"), {
+      target: { value: "me@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText("密码"), {
+      target: { value: "secret123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "登录" }));
+
+    await waitFor(
+      () => {
+        expect(mockNavigate).toHaveBeenCalledWith("/");
+      },
+      { timeout: 5000 },
+    );
+    expect(mockSignInWithPassword).toHaveBeenCalledWith({
+      email: "me@example.com",
+      password: "secret123",
+    });
+    expect(useStore.getState().user?.id).toBe("user-login");
+    // 凭证已保存到 localStorage（setItem 为 noop mock，断言调用参数）
+    expect(localStorage.setItem).toHaveBeenCalledWith(
+      "km-owner-credentials",
+      JSON.stringify({ email: "me@example.com", password: "secret123" }),
+    );
   });
 });

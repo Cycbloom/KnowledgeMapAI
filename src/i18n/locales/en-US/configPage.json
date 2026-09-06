@@ -35,6 +35,17 @@
   "configuredProviders": "Configured Providers",
   "authenticating": "Authenticating...",
   "ownerProvisionFailed": "Failed to create the owner user automatically. Check database auth settings and retry",
+  "loginTitle": "Sign In",
+  "loginEmail": "Email",
+  "loginPassword": "Password",
+  "loginSubmit": "Sign In",
+  "loginNoAccount": "No account yet?",
+  "loginRegisterLink": "Create one",
+  "loginBackToSetup": "Back to service setup",
+  "emailAndPasswordRequired": "Email and password are required",
+  "invalidCredentials": "Invalid email or password",
+  "loginFailed": "Sign in failed. Please try again",
+  "supabaseNotConfigured": "Supabase is not configured. Complete the connection in setup first",
   "switchToLightMode": "Switch to light mode",
   "switchToDarkMode": "Switch to dark mode"
 }

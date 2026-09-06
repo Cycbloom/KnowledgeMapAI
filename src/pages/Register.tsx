@@ -9,6 +9,7 @@ import { ConfirmationModal } from '../components/common/ConfirmationModal';
 import { Sun, Moon, Cloud, Check, X } from 'lucide-react';
 import { isValidationError } from '../utils/errors';
 import { getAuthModeDisplay } from '../config/authConfig';
+import { saveOwnerCredentials } from '../utils/silentAuth';
 import { checkRequirement, getPasswordRequirements } from '@shared/utils/passwordPolicy';
 import type { User } from '@shared/types/user';
 
@@ -57,6 +58,8 @@ export const Register = () => {
       if (data.error) throw new Error(data.error);
 
       setUser(data.user as User | null, data.session?.access_token ?? null, data.session?.refresh_token ?? null);
+      // 保存凭证到本地，供后续启动静默重登（与登录行为一致）
+      saveOwnerCredentials({ email: draft.email, password });
       clearDraft();
       navigate('/');
     } catch (err: unknown) {

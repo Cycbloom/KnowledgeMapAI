@@ -255,3 +255,58 @@ describe('restoreSession（自愈链路）', () => {
     expect(restored?.user?.email).toBe('owner-fresh@local.app');
   });
 });
+
+describe('restoreSession（生产模式：不自动建号）', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.stubEnv('MODE', 'production');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('无缓存会话且无本地凭证时返回 null 且不调用 signUp', async () => {
+    const signUp = vi.fn();
+    const signIn = vi.fn();
+    const client = makeClient({ signUp, signInWithPassword: signIn });
+
+    const restored = await restoreSession(client);
+
+    expect(restored).toBeNull();
+    expect(signUp).not.toHaveBeenCalled();
+    expect(signIn).not.toHaveBeenCalled();
+  });
+
+  it('清理僵尸会话后不自动重建账号，返回 null', async () => {
+    const zombieSession = makeSession('owner-zombie@local.app');
+    const getSession = vi.fn().mockResolvedValue({ data: { session: zombieSession } });
+    const getUser = vi.fn().mockResolvedValue({
+      data: { user: null },
+      error: { message: 'User from sub not found' },
+    });
+    const signOut = vi.fn().mockResolvedValue({});
+    const signUp = vi.fn();
+    const client = makeClient({ getSession, getUser, signOut, signUp });
+
+    const restored = await restoreSession(client);
+
+    expect(signOut).toHaveBeenCalledTimes(1);
+    expect(restored).toBeNull();
+    expect(signUp).not.toHaveBeenCalled();
+  });
+
+  it('本地凭证失效被清理后返回 null，交由登录表单引导显式登录', async () => {
+    saveOwnerCredentials({ email: 'owner-dead@local.app', password: 'bad' });
+    const signIn = vi.fn().mockResolvedValue({ data: { session: null } });
+    const signUp = vi.fn();
+    const client = makeClient({ signInWithPassword: signIn, signUp });
+
+    const restored = await restoreSession(client);
+
+    expect(signIn).toHaveBeenCalledTimes(1);
+    expect(getOwnerCredentials()).toBeNull();
+    expect(restored).toBeNull();
+    expect(signUp).not.toHaveBeenCalled();
+  });
+});

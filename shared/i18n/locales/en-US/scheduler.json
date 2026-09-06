@@ -584,7 +584,20 @@
         "studyCenter": "Open this knowledge point in Study Center",
         "createQuiz": "Create questions for this knowledge point",
         "select": "Select this knowledge point (for batch quiz)"
-      }
+      },
+      "refresh": "Refresh subtasks",
+      "syncLabel": "Auto-create missing subtasks",
+      "resetLabel": "Reset all subtasks to pending",
+      "syncDone": "Missing subtasks created",
+      "resetDone": "All subtasks reset to pending",
+      "resetTitle": "Reset all subtask statuses",
+      "resetMessage": "Reset all subtasks of this task to 'pending' (only resets completion status; mastery and learning records are kept). Continue?",
+      "refreshFailed": "Failed to refresh subtasks",
+      "pathSelectLabel": "Select learning path",
+      "pathApplied": "Subtasks re-orchestrated to this learning path",
+      "allApplied": "Showing all knowledge-point subtasks",
+      "allNodes": "All knowledge points",
+      "hiddenHint": "{{count}} more knowledge points are not in the current path"
     },
     "overview": {
       "bigLoopTitle": "Big loop · Graph task",

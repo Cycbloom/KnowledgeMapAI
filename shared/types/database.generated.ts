@@ -3856,6 +3856,7 @@ export type Database = {
       }
       user_tasks: {
         Row: {
+          active_learning_path_id: string | null
           actual_duration: number | null
           completed_at: string | null
           context: Json | null
@@ -3887,6 +3888,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          active_learning_path_id?: string | null
           actual_duration?: number | null
           completed_at?: string | null
           context?: Json | null
@@ -3918,6 +3920,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          active_learning_path_id?: string | null
           actual_duration?: number | null
           completed_at?: string | null
           context?: Json | null

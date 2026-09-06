@@ -185,6 +185,7 @@ export class LearningPathCrudService {
     supabase: SupabaseClient,
     userId: string,
     status?: string,
+    sourceGraphId?: string,
   ): Promise<LearningPathWithNodeCount[]> {
     let query = supabase
       .from("learning_paths")
@@ -214,6 +215,10 @@ export class LearningPathCrudService {
 
     if (status) {
       query = query.eq("status", status);
+    }
+
+    if (sourceGraphId) {
+      query = query.eq("source_graph_id", sourceGraphId);
     }
 
     const { data: paths, error } = await query;

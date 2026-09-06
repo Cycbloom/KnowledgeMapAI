@@ -15,6 +15,8 @@ import {
   CheckSquare,
   FileCheck,
   ListTodo,
+  RefreshCw,
+  Route,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../../services/api";
@@ -54,11 +56,22 @@ interface SubtaskListProps {
   className?: string;
   /** 深度拓展完成后由宿主递增，触发本组件重载子任务列表 */
   subtaskReloadKey?: number;
+  /** 图任务当前编排的学习路径 ID（持久化于 user_tasks.active_learning_path_id）；空=不按路径 */
+  activeLearningPathId?: string | null;
+  /** 编排路径变更后回调宿主，同步父级 task 状态（避免切换 Tab 后选择器被陈旧 prop 重置） */
+  onActivePathChange?: (pathId: string | null) => void;
 }
 
 interface KnowledgePoint {
   id: string;
   title: string;
+}
+
+interface GraphLearningPath {
+  id: string;
+  title: string;
+  nodes_count?: number;
+  completed_nodes_count?: number;
 }
 
 export const SubtaskList: React.FC<SubtaskListProps> = ({
@@ -67,6 +80,8 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
   graphId,
   className = "",
   subtaskReloadKey,
+  activeLearningPathId,
+  onActivePathChange,
 }) => {
   const navigate = useNavigate();
   const [subtasks, setSubtasks] = useState<TaskSubtask[]>([]);
@@ -77,6 +92,11 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
   const [selectedKpIds, setSelectedKpIds] = useState<Set<string>>(
     new Set(),
   );
+  const [learningPaths, setLearningPaths] = useState<GraphLearningPath[]>([]);
+  /** 当前编排的学习路径；空字符串=不按路径（展示全部知识点子任务） */
+  const [activePathId, setActivePathId] = useState("");
+  const [refreshMenuOpen, setRefreshMenuOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const { t } = useTranslation();
   const {
     value: newSubtask,
@@ -115,6 +135,100 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
     loadSubtasks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subtaskReloadKey]);
+
+  // 图任务：加载该图谱的学习路径（供路径选择器）
+  useEffect(() => {
+    if (!graphId) {
+      setLearningPaths([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await api.learningPaths.listForGraph(graphId, "active");
+        if (!cancelled) {
+          setLearningPaths(
+            (data as GraphLearningPath[] | undefined | null) ?? [],
+          );
+        }
+      } catch {
+        if (!cancelled) setLearningPaths([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [graphId]);
+
+  // 宿主传入的持久化路径发生变化时，同步当前激活路径
+  useEffect(() => {
+    setActivePathId(activeLearningPathId ?? "");
+  }, [activeLearningPathId]);
+
+  const applyRefreshResult = (res: {
+    subtasks: TaskSubtask[];
+    activePathId: string | null;
+  }) => {
+    setSubtasks(res.subtasks ?? []);
+    setActivePathId(res.activePathId ?? "");
+    onActivePathChange?.(res.activePathId ?? null);
+  };
+
+  const handleSelectPath = async (pathId: string) => {
+    setRefreshMenuOpen(false);
+    if (pathId === activePathId) return;
+    try {
+      setRefreshing(true);
+      // 切换路径 = 以该路径重新编排（自动补齐缺失 + 按路径重排 + 持久化）
+      const res = await api.scheduler.refreshSubtasks(taskId, {
+        mode: "sync",
+        path_id: pathId || null,
+      });
+      applyRefreshResult(res);
+      setSelectedKpIds(new Set());
+      messageHelper.success(
+        pathId
+          ? t('scheduler.taskWorkbench.subtaskList.pathApplied')
+          : t('scheduler.taskWorkbench.subtaskList.allApplied'),
+      );
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : t('scheduler.taskWorkbench.subtaskList.refreshFailed');
+      messageHelper.error(errMsg);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleRefresh = async (reset: boolean) => {
+    if (reset) {
+      const confirmed = await asyncConfirm({
+        title: t('scheduler.taskWorkbench.subtaskList.resetTitle'),
+        message: t('scheduler.taskWorkbench.subtaskList.resetMessage'),
+        isDangerous: true,
+      });
+      if (!confirmed) return;
+    }
+    try {
+      setRefreshing(true);
+      const res = await api.scheduler.refreshSubtasks(taskId, {
+        mode: reset ? "reset" : "sync",
+        path_id: activePathId || null,
+      });
+      applyRefreshResult(res);
+      setSelectedKpIds(new Set());
+      messageHelper.success(
+        reset
+          ? t('scheduler.taskWorkbench.subtaskList.resetDone')
+          : t('scheduler.taskWorkbench.subtaskList.syncDone'),
+      );
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : t('scheduler.taskWorkbench.subtaskList.refreshFailed');
+      messageHelper.error(errMsg);
+    } finally {
+      setRefreshMenuOpen(false);
+      setRefreshing(false);
+    }
+  };
 
   const toggleSelect = (kpId: string) => {
     setSelectedKpIds((prev) => {
@@ -216,8 +330,15 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
     }
   };
 
-  // 单趟统计完成数
-  const { completedCount } = subtasks.reduce(
+  // 当激活某条学习路径时，只展示属于该路径（learning_path_node_id 非空）的子任务
+  const displayedSubtasks = useMemo(() => {
+    if (!activePathId) return subtasks;
+    return subtasks.filter((s) => s.learning_path_node_id != null);
+  }, [subtasks, activePathId]);
+  const hiddenCount = subtasks.length - displayedSubtasks.length;
+
+  // 单趟统计完成数（基于当前展示列表）
+  const { completedCount } = displayedSubtasks.reduce(
     (acc, st) => {
       if (st.status === "completed") acc.completedCount++;
       return acc;
@@ -225,8 +346,8 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
     { completedCount: 0 },
   );
   const progress =
-    subtasks.length > 0
-      ? Math.round((completedCount / subtasks.length) * 100)
+    displayedSubtasks.length > 0
+      ? Math.round((completedCount / displayedSubtasks.length) * 100)
       : 0;
 
   // 实时掌握度：优先按学习卡计算，缺失时回退子任务已存值
@@ -237,12 +358,12 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
     return live != null ? live : subtask.mastery_level;
   };
 
-  // 平均掌握度改用实时值（汇总）
+  // 平均掌握度改用实时值（汇总，基于当前展示列表）
   const avgMastery = useMemo(() => {
-    if (subtasks.length === 0) return 0;
+    if (displayedSubtasks.length === 0) return 0;
     let sum = 0;
     let count = 0;
-    for (const st of subtasks) {
+    for (const st of displayedSubtasks) {
       const live = st.knowledge_point_id
         ? masteryByKp.get(st.knowledge_point_id)
         : undefined;
@@ -253,7 +374,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
       }
     }
     return count > 0 ? sum / count : 0;
-  }, [subtasks, masteryByKp]);
+  }, [displayedSubtasks, masteryByKp]);
 
   if (loading) {
     return (
@@ -283,29 +404,82 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
             {t('scheduler.taskWorkbench.subtaskList.title')}
           </h3>
           <span className="text-sm text-slate-500 dark:text-slate-400">
-            {t('scheduler.taskWorkbench.subtaskList.completionFormat', { completed: completedCount, total: subtasks.length })}
+            {t('scheduler.taskWorkbench.subtaskList.completionFormat', { completed: completedCount, total: displayedSubtasks.length })}
           </span>
-          {subtasks.length > 0 && (
+          {displayedSubtasks.length > 0 && (
             <span className="text-sm text-slate-500 dark:text-slate-400">
               {t('scheduler.taskWorkbench.subtaskList.avgMastery', { percent: avgMastery.toFixed(0) })}
             </span>
           )}
         </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsAdding(true);
-          }}
-          className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-colors"
-        >
-          <Plus size={14} />
-          {t('scheduler.taskWorkbench.subtaskList.add')}
-        </button>
+        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+          {/* 刷新/重置子任务 */}
+          <div className="relative">
+            <button
+              onClick={() => setRefreshMenuOpen((v) => !v)}
+              disabled={refreshing}
+              title={t('scheduler.taskWorkbench.subtaskList.refresh')}
+              aria-label={t('scheduler.taskWorkbench.subtaskList.refresh')}
+              className="flex items-center gap-1 px-2.5 py-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-colors disabled:opacity-50"
+            >
+              <RefreshCw size={15} className={refreshing ? "animate-spin" : ""} />
+              {t('scheduler.taskWorkbench.subtaskList.refresh')}
+            </button>
+            {refreshMenuOpen && (
+              <div className="absolute right-0 top-full mt-1 z-20 w-60 p-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-500 rounded-xl shadow-lg">
+                <button
+                  onClick={() => handleRefresh(false)}
+                  disabled={refreshing}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw size={14} />
+                  {t('scheduler.taskWorkbench.subtaskList.syncLabel')}
+                </button>
+                <button
+                  onClick={() => handleRefresh(true)}
+                  disabled={refreshing}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  <CheckCircle size={14} />
+                  {t('scheduler.taskWorkbench.subtaskList.resetLabel')}
+                </button>
+              </div>
+            )}
+          </div>
+          {/* 学习路径选择器 */}
+          {graphId && learningPaths.length > 0 && (
+            <div className="flex items-center gap-1.5">
+              <Route size={14} className="text-slate-400" />
+              <select
+                value={activePathId}
+                onChange={(e) => handleSelectPath(e.target.value)}
+                disabled={refreshing}
+                aria-label={t('scheduler.taskWorkbench.subtaskList.pathSelectLabel')}
+                className="max-w-[200px] px-2 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+              >
+                <option value="">{t('scheduler.taskWorkbench.subtaskList.allNodes')}</option>
+                {learningPaths.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          {/* 新增子任务 */}
+          <button
+            onClick={() => setIsAdding(true)}
+            className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-colors"
+          >
+            <Plus size={14} />
+            {t('scheduler.taskWorkbench.subtaskList.add')}
+          </button>
+        </div>
       </div>
 
       {isExpanded && (
         <>
-          {subtasks.length > 0 && (
+          {displayedSubtasks.length > 0 && (
             <div className="mb-3">
               <div className="flex items-center gap-2">
                 <div className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
@@ -319,6 +493,11 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                 </span>
               </div>
             </div>
+          )}
+          {activePathId && hiddenCount > 0 && (
+            <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+              {t('scheduler.taskWorkbench.subtaskList.hiddenHint', { count: hiddenCount })}
+            </p>
           )}
 
           {isAdding && (
@@ -405,7 +584,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
           )}
 
           <div className="space-y-2">
-            {subtasks.map((subtask) => {
+            {displayedSubtasks.map((subtask) => {
               const masteryValue = masteryOf(subtask);
               const kpId = subtask.knowledge_point_id;
               return (
@@ -544,7 +723,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
               </div>
             )}
 
-            {subtasks.length === 0 && !isAdding && (
+            {displayedSubtasks.length === 0 && !isAdding && (
               <EmptyState
                 icon={<ListTodo size={32} />}
                 title={t('scheduler.empty.subtasks')}

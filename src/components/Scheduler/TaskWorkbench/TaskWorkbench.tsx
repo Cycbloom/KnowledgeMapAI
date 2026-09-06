@@ -763,7 +763,19 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
                 tabIndex={0}
                 className="h-full overflow-y-auto"
               >
-                <SubtaskList taskId={task.id} graphId={task.graph_id} subtaskReloadKey={subtaskReloadKey} />
+                <SubtaskList
+                  taskId={task.id}
+                  graphId={task.graph_id}
+                  subtaskReloadKey={subtaskReloadKey}
+                  activeLearningPathId={task.active_learning_path_id}
+                  onActivePathChange={(pathId) =>
+                    setTask((prev) =>
+                      prev
+                        ? { ...prev, active_learning_path_id: pathId ?? null }
+                        : prev,
+                    )
+                  }
+                />
               </div>
             )}
 

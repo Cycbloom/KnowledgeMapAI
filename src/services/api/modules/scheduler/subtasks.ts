@@ -25,6 +25,19 @@ export const subtasksApi = {
   getSubtasks: (taskId: string): Promise<TaskSubtask[]> =>
     requestData<TaskSubtask[]>(`/scheduler/tasks/${taskId}/subtasks`),
 
+  /**
+   * 刷新/重建子任务：自动补齐缺失子任务 + 按学习路径重排 +（可选）重置完成状态。
+   * pathId 不传=不按路径（展示全部知识点子任务）。
+   */
+  refreshSubtasks: (
+    taskId: string,
+    data: { mode?: "sync" | "reset"; path_id?: string | null },
+  ): Promise<{ subtasks: TaskSubtask[]; activePathId: string | null }> =>
+    requestData<{ subtasks: TaskSubtask[]; activePathId: string | null }>(
+      `/scheduler/tasks/${taskId}/subtasks/refresh`,
+      { method: "POST", body: JSON.stringify(data) },
+    ),
+
   createSubtask: (taskId: string, data: CreateSubtaskData): Promise<TaskSubtask> =>
     requestData<TaskSubtask>(`/scheduler/tasks/${taskId}/subtasks`, {
       method: "POST",

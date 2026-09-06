@@ -54,6 +54,8 @@ export interface UserTask {
   progress_percentage?: number;
   parent_task_id?: string;
   graph_id?: string;
+  /** 图任务当前编排采用的学习路径 ID（多条学习路径间切换时记忆当前来源；空=展示全部子任务） */
+  active_learning_path_id?: string | null;
   context?: Record<string, unknown> | string;
   dependencies?: TaskDependency[];
   subtask_count?: number;

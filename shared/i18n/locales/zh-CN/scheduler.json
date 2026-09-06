@@ -584,7 +584,20 @@
         "studyCenter": "在学习中心打开该知识点",
         "createQuiz": "为该知识点创建题目",
         "select": "选择该知识点（用于批量创建测验）"
-      }
+      },
+      "refresh": "刷新子任务",
+      "syncLabel": "自动补齐缺失子任务",
+      "resetLabel": "重置所有子任务为待完成",
+      "syncDone": "已自动补齐缺失子任务",
+      "resetDone": "已重置所有子任务为待完成",
+      "resetTitle": "重置所有子任务状态",
+      "resetMessage": "将把该任务下所有子任务重置为『待完成』（仅重置完成状态，保留掌握度与学习记录）。是否继续？",
+      "refreshFailed": "刷新子任务失败",
+      "pathSelectLabel": "选择学习路径",
+      "pathApplied": "已按该学习路径编排子任务",
+      "allApplied": "已展示全部知识点子任务",
+      "allNodes": "全部知识点",
+      "hiddenHint": "另有 {{count}} 个知识点不在当前路径"
     },
     "overview": {
       "bigLoopTitle": "大循环 · 图谱大任务",

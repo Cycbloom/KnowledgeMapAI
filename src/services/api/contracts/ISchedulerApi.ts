@@ -228,6 +228,10 @@ export interface ISchedulerSettingsApi {
 
 export interface ISchedulerSubtasksApi {
   getSubtasks: (taskId: string) => Promise<TaskSubtask[]>;
+  refreshSubtasks: (
+    taskId: string,
+    data: { mode?: "sync" | "reset"; path_id?: string | null },
+  ) => Promise<{ subtasks: TaskSubtask[]; activePathId: string | null }>;
   createSubtask: (taskId: string, data: CreateSubtaskData) => Promise<TaskSubtask>;
   updateSubtask: (taskId: string, subtaskId: string, data: UpdateSubtaskData) => Promise<TaskSubtask>;
   deleteSubtask: (taskId: string, subtaskId: string) => Promise<void>;

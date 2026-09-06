@@ -49,6 +49,7 @@ const updatePathSchema = z.object({
 // 列表查询参数 schema
 const listQuerySchema = z.object({
   status: z.enum(["active", "completed", "paused", "archived"]).optional(),
+  source_graph_id: z.string().uuid("无效的图谱ID").optional(),
 });
 
 // 获取学习路径列表
@@ -57,11 +58,12 @@ router.get(
   requireAuth,
   validate({ query: listQuerySchema }),
   async (req: AuthedRequest, res: Response) => {
-    const { status } = req.query;
+    const { status, source_graph_id } = req.query;
     const data = await learningPathService.getLearningPaths(
       req.supabase,
       req.user.id,
       status as string | undefined,
+      source_graph_id as string | undefined,
     );
     res.json(data);
   },

@@ -1,4 +1,4 @@
-﻿import { SupabaseClient } from "@supabase/supabase-js";
+import { SupabaseClient } from "@supabase/supabase-js";
 import { LearningPathTaskIntegration } from "./learningPathTaskIntegration";
 import { LearningPathDailyPlan } from "./learningPathDailyPlan";
 import { LearningPathNodeService } from "./learningPathNodeService";
@@ -72,8 +72,9 @@ export class LearningPathService {
     supabase: SupabaseClient,
     userId: string,
     status?: string,
+    sourceGraphId?: string,
   ): Promise<LearningPathWithNodeCount[]> {
-    return this.crudService.getLearningPaths(supabase, userId, status);
+    return this.crudService.getLearningPaths(supabase, userId, status, sourceGraphId);
   }
 
   getLearningPath(

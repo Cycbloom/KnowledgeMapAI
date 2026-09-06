@@ -317,6 +317,12 @@ export const learningPathsApi = {
   list: (status?: LearningPathStatus) =>
     request<LearningPathResponse[]>(`/learning-paths${  status ? `?status=${status}` : ""}`),
 
+  /** 按图谱列出学习路径（默认 active），用于任务详情页路径选择器 */
+  listForGraph: (graphId: string, status: LearningPathStatus = "active") =>
+    request<LearningPathResponse[]>(
+      `/learning-paths?source_graph_id=${graphId}&status=${status}`,
+    ),
+
   get: (id: string) => request<LearningPathResponse>(`/learning-paths/${id}`),
 
   create: (data: CreateLearningPathInput) =>

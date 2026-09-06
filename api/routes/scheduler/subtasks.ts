@@ -56,6 +56,13 @@ const subtaskParamsSchema = z.object({
   subtaskId: z.string().uuid("无效的子任务ID"),
 });
 
+const refreshSubtasksBodySchema = z.object({
+  /** sync=自动补齐缺失子任务并按路径重排；reset=在 sync 基础上额外将全部子任务状态重置为待完成 */
+  mode: z.enum(["sync", "reset"]).optional().default("sync"),
+  /** 目标学习路径；不传=不按路径（展示全部知识点子任务） */
+  path_id: z.string().uuid("无效的学习路径ID").optional().nullable(),
+});
+
 router.post(
   "/tasks/:id/subtasks",
   requireAuth,
@@ -92,6 +99,29 @@ router.get(
     const { id } = req.params;
 
     const data = await subtaskService.list(req.supabase, req.user.id, id);
+
+    res.json({ success: true, data });
+  },
+);
+
+// 刷新/重建子任务：自动补齐缺失子任务 + 按学习路径重排 +（可选）重置完成状态
+router.post(
+  "/tasks/:id/subtasks/refresh",
+  requireAuth,
+  validate({
+    params: z.object({ id: z.string().uuid("无效的任务ID") }),
+    body: refreshSubtasksBodySchema,
+  }),
+  async (req: AuthedRequest, res: Response) => {
+    const { id } = req.params;
+    const { mode, path_id } = req.body;
+
+    const data = await subtaskService.refreshSubtasksForTask(
+      req.supabase,
+      req.user.id,
+      id,
+      { mode, pathId: path_id ?? undefined },
+    );
 
     res.json({ success: true, data });
   },

@@ -69,6 +69,7 @@ export interface GeneratePathInput {
 
 export interface ILearningPathsApi {
   list(status?: LearningPathStatus): Promise<unknown>;
+  listForGraph(graphId: string, status?: LearningPathStatus): Promise<unknown>;
   get(id: string): Promise<unknown>;
   create(data: CreateLearningPathInput): Promise<unknown>;
   update(id: string, data: UpdateLearningPathInput): Promise<unknown>;

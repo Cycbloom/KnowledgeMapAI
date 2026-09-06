@@ -1,0 +1,11 @@
+const fs = require("fs");
+const pkg = JSON.parse(fs.readFileSync("./node_modules/mermaid/package.json", "utf8"));
+console.log("exports:", JSON.stringify(pkg.exports, null, 2).slice(0, 600));
+console.log("main:", pkg.main);
+console.log("module:", pkg.module);
+const esm = fs.readFileSync("./node_modules/mermaid/dist/mermaid.esm.min.mjs", "utf8");
+console.log("esm.min.mjs len:", esm.length);
+const imports = [...esm.matchAll(/import\s*\{?[^}]*\}?\s*from\s*"([^"]+)"/g)].map((m) => m[1]);
+console.log("esm.min.mjs external imports:", [...new Set(imports)].join(", ") || "(none)");
+const dynImports = [...esm.matchAll(/import\("([^"]+)"\)/g)].map((m) => m[1]);
+console.log("esm.min.mjs dynamic imports:", [...new Set(dynImports)].join(", ") || "(none)");

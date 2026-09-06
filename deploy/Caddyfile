@@ -1,0 +1,25 @@
+# KnowledgeMap - cycbloom.cn deployment
+supabase.cycbloom.cn {
+	reverse_proxy 127.0.0.1:8000
+}
+
+api.cycbloom.cn {
+	reverse_proxy 127.0.0.1:3001
+}
+
+app.cycbloom.cn {
+	# Web 端 API 客户端固定使用同源 /api/v1（见 createApiClient.ts），
+	# 因此必须把 /api/* 反代到 API server，而不是交给静态文件服务器。
+	handle /api/* {
+		reverse_proxy 127.0.0.1:3001
+	}
+	handle {
+		root * /opt/km/web
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+cycbloom.cn {
+	redir https://app.cycbloom.cn{uri} permanent
+}

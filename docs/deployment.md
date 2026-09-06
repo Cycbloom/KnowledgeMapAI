@@ -7,9 +7,10 @@
 
 | 项 | 值 |
 |---|---|
-| 服务器 | 腾讯云香港轻量应用服务器，2 核 4G / 6M 固定带宽，Ubuntu 24.04 |
+| 服务器 | 腾讯云上海轻量应用服务器，2 核 4G / 6M 固定带宽，Ubuntu 24.04 |
 | 公网 IP | `1.15.174.173`（IPv4） |
-| 域名 | `cycbloom.cn`（阿里云注册，无需备案，服务器在香港） |
+| 域名 | `cycbloom.cn`（阿里云注册，域名已实名） |
+| 备案 | ⚠️ 服务器在上海（大陆节点），公网 80/443 提供服务**需要 ICP 备案**，建议尽快办理（见 §6） |
 | 子域名 | `api.cycbloom.cn`（API）、`supabase.cycbloom.cn`（Supabase 网关）、`app.cycbloom.cn`（Web 前端） |
 | HTTPS | Caddy + Let's Encrypt 自动签发/续期 |
 
@@ -174,6 +175,7 @@ gunzip -c /opt/km/data/backups/db-<时间戳>.sql.gz | docker exec -i supabase-d
 - 公开注册关闭；admin 接口仅 service_role 可用
 - 密钥分级：ANON_KEY 可进客户端；SERVICE_ROLE_KEY / JWT_SECRET / POSTGRES_PASSWORD 只留在服务器
 - 建议定期下载 `/opt/km/data/backups/` 到本地异地保存
+- **ICP 备案**：服务器在上海（大陆节点），用 `cycbloom.cn` 提供 80/443 公网服务按法规需 ICP 备案。当前服务可正常运行，但存在被云厂商暂停访问/不合规的风险，建议尽快在阿里云控制台办理备案（个人备案，周期约 1-3 周）；备案期间不影响已有访问
 
 ## 7. 故障排查
 

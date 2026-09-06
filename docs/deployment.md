@@ -31,12 +31,19 @@ Caddy（:80/:443，自动证书）
 ### 2.1 Supabase 栈（Docker Compose）
 
 - 目录：`/opt/km/supabase-official`
-- 编排文件：`docker-compose.prod.yml`（精简版，只含 db/auth/rest/realtime/storage/api-gw(envoy)，已裁掉 studio/meta/imgproxy/functions/supavisor）
+- 编排文件：`docker-compose.prod.yml`（精简版：db/auth/rest/realtime/storage/api-gw(envoy)/meta/studio；已裁掉 imgproxy/functions/supavisor）
 - 配置：`/opt/km/supabase-official/.env`（含唯一密钥）
 - 数据：`volumes/db/data`（Postgres 数据盘）、`volumes/storage`（存储文件）
 - 网关绑定 `127.0.0.1:8000`（不对外直接暴露，仅 Caddy 代理）
 
-### 2.2 API Server（systemd）
+### 2.2 Supabase Studio 管理控制台（网页后台）
+
+- 地址：`https://studio.cycbloom.cn`（Caddy basic_auth 保护，用户名 `kmstudio`，密码见服务器 `STUDIO_PASSWORD`）
+- 用途：可视化浏览表/数据、跑 SQL、管理存储桶等，等同 Supabase 云端 Dashboard
+- 服务：`meta`（postgres-meta）+ `studio`，绑定本机 `127.0.0.1:3010`，不对外直连
+- 改密码：服务器 `caddy hash-password` 生成新 hash，更新 `/etc/caddy/Caddyfile` 中 `studio.cycbloom.cn` 的 `basic_auth` 后 `systemctl reload caddy`
+
+### 2.3 API Server（systemd）
 
 - 服务名：`km-api`
 - 目录：`/opt/km/api`（`api/` 源码 + `shared/` + 精简 `package.json`）
@@ -44,13 +51,13 @@ Caddy（:80/:443，自动证书）
 - 环境变量：`/opt/km/api/.env`（NODE_ENV=production，Supabase URL/密钥、FRONTEND_URL 等）
 - 监听 `:3001`（UFW 只放行 22/80/443，外部无法直连）
 
-### 2.3 Caddy（HTTPS 反向代理）
+### 2.4 Caddy（HTTPS 反向代理）
 
 - 配置：`/etc/caddy/Caddyfile`
 - 服务：`caddy`（systemd 托管，自动申请/续期 Let's Encrypt 证书）
-- 已签发域名：`cycbloom.cn`、`api/supabase/app.cycbloom.cn`
+- 已签发域名：`cycbloom.cn`、`api/supabase/app/studio.cycbloom.cn`
 
-### 2.4 密钥与敏感文件（禁止外泄）
+### 2.5 密钥与敏感文件（禁止外泄）
 
 | 文件 | 内容 |
 |---|---|

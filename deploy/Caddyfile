@@ -23,3 +23,13 @@ app.cycbloom.cn {
 cycbloom.cn {
 	redir https://app.cycbloom.cn{uri} permanent
 }
+
+# Supabase Studio 管理控制台（本机 3010，Caddy 加 basic auth 保护）
+# hash 用服务器上的 `caddy hash-password` 生成，勿提交真实 hash
+studio.cycbloom.cn {
+	basic_auth {
+		kmstudio <CHANGE_ME_HASH>
+	}
+	header -Server
+	reverse_proxy 127.0.0.1:3010
+}

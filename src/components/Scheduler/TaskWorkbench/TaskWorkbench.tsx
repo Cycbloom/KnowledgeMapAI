@@ -430,8 +430,8 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
             <Skeleton variant="rectangular" width={70} height={20} className="rounded-full" />
           </div>
         </div>
-        <div className="flex-1 min-h-0 overflow-hidden flex">
-          <div className="w-[360px] flex-shrink-0 border-r border-slate-200 dark:border-slate-800 p-4 space-y-4">
+        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar lg:overflow-hidden flex flex-col lg:flex-row">
+          <div className="w-full lg:w-[360px] lg:flex-shrink-0 lg:border-r lg:overflow-y-auto border-b lg:border-b-0 border-slate-200 dark:border-slate-800 px-4 py-4 space-y-4">
             <Skeleton variant="text" width="30%" />
             <div className="grid grid-cols-2 gap-2">
               <SkeletonCard />
@@ -552,9 +552,9 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
       </div>
 
       {/* Main content - Left/Right split */}
-      <div className="flex-1 min-h-0 overflow-hidden flex">
+      <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar lg:overflow-hidden flex flex-col lg:flex-row">
         {/* Left panel - Task info */}
-        <div className="w-[360px] flex-shrink-0 border-r border-slate-200 dark:border-slate-800 overflow-y-auto p-4 space-y-4">
+        <div className="w-full lg:w-[360px] lg:flex-shrink-0 lg:border-r lg:overflow-y-auto border-b lg:border-b-0 border-slate-200 dark:border-slate-800 px-4 py-4 space-y-4 order-last lg:order-none">
           {/* Description */}
           {task.description && (
             <div>
@@ -687,10 +687,10 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
         </div>
 
         {/* Right panel - Work area */}
-        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 lg:overflow-hidden order-first lg:order-none">
           {/* Tab bar */}
           <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4">
-            <div className="flex items-center gap-1" role="tablist" aria-label={t('layout.scheduler')}>
+            <div className="flex items-center gap-1 overflow-x-auto" role="tablist" aria-label={t('layout.scheduler')}>
               {tabs.map((tab, index) => {
                 const isActive = activeTab === tab.id;
                 return (
@@ -704,7 +704,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
                     tabIndex={isActive ? 0 : -1}
                     onClick={() => setActiveTab(tab.id)}
                     onKeyDown={(e) => handleTabKeyDown(e, index)}
-                    className={`flex items-center gap-2 px-3 py-2.5 text-sm font-medium border-b-2 transition-all ${
+                    className={`flex items-center gap-2 whitespace-nowrap px-2.5 lg:px-3 py-2.5 text-sm font-medium border-b-2 transition-all ${
                       isActive
                         ? "border-primary-500 text-primary-600 dark:text-primary-400"
                         : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -719,14 +719,14 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
           </div>
 
           {/* Tab content */}
-          <div className="flex-1 min-h-0 overflow-hidden p-4">
+          <div className="flex-1 min-h-0 p-4 lg:overflow-hidden">
             {activeTab === "overview" && (
               <div
                 role="tabpanel"
                 id={`${panelIdPrefix}-overview`}
                 aria-labelledby={`${tabIdPrefix}-overview`}
                 tabIndex={0}
-                className="h-full overflow-y-auto"
+                className="lg:h-full lg:overflow-y-auto"
               >
                 <OverviewTab
                   taskId={task.id}
@@ -745,7 +745,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
                 id={`${panelIdPrefix}-notes`}
                 aria-labelledby={`${tabIdPrefix}-notes`}
                 tabIndex={0}
-                className="h-full"
+                className="lg:h-full"
               >
                 <NotesTab
                   notes={task.notes || ""}
@@ -761,7 +761,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
                 id={`${panelIdPrefix}-subtasks`}
                 aria-labelledby={`${tabIdPrefix}-subtasks`}
                 tabIndex={0}
-                className="h-full overflow-y-auto"
+                className="lg:h-full lg:overflow-y-auto"
               >
                 <SubtaskList
                   taskId={task.id}
@@ -785,7 +785,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
                 id={`${panelIdPrefix}-executions`}
                 aria-labelledby={`${tabIdPrefix}-executions`}
                 tabIndex={0}
-                className="h-full"
+                className="lg:h-full"
               >
                 <ExecutionRecords taskId={task.id} />
               </div>
@@ -797,7 +797,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
                 id={`${panelIdPrefix}-progress`}
                 aria-labelledby={`${tabIdPrefix}-progress`}
                 tabIndex={0}
-                className="h-full"
+                className="lg:h-full"
               >
                 <ProgressDetail
                   taskId={task.id}
@@ -812,7 +812,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
 
       {/* Footer - Action buttons */}
       <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-6 py-3">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="text-xs text-slate-400 dark:text-slate-500">
             {task.status === "in_progress" && (
               <span className="flex items-center gap-1.5">
@@ -821,7 +821,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
               </span>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-end gap-3">
             {showGenerateNodes && (
               <button
                 type="button"

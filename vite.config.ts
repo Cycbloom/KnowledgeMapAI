@@ -46,7 +46,13 @@ function getChunkStrategy(id: string): string | undefined {
     id.includes("dagre") ||
     id.includes("graphlib")
   ) {
-    return "vendor-d3";
+    // 实测（2026-09-06）：R16 Task 14 将 d3 单独拆成 vendor-d3 后，与 vendor-mermaid
+    // 形成跨 chunk 循环（vendor-mermaid -> vendor-d3 -> vendor-mermaid）。Web 端 Mermaid
+    // 组件动态 import('mermaid') 时，d3 chunk 顶层引用 vendor-mermaid 中尚未初始化的
+    // 绑定，触发 "Cannot access 'z5' before initialization"（TDZ）崩溃（vendor-mermaid-
+    // DHoxxY22.js）。修复：d3/dagre/graphlib 合并回 vendor-mermaid 切断循环（与移动端
+    // 单 vendor chunk 规避思路一致）。代价：使用 d3-force 等的页面会随带 mermaid chunk。
+    return "vendor-mermaid";
   }
   // R16 Task 14: 拆分 vendor-mermaid（2,321.89 kB）中的大型子依赖为独立 chunk。
   // 顺序敏感：这些规则必须在 vendor-mermaid 之前，否则会被 mermaid 通用规则先匹配。

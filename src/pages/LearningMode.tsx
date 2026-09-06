@@ -152,6 +152,7 @@ export const LearningMode = () => {
     lineHeight,
     readingMode,
     contentWidthMode,
+    paginationMode,
   } = useLearningSettingsStore(
     useShallow((s) => ({
       fontSize: s.fontSize,
@@ -159,6 +160,7 @@ export const LearningMode = () => {
       lineHeight: s.lineHeight,
       readingMode: s.readingMode,
       contentWidthMode: s.contentWidthMode,
+      paginationMode: s.paginationMode,
     })),
   );
   // 节点内容语言：复用共享「节点显示语言」，与图编辑器双向联动（一处切换，两处即时同步）
@@ -653,11 +655,13 @@ export const LearningMode = () => {
                 linkedTask={linkedTask} nodeStatus={_nodeStatus}
                 fontSize={fontSize} fontFamily={fontFamily} lineHeight={lineHeight}
                 readingMode={readingMode} contentWidthMode={contentWidthMode}
+                paginationMode={paginationMode}
                 getStudyModeIcon={getStudyModeIcon} getStrategyHint={getStrategyHint}
                 shouldShowArticle={shouldShowArticle} shouldShowQuiz={shouldShowQuiz}
                 onToggleHighlight={() => setHighlightEnabled(!highlightEnabled)}
                 onRegenerateMaterial={handleRegenerateMaterial}
                 onStartChallenge={handleStartChallenge}
+                onOpenSettings={() => setIsSettingsOpen(true)}
               />
             </div>
           </div>

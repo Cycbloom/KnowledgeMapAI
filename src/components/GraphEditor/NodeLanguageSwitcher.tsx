@@ -29,7 +29,7 @@ export const NodeLanguageSwitcher: React.FC = () => {
     >
       <Languages
         size={14}
-        className="text-slate-400 dark:text-slate-500 ml-1"
+        className="text-slate-400 dark:text-slate-500 ml-1 shrink-0"
       />
       {/* 跟随系统（默认） */}
       <button
@@ -38,7 +38,7 @@ export const NodeLanguageSwitcher: React.FC = () => {
         onClick={() => followSystem(i18n.language)}
         aria-pressed={!manuallySet}
         title={t("graphEditor.nodeLanguageSwitcher.followSystem")}
-        className={`px-1.5 py-0.5 rounded-md text-xs font-medium transition-colors ${
+        className={`px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
           !manuallySet
             ? "bg-primary-500 text-white"
             : "text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
@@ -53,7 +53,7 @@ export const NodeLanguageSwitcher: React.FC = () => {
           onClick={() => setDisplayLanguage(lang.code)}
           aria-pressed={manuallySet && displayLanguage === lang.code}
           title={lang.label}
-          className={`px-1.5 py-0.5 rounded-md text-xs font-medium transition-colors ${
+          className={`px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
             manuallySet && displayLanguage === lang.code
               ? "bg-primary-500 text-white"
               : "text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"

@@ -1,4 +1,4 @@
-import React, { useId } from "react";
+import React, { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +17,7 @@ import {
   Coffee,
   Languages,
   MonitorSmartphone,
+  ScrollText,
 } from "lucide-react";
 import { useLearningSettingsStore } from "../../store/useLearningSettingsStore";
 import {
@@ -42,11 +43,13 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
     lineHeight,
     readingMode,
     contentWidthMode,
+    paginationMode,
     setFontSize,
     setFontFamily,
     setLineHeight,
     setReadingMode,
     setContentWidthMode,
+    setPaginationMode,
     resetSettings,
   } = useLearningSettingsStore(
     useShallow((s) => ({
@@ -55,11 +58,13 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
       lineHeight: s.lineHeight,
       readingMode: s.readingMode,
       contentWidthMode: s.contentWidthMode,
+      paginationMode: s.paginationMode,
       setFontSize: s.setFontSize,
       setFontFamily: s.setFontFamily,
       setLineHeight: s.setLineHeight,
       setReadingMode: s.setReadingMode,
       setContentWidthMode: s.setContentWidthMode,
+      setPaginationMode: s.setPaginationMode,
       resetSettings: s.resetSettings,
     })),
   );
@@ -68,6 +73,8 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
   const { isMobile } = useIsMobile();
   const navigate = useNavigate();
   const titleId = useId();
+  // 设置分组 Tab：常用 / 排版 / 更多
+  const [settingsTab, setSettingsTab] = useState<"common" | "typography" | "more">("common");
   const modalRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
   useEscapeKey(onClose, isOpen);
 
@@ -115,8 +122,38 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
         </motion.button>
       </div>
 
-      <div className="flex-1 overflow-hidden">
-        <div className="p-6 space-y-6 overflow-y-auto h-full">
+      {/* 设置分组 Tab：常用 / 排版 / 更多 */}
+      <div className="flex items-center gap-1 px-4 pt-3 pb-3 border-b border-slate-200 dark:border-slate-500 bg-slate-50 dark:bg-slate-700/50 shrink-0">
+        {(
+          [
+            { id: "common" as const, label: t("learning.settings.tabCommon") },
+            { id: "typography" as const, label: t("learning.settings.tabTypography") },
+            { id: "more" as const, label: t("learning.settings.tabMore") },
+          ]
+        ).map((tab) => {
+          const isActive = settingsTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setSettingsTab(tab.id)}
+              aria-pressed={isActive}
+              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isActive
+                  ? "bg-white dark:bg-slate-800 text-primary-600 dark:text-primary-400 shadow-sm border border-slate-200 dark:border-slate-600"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+              }`}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="p-6 space-y-6">
+          {settingsTab === "common" && (
+          <>
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Type
@@ -151,7 +188,10 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
               </div>
             </div>
           </div>
-
+          </>
+          )}
+          {settingsTab === "typography" && (
+          <>
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Type
@@ -319,7 +359,10 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
               })}
             </div>
           </div>
-
+          </>
+          )}
+          {settingsTab === "common" && (
+          <>
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <BookOpen
@@ -478,6 +521,83 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
             </div>
           </div>
 
+          {isMobile && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <ScrollText
+                size={16}
+                className="text-slate-500 dark:text-slate-400"
+              />
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                {t("learning.settings.pagination")}
+              </span>
+            </div>
+            <div
+              role="radiogroup"
+              aria-label={t("learning.settings.pagination")}
+              className="grid grid-cols-2 gap-2"
+            >
+              {(
+                [
+                  {
+                    id: "scroll" as const,
+                    label: t("learning.settings.scroll"),
+                    icon: ScrollText,
+                    color:
+                      "from-slate-100 to-white dark:from-slate-700 dark:to-slate-800",
+                  },
+                  {
+                    id: "pagination" as const,
+                    label: t("learning.settings.page"),
+                    icon: BookOpen,
+                    color:
+                      "from-primary-50 to-violet-50 dark:from-primary-900/20 dark:to-violet-900/20",
+                  },
+                ]
+              ).map((mode) => {
+                const isSelected = paginationMode === mode.id;
+                return (
+                  <motion.button
+                    key={mode.id}
+                    onClick={() => setPaginationMode(mode.id)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    role="radio"
+                    aria-checked={isSelected}
+                    tabIndex={isSelected ? 0 : -1}
+                    className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                      isSelected
+                        ? `border-primary-500 bg-gradient-to-br ${mode.color}`
+                        : "border-slate-200 dark:border-slate-500 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800"
+                    }`}
+                  >
+                    <mode.icon
+                      size={20}
+                      className={
+                        isSelected
+                          ? "text-primary-600 dark:text-primary-400"
+                          : "text-slate-400 dark:text-slate-500"
+                      }
+                    />
+                    <span
+                      className={`text-xs font-medium ${
+                        isSelected
+                          ? "text-primary-700 dark:text-primary-300"
+                          : "text-slate-600 dark:text-slate-400"
+                      }`}
+                    >
+                      {mode.label}
+                    </span>
+                  </motion.button>
+                );
+              })}
+            </div>
+          </div>
+          )}
+          </>
+          )}
+          {settingsTab === "typography" && (
+          <>
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Languages
@@ -565,7 +685,10 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
               })}
             </div>
           </div>
-
+          </>
+          )}
+          {settingsTab === "more" && (
+          <>
           <div className="pt-2">
             <motion.button
               onClick={resetSettings}
@@ -593,6 +716,8 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
               </span>
             </motion.button>
           </div>
+          </>
+          )}
         </div>
       </div>
     </>
@@ -615,16 +740,16 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed inset-x-0 bottom-0 z-fullscreen-content max-h-[90dvh] flex flex-col"
+              className="fixed inset-x-0 bottom-0 z-fullscreen-content flex flex-col"
             >
               <div
                 ref={modalRef}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={titleId}
-                className="bg-white dark:bg-slate-800 rounded-t-2xl shadow-2xl border-t border-slate-200 dark:border-slate-500 overflow-hidden h-full flex flex-col"
+                className="bg-white dark:bg-slate-800 rounded-t-2xl shadow-2xl border-t border-slate-200 dark:border-slate-500 overflow-hidden flex flex-col max-h-[90dvh]"
               >
-                <div className="flex items-center justify-center py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                <div className="flex items-center justify-center py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 shrink-0">
                   <GripHorizontal
                     className="text-gray-400 dark:text-gray-500"
                     size={24}

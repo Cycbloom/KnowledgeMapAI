@@ -108,6 +108,9 @@
   },
   "settings": {
     "readingSettings": "阅读设置",
+    "tabCommon": "常用",
+    "tabTypography": "排版",
+    "tabMore": "更多",
     "promptSettings": "配置生成模板",
     "fontSize": "字体大小",
     "fontFamily": "字体",

@@ -124,7 +124,7 @@ export const LearningModeHeader = ({
 
         <button
           onClick={() => navigate("/")}
-          className={`min-w-[44px] min-h-[44px] flex items-center justify-center p-1.5 lg:p-2 rounded-lg transition-colors ${
+          className={`min-w-[44px] min-h-[44px] hidden sm:flex items-center justify-center p-1.5 lg:p-2 rounded-lg transition-colors ${
             isDark
               ? "hover:bg-slate-800 text-slate-400"
               : "hover:bg-gray-100 text-gray-600"

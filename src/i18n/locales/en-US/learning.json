@@ -47,6 +47,9 @@
   },
   "settings": {
     "readingSettings": "Reading Settings",
+    "tabCommon": "Common",
+    "tabTypography": "Typography",
+    "tabMore": "More",
     "promptSettings": "Configure Generation Template",
     "fontSize": "Font Size",
     "fontFamily": "Font Family",

@@ -1,9 +1,10 @@
-import React from "react";
-import { ArrowLeft, Sparkles, RefreshCw, Info, Route, GraduationCap } from "lucide-react";
+import React, { useState } from "react";
+import { ArrowLeft, Sparkles, RefreshCw, Info, Route, GraduationCap, Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { HighlightedReader } from "./HighlightedReader";
 import { NodeLanguageSwitcher } from "../GraphEditor/NodeLanguageSwitcher";
+import { PaginatedReader } from "./PaginatedReader";
 import { Skeleton } from "../common";
 import type { Keyword } from "../../types";
 import type { LinkedTask } from "../../hooks/scheduler/useLinkedTask";
@@ -13,6 +14,7 @@ import { STUDY_MODE_PRESETS } from "@shared/constants/studyModePresets";
 import type {
   UserSettingsReadingMode,
   UserSettingsContentWidthMode,
+  UserSettingsPaginationMode,
   UserSettingsFontFamily,
   UserSettingsLineHeight,
 } from "@shared/types";
@@ -44,9 +46,11 @@ interface LearningArticleReaderProps {
   ) => string | null;
   shouldShowArticle: () => boolean;
   shouldShowQuiz: () => boolean;
+  paginationMode: UserSettingsPaginationMode;
   onToggleHighlight: () => void;
   onRegenerateMaterial: () => void;
   onStartChallenge: () => void;
+  onOpenSettings: () => void;
 }
 
 export const LearningArticleReader = ({
@@ -73,12 +77,68 @@ export const LearningArticleReader = ({
   getStrategyHint,
   shouldShowArticle,
   shouldShowQuiz,
+  paginationMode,
   onToggleHighlight,
   onRegenerateMaterial,
   onStartChallenge,
+  onOpenSettings,
 }: LearningArticleReaderProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  // 底部阅读工具条：默认展开，可点击收起为一个小悬浮胶囊，再点唤起
+  const [toolbarCollapsed, setToolbarCollapsed] = useState(false);
+
+  // 分页/翻页阅读模式：仅移动端生效；加载中暂回退到滚动布局的骨架屏
+  const isPaginated = isMobile && paginationMode === "pagination" && !isGenerating;
+  // 分页态下底部工具条：不预留高度，工具栏是 fixed 覆盖层，内容用满整个阅读区
+  const bottomReserve = 0;
+
+  // 底部阅读工具条：滚动分支与分页分支共用（固定定位，点正文切换显隐）
+  const toolbarNav =
+    isMobile && !toolbarCollapsed ? (
+      <nav
+        aria-label={t("learning.settings.readingSettings")}
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <div className="max-w-3xl mx-auto flex items-stretch divide-x divide-gray-200 dark:divide-slate-700">
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 text-[11px] font-medium text-slate-600 dark:text-slate-300 active:bg-gray-100 dark:active:bg-slate-800 transition-colors"
+          >
+            <Settings size={18} className="text-primary-600 dark:text-primary-400" />
+            {t("learning.header.settings")}
+          </button>
+          <button
+            type="button"
+            onClick={onToggleHighlight}
+            aria-pressed={highlightEnabled}
+            className={`flex-1 flex flex-col items-center justify-center gap-1 py-2.5 text-[11px] font-medium transition-colors ${
+              highlightEnabled
+                ? "text-yellow-600 dark:text-yellow-400"
+                : "text-slate-600 dark:text-slate-300 active:bg-gray-100 dark:active:bg-slate-800"
+            }`}
+          >
+            <Sparkles size={18} className={highlightEnabled ? "text-yellow-500" : ""} />
+            {t("learning.keywordHighlight")}
+          </button>
+          <button
+            type="button"
+            onClick={onRegenerateMaterial}
+            disabled={isGenerating || !isOnline}
+            className={`flex-1 flex flex-col items-center justify-center gap-1 py-2.5 text-[11px] font-medium transition-colors ${
+              isGenerating || !isOnline
+                ? "text-gray-300 dark:text-slate-600"
+                : "text-slate-600 dark:text-slate-300 active:bg-gray-100 dark:active:bg-slate-800"
+            }`}
+          >
+            <RefreshCw size={18} className={isGenerating ? "animate-spin" : ""} />
+            {t("learning.material.regenerate")}
+          </button>
+        </div>
+      </nav>
+    ) : null;
 
   // Reading card container styles: background applies to the FULL card
   // (rounded, padded), while prose inside is constrained only for text width.
@@ -156,9 +216,58 @@ export const LearningArticleReader = ({
     );
   }
 
+  if (isPaginated) {
+    return (
+      // 与滚动分支一致的"整区点击切换工具条"有意交互（移动端触屏）
+      // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+      <div
+        onClick={() => {
+          if (isMobile) setToolbarCollapsed((v) => !v);
+        }}
+        className={`flex flex-col flex-1 overflow-hidden border-r dark:border-slate-800 relative bg-white dark:bg-slate-900 px-4`}
+      >
+        {/* 分页态紧凑头部：返回 + 标题（省略辅助横幅，尽量给足页高） */}
+        <div className="flex items-center gap-3 min-w-0 shrink-0 pt-4 pb-3 border-b border-gray-200 dark:border-slate-500">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/learning?graph_id=${graphId}`);
+            }}
+            className={`flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors ${
+              isDark
+                ? "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+                : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+            }`}
+            title={t("learning.overview.back")}
+          >
+            <ArrowLeft size={16} />
+            <span className="hidden sm:inline">{t("learning.overview.title")}</span>
+          </button>
+          <div className="min-w-0 flex-1">
+            <h2 className={`text-lg font-bold leading-snug break-words ${isDark ? "text-white" : "text-gray-900"}`}>
+              {nodeTitle}
+            </h2>
+          </div>
+        </div>
+        {/* 分页阅读区：单份内容 translateY 切页，横滑/点两侧翻页 */}
+        <PaginatedReader className="flex-1 min-h-0" bottomOffset={bottomReserve}>
+          <div className={readingCardClasses}>{renderArticleBody()}</div>
+        </PaginatedReader>
+        {toolbarNav}
+      </div>
+    );
+  }
+
   return (
+    <>
+    {/* 移动端阅读器：点击正文任意处唤出/隐藏底部工具条（小说阅读器交互）。
+        这是有意的非语义"整区点击切换"交互，移动端靠触屏，桌面端无此行为。 */}
+    {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
     <div
-      className={`flex-1 overflow-y-auto custom-scrollbar ${isMobile ? "p-4" : "p-8 lg:p-12"} border-r dark:border-slate-800 relative bg-white dark:bg-slate-900`}
+      onClick={() => {
+        if (isMobile) setToolbarCollapsed((v) => !v);
+      }}
+      className={`flex-1 overflow-y-auto custom-scrollbar ${isMobile ? (toolbarCollapsed ? "p-4 pb-8" : "p-4 pb-24") : "p-8 lg:p-12"} border-r dark:border-slate-800 relative bg-white dark:bg-slate-900`}
     >
       {isGenerating ? (
         <div className="w-full">
@@ -181,7 +290,7 @@ export const LearningArticleReader = ({
         </div>
       ) : (
         <div className="w-full">
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 dark:border-slate-500 w-full min-w-0">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 pb-4 border-b border-gray-200 dark:border-slate-500 w-full min-w-0">
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <button
                 onClick={() => navigate(`/learning?graph_id=${graphId}`)}
@@ -195,8 +304,8 @@ export const LearningArticleReader = ({
                 <ArrowLeft size={16} />
                 <span className="hidden sm:inline">{t("learning.overview.title")}</span>
               </button>
-              <div>
-                <h2 className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+              <div className="min-w-0">
+                <h2 className={`text-xl sm:text-2xl font-bold leading-snug break-words ${isDark ? "text-white" : "text-gray-900"}`}>
                   {nodeTitle}
                 </h2>
                 {keywords.length > 0 && (
@@ -215,11 +324,11 @@ export const LearningArticleReader = ({
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="hidden lg:flex items-center gap-2 flex-shrink-0 flex-wrap min-w-0">
               <NodeLanguageSwitcher />
               <button
                 onClick={onToggleHighlight}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors shrink-0 whitespace-nowrap ${
+                className={`flex items-center gap-1.5 px-3 py-2 min-h-[36px] rounded-lg text-sm font-medium transition-colors shrink-0 whitespace-nowrap ${
                   highlightEnabled
                     ? isDark
                       ? "bg-yellow-900/30 text-yellow-400 hover:bg-yellow-900/50 border border-yellow-500/30"
@@ -236,7 +345,7 @@ export const LearningArticleReader = ({
               <button
                 onClick={onRegenerateMaterial}
                 disabled={isGenerating || !isOnline}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors shrink-0 whitespace-nowrap ${
+                className={`flex items-center gap-1.5 px-3 py-2 min-h-[36px] rounded-lg text-sm font-medium transition-colors shrink-0 whitespace-nowrap ${
                   isGenerating || !isOnline
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-600"
                     : isDark
@@ -251,13 +360,23 @@ export const LearningArticleReader = ({
             </div>
           </div>
           {linkedTask && (
-            <div className="mb-4 px-3 py-2 rounded-lg flex items-center gap-2 text-sm bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
-              <Route size={16} />
-              <span>{t("learning.articleReader.linkedGraph", { name: linkedTask.graphName })}</span>
-              <span className="text-xs opacity-75">
-                {t("learning.articleReader.nodes", { completed: linkedTask.completedNodes, total: linkedTask.totalNodes })}
-              </span>
-              <span className="ml-auto">{linkedTask.progress}%</span>
+            <div className="mb-4 px-3 py-3 rounded-lg text-sm bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800/40">
+              <div className="flex items-center gap-2 text-indigo-700 dark:text-indigo-300 min-w-0">
+                <Route size={16} className="shrink-0" />
+                <span className="min-w-0 flex-1 truncate">
+                  {t("learning.articleReader.linkedGraph", { name: linkedTask.graphName })}
+                </span>
+                <span className="text-xs opacity-75 whitespace-nowrap">
+                  {t("learning.articleReader.nodes", { completed: linkedTask.completedNodes, total: linkedTask.totalNodes })}
+                </span>
+                <span className="font-semibold whitespace-nowrap">{linkedTask.progress}%</span>
+              </div>
+              <div className="mt-2 h-1.5 w-full rounded-full bg-indigo-200/70 dark:bg-indigo-800/50 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-indigo-500 transition-all duration-500"
+                  style={{ width: `${Math.min(100, Math.max(0, linkedTask.progress))}%` }}
+                />
+              </div>
             </div>
           )}
           {studyMode === "mixed" &&
@@ -268,14 +387,14 @@ export const LearningArticleReader = ({
               const hint = getStrategyHint(studyMode, currentNodeStatus);
               return hint ? (
                 <div
-                  className={`mb-4 px-3 py-2 rounded-lg flex items-center gap-2 text-sm ${
+                  className={`mb-4 px-3 py-2.5 rounded-lg flex items-start gap-2 text-sm ${
                     isDark
                       ? "bg-amber-900/20 text-amber-300 border border-amber-500/20"
                       : "bg-amber-50 text-amber-700 border border-amber-200"
                   }`}
                 >
-                  <Info size={16} className="flex-shrink-0" />
-                  <span>{hint}</span>
+                  <Info size={16} className="flex-shrink-0 mt-0.5" />
+                  <span className="leading-snug">{hint}</span>
                 </div>
               ) : null;
             })()}
@@ -283,5 +402,7 @@ export const LearningArticleReader = ({
         </div>
       )}
     </div>
+      {toolbarNav}
+    </>
   );
 };

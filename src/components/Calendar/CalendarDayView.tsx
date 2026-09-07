@@ -90,6 +90,9 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
   }, [currentDate, events, executions]);
 
   const getEventColor = (event: CalendarEvent) => {
+    if (event.overdue) {
+      return "bg-red-500 border-red-600";
+    }
     switch (event.type) {
       case "task":
         return "bg-primary-500 border-primary-600";

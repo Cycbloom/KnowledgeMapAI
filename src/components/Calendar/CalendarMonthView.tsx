@@ -232,6 +232,9 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   }, [stageWindowBands, currentDate]);
 
   const getEventColor = (event: CalendarEvent) => {
+    if (event.overdue) {
+      return "bg-red-500";
+    }
     switch (event.type) {
       case "task":
         return "bg-primary-500";

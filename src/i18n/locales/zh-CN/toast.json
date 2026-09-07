@@ -2,6 +2,19 @@
   "embeddingBackfillTitle": "自动补全提醒",
   "embeddingBackfillFailed": "自动补全知识向量失败：{{failed}} 项失败，{{processed}} 项成功",
   "embeddingBackfillDismiss": "关闭",
+  "reviewReminder": {
+    "title": "复习提醒",
+    "goReview": "去复习",
+    "dismiss": "关闭",
+    "fallback": "你有 {{count}} 张卡片待复习"
+  },
+  "deadlineReminder": {
+    "title": "任务到期提醒",
+    "overdueTitle": "任务逾期",
+    "viewTask": "查看任务",
+    "dismiss": "关闭",
+    "fallback": "任务 {{title}} 需要关注"
+  },
   "graph": {
     "snapshotCreated": "快照创建成功",
     "snapshotCreateFailed": "快照创建失败",

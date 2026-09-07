@@ -162,6 +162,13 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
   }, [currentDate, events, executions]);
 
   const getEventColor = (event: CalendarEvent) => {
+    if (event.overdue) {
+      return {
+        bg: "bg-red-500",
+        border: "border-red-600",
+        light: "bg-red-100 dark:bg-red-500/20",
+      };
+    }
     switch (event.type) {
       case "task":
         return {

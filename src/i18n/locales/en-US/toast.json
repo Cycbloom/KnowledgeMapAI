@@ -2,6 +2,19 @@
   "embeddingBackfillTitle": "Embedding Backfill",
   "embeddingBackfillFailed": "Failed to backfill embeddings: {{failed}} failed, {{processed}} succeeded",
   "embeddingBackfillDismiss": "Dismiss",
+  "reviewReminder": {
+    "title": "Review Reminder",
+    "goReview": "Review Now",
+    "dismiss": "Close",
+    "fallback": "You have {{count}} cards due for review"
+  },
+  "deadlineReminder": {
+    "title": "Task Deadline Reminder",
+    "overdueTitle": "Task Overdue",
+    "viewTask": "View Task",
+    "dismiss": "Close",
+    "fallback": "Task {{title}} needs attention"
+  },
   "graph": {
     "snapshotCreated": "Snapshot created",
     "snapshotCreateFailed": "Failed to create snapshot",

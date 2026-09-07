@@ -48,6 +48,8 @@ import { useGoalDialogVariantOpenStore } from "../../store/useGoalDialogVariantO
 import { GraphExpansionNotification } from "../GraphMap/GraphExpansionNotification";
 import { useGraphExpansionNotificationStore } from "../../store/useGraphExpansionNotificationStore";
 import { EmbeddingBackfillToast } from "../Notifications/EmbeddingBackfillToast";
+import { ReviewReminderToast } from "../Notifications/ReviewReminderToast";
+import { DeadlineReminderToast } from "../Notifications/DeadlineReminderToast";
 import { AnimatedOutlet } from "./AnimatedOutlet";
 import { useIsMobile } from "../../hooks/common/useIsMobile";
 import { useSwipeBack } from "../../hooks/gesture/useSwipeBack";
@@ -834,6 +836,8 @@ export const Layout = () => {
           <OfflineIndicator />
           <AchievementNotification />
           <EmbeddingBackfillToast />
+          <ReviewReminderToast />
+          <DeadlineReminderToast />
           <LevelTestNotification
             notice={levelTestNotice}
             onClose={handleLevelTestClose}

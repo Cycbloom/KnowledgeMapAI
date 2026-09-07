@@ -30,6 +30,14 @@ function mapPriorityColor(priority: number): string {
  * 包含字段直接映射和计算派生逻辑。
  */
 export function userTaskToCalendarEvent(task: UserTask): CalendarEvent {
+  const deadline = task.deadline;
+  const overdue =
+    deadline !== undefined &&
+    deadline !== null &&
+    new Date(deadline).getTime() < Date.now() &&
+    task.status !== "completed" &&
+    task.status !== "cancelled";
+
   return {
     id: task.id,
     title: task.title,
@@ -38,6 +46,7 @@ export function userTaskToCalendarEvent(task: UserTask): CalendarEvent {
     end: task.scheduled_end,
     type: mapTaskType(task.tags),
     color: mapPriorityColor(task.priority),
+    overdue,
     allDay: !task.scheduled_start,
     estimated_duration: task.estimated_duration,
     subtasks: task.subtasks || [],

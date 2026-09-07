@@ -41,6 +41,8 @@ export interface CalendarEvent {
   type: "task" | "study" | "review" | "other" | "path_schedule" | "review_projection" | "stage_window";
   /** 从 UserTask.priority 计算：4→red，3→orange，其他→blue */
   color?: string;
+  /** 从 UserTask.deadline 计算：已过截止时间且未完成的任务为 true（日历红色逾期高亮） */
+  overdue?: boolean;
   /** 路径排课事件特有字段：知识点 ID（用于跳转学习） */
   knowledgePointId?: string | null;
   /** 周窗口事件特有字段：图谱 ID（用于跳转图谱） */

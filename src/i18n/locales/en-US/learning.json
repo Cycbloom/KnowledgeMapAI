@@ -945,7 +945,21 @@
 },
   "modeRightPanel": {
     "conceptAggregation": "Concept Aggregation",
-    "smartMergeConcepts": "Smart Merge Similar Concepts"
+    "smartMergeConcepts": "Smart Merge Similar Concepts",
+    "knowledgeGaps": "Knowledge Gaps",
+    "knowledgeGapsHint": "AI gap analysis of your graph"
+  },
+  "knowledgeGaps": {
+    "title": "Knowledge Gap Analysis",
+    "subtitle": "Find isolated nodes and nodes missing content, with AI suggestions to fill the gaps",
+    "analyze": "Analyze Gaps",
+    "analyzing": "Analyzing...",
+    "noGaps": "No obvious gaps found — your graph looks healthy",
+    "suggestions": "AI-suggested areas to add",
+    "isolated": "Isolated",
+    "missingContent": "Missing content",
+    "untitled": "Untitled knowledge point",
+    "loadFailed": "Gap analysis failed, please try again"
   },
   "pathPanel": {
     "titleFormat": "Learning Path - {{title}}",

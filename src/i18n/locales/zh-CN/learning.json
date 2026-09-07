@@ -944,7 +944,21 @@
 },
   "modeRightPanel": {
     "conceptAggregation": "概念聚合",
-    "smartMergeConcepts": "智能合并相似概念"
+    "smartMergeConcepts": "智能合并相似概念",
+    "knowledgeGaps": "知识盲区",
+    "knowledgeGapsHint": "AI 分析图谱盲区"
+  },
+  "knowledgeGaps": {
+    "title": "知识盲区分析",
+    "subtitle": "发现孤立节点与缺失内容的盲区，并给出 AI 补齐建议",
+    "analyze": "分析盲区",
+    "analyzing": "分析中...",
+    "noGaps": "未发现明显盲区，图谱结构良好",
+    "suggestions": "AI 建议补充的领域",
+    "isolated": "孤立节点",
+    "missingContent": "缺少内容",
+    "untitled": "未命名知识点",
+    "loadFailed": "盲区分析失败，请重试"
   },
   "pathPanel": {
     "titleFormat": "学习路径 - {{title}}",

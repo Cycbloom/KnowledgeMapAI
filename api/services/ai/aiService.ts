@@ -160,7 +160,12 @@ export class AIService {
     options?: {
       provider?: import("@shared/types").AIProviderType;
       model?: string;
-      userProgress?: { masteredCount?: number; currentLevel?: string };
+      userId?: string;
+      userProgress?: {
+        masteredCount?: number;
+        currentLevel?: string;
+        dueCount?: number;
+      };
     },
   ) {
     return knowledgeExpansionService.suggestNextTopic(nodeTitle, nodeContent, _existingNodes, options);

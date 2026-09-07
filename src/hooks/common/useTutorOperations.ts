@@ -268,15 +268,11 @@ export const useTutorOperations = ({
     try {
       const existingNodes = nodes.map((n) => n.title);
 
+      // 真实学习进度（掌握度/到期复习/弱项）由后端按 userId 聚合注入 prompt
       const result = await api.ai.suggestNextTopic({
         node_title: selectedNode.title,
         node_content: selectedNode.content,
         existing_nodes: existingNodes,
-        user_progress: {
-          mastered_count: nodes.filter((n) => n.level === "root").length,
-          due_count: 0,
-          current_level: "intermediate",
-        },
       });
 
       setSuggestedNextTopics(result.suggestions || []);

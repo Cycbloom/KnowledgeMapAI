@@ -15,6 +15,10 @@ import {
   generateRequestKey,
 } from "./aiUtils";
 import {
+  resolveLocalizedText,
+  type LocalizedText,
+} from "@shared/utils/localization";
+import {
   withTimeoutAndRetry,
   LONG_TIMEOUT,
 } from "../../../shared/utils/retry";
@@ -212,7 +216,12 @@ export class KnowledgeExpansionService {
     options: {
       provider?: AIProviderType;
       model?: string;
-      userProgress?: { masteredCount?: number; currentLevel?: string };
+      userId?: string;
+      userProgress?: {
+        masteredCount?: number;
+        currentLevel?: string;
+        dueCount?: number;
+      };
     } = {},
   ) {
     const provider = options.provider
@@ -244,9 +253,20 @@ export class KnowledgeExpansionService {
             },
           },
           async () => {
-            const progressContext = options.userProgress
-              ? `\nUser Progress:\n- Mastered nodes: ${options.userProgress.masteredCount || 0}\n- Current level: ${options.userProgress.currentLevel || "beginner"}`
-              : "";
+            const progress = await this.resolveUserProgress(
+              options.userId,
+              options.userProgress,
+            );
+            const progressLines = [
+              `- Mastered nodes: ${progress.masteredCount} / ${progress.totalNodes}`,
+              `- Average mastery: ${progress.averageMastery}`,
+              `- Current level: ${progress.currentLevel}`,
+              `- Due reviews: ${progress.dueCount}`,
+              ...(progress.weakTopics.length > 0
+                ? [`- Weak topics (lowest mastery): ${progress.weakTopics.join(", ")}`]
+                : []),
+            ];
+            const progressContext = `\nUser Progress:\n${progressLines.join("\n")}`;
 
             // Fetch the prompt from the database (DB is the single source of truth)
             const systemPrompt = await promptService.getRenderedPrompt(
@@ -297,6 +317,107 @@ export class KnowledgeExpansionService {
       });
     }
   }
+
+  /**
+   * 解析用户真实学习进度（掌握度驱动推荐的权威数据源）。
+   *
+   * - 有 userId：从 knowledge_points.mastery_level（FSRS 派生）与
+   *   study_cards.next_review 实时聚合：掌握节点数/平均掌握度/低掌握度弱项/到期复习；
+   * - 无 userId 或查询失败：回退到调用方传入的 userProgress（或全零默认）。
+   */
+  private async resolveUserProgress(
+    userId?: string,
+    userProgress?: {
+      masteredCount?: number;
+      currentLevel?: string;
+      dueCount?: number;
+    },
+  ): Promise<ResolvedUserProgress> {
+    const fallback: ResolvedUserProgress = {
+      masteredCount: userProgress?.masteredCount ?? 0,
+      totalNodes: 0,
+      averageMastery: 0,
+      currentLevel: userProgress?.currentLevel ?? "beginner",
+      dueCount: userProgress?.dueCount ?? 0,
+      weakTopics: [],
+    };
+    if (!userId) return fallback;
+
+    try {
+      const admin = getSupabaseAdmin();
+      const [kpRes, dueRes] = await Promise.all([
+        admin
+          .from("knowledge_points")
+          .select("title, mastery_level")
+          .eq("owner_id", userId),
+        admin
+          .from("study_cards")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", userId)
+          .lte("next_review", new Date().toISOString()),
+      ]);
+
+      if (kpRes.error) {
+        logger.warn(
+          "[suggestNextTopic] failed to fetch knowledge points:",
+          kpRes.error,
+        );
+        return fallback;
+      }
+
+      const kps = (kpRes.data ?? []) as {
+        title?: LocalizedText;
+        mastery_level?: number;
+      }[];
+      const totalNodes = kps.length;
+      const masteredCount = kps.filter(
+        (k) => (k.mastery_level ?? 0) >= 0.65,
+      ).length;
+      const averageMastery = totalNodes
+        ? Math.round(
+            (kps.reduce((sum, k) => sum + (k.mastery_level ?? 0), 0) /
+              totalNodes) *
+              100,
+          ) / 100
+        : 0;
+      const weakTopics = kps
+        .filter((k) => (k.mastery_level ?? 0) < 0.45)
+        .sort((a, b) => (a.mastery_level ?? 0) - (b.mastery_level ?? 0))
+        .slice(0, 8)
+        .map((k) => resolveLocalizedText(k.title, "zh-CN"))
+        .filter((title) => title.trim().length > 0);
+
+      return {
+        masteredCount,
+        totalNodes,
+        averageMastery,
+        currentLevel: this.mapMasteryToLevel(averageMastery),
+        dueCount: dueRes.count ?? 0,
+        weakTopics,
+      };
+    } catch (error) {
+      logger.warn("[suggestNextTopic] failed to resolve user progress:", error);
+      return fallback;
+    }
+  }
+
+  /** 平均掌握度 → 学习阶段（与 masteryThresholds 档位对齐） */
+  private mapMasteryToLevel(avg: number): string {
+    if (avg >= 0.82) return "advanced";
+    if (avg >= 0.65) return "proficient";
+    if (avg >= 0.45) return "intermediate";
+    if (avg >= 0.25) return "familiar";
+    return "beginner";
+  }
+}
+
+interface ResolvedUserProgress {
+  masteredCount: number;
+  totalNodes: number;
+  averageMastery: number;
+  currentLevel: string;
+  dueCount: number;
+  weakTopics: string[];
 }
 
 export const knowledgeExpansionService = new KnowledgeExpansionService();

@@ -22,13 +22,17 @@ interface RagSearchResponse {
   results: Source[];
 }
 
-interface KnowledgeGap {
+export interface KnowledgeGap {
   topic: string;
   reason: string;
   priority: 'high' | 'medium' | 'low';
+  /** 盲区类型：孤立节点 / 缺少内容描述 */
+  kind?: 'isolated' | 'missing_content';
+  /** 对应知识点 ID（前端可跳转定位） */
+  knowledgePointId?: string;
 }
 
-interface AnalyzeGapsResponse {
+export interface AnalyzeGapsResponse {
   gaps: KnowledgeGap[];
   suggestions: string[];
 }

@@ -626,6 +626,8 @@ export class RAGService {
       topic: string;
       reason: string;
       priority: "high" | "medium" | "low";
+      /** 对应知识点 ID（前端可跳转定位） */
+      knowledgePointId: string;
     }>;
     suggestions: string[];
   }> {
@@ -685,6 +687,8 @@ export class RAGService {
       topic: string;
       reason: string;
       priority: "high" | "medium" | "low";
+      kind: "isolated" | "missing_content";
+      knowledgePointId: string;
     }> = [];
 
     isolatedNodes.forEach((n) => {
@@ -692,6 +696,8 @@ export class RAGService {
         topic: n.title,
         reason: "该节点没有与其他节点建立连接",
         priority: "medium",
+        kind: "isolated",
+        knowledgePointId: n.id,
       });
     });
 
@@ -700,6 +706,8 @@ export class RAGService {
         topic: n.title,
         reason: "该节点缺少详细内容描述",
         priority: "high",
+        kind: "missing_content",
+        knowledgePointId: n.id,
       });
     });
 

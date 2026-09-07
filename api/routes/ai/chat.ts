@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../../middleware/auth";
+import { requireAuth, type AuthRequest, type AuthedRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import {
   chatSchema,
@@ -76,10 +76,19 @@ router.post("/extract-concepts", requireAuth, validate(extractConceptsSchema), a
   res.json(result);
 });
 
-router.post("/suggest-next-topic", requireAuth, validate(suggestNextTopicSchema), async (req: AuthRequest, res: Response) => {
+router.post("/suggest-next-topic", requireAuth, validate(suggestNextTopicSchema), async (req: AuthedRequest, res: Response) => {
   const { node_title, node_content, existing_nodes, user_progress, provider: providerType, model } = req.body;
   const result = await aiService.suggestNextTopic(node_title, node_content, existing_nodes, {
-    provider: providerType, model, userProgress: user_progress,
+    provider: providerType, model,
+    // 真实掌握度由后端按 userId 聚合；user_progress 仅作可选覆盖
+    userId: req.user.id,
+    userProgress: user_progress
+      ? {
+          masteredCount: user_progress.mastered_count,
+          currentLevel: user_progress.current_level,
+          dueCount: user_progress.due_count,
+        }
+      : undefined,
   });
   res.json(result);
 });

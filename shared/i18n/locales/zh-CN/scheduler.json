@@ -1784,7 +1784,18 @@
     "messages": {
       "pendingReviewCount": "你有 {{count}} 个待复习的知识点",
       "knowledgePointNeedsReview": "知识点需要复习：掌握度已降至 {{mastery}}%",
-      "quizTitle": "测验: {{title}}"
+      "quizTitle": "测验: {{title}}",
+      "overdueTitle": "任务逾期",
+      "deadlineTitle": "任务到期提醒",
+      "overdueTask": "任务已逾期：{{title}}",
+      "deadlineReminder": "任务即将到期：{{title}}（剩 {{minutes}} 分钟）",
+      "taskCompletedTitle": "任务完成",
+      "taskCompleted": "任务「{{title}}」已完成",
+      "taskCompletedGeneric": "任务已完成",
+      "timeSliceEndTitle": "专注时段结束",
+      "timeSliceEnd": "本轮专注完成（{{minutes}} 分钟）",
+      "dailySummaryTitle": "每日学习小结",
+      "dailySummary": "今日完成 {{tasksCompleted}} 个任务，专注 {{focusMinutes}} 分钟，复习 {{cardsReviewed}} 张卡；还有 {{pendingReviews}} 张待复习、{{overdueTasks}} 个逾期任务"
     }
   },
   "todayBrief": {

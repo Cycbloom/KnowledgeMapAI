@@ -1784,7 +1784,18 @@
     "messages": {
       "pendingReviewCount": "You have {{count}} knowledge points pending review",
       "knowledgePointNeedsReview": "Knowledge point needs review: mastery has dropped to {{mastery}}%",
-      "quizTitle": "Quiz: {{title}}"
+      "quizTitle": "Quiz: {{title}}",
+      "overdueTitle": "Task Overdue",
+      "deadlineTitle": "Task Deadline Reminder",
+      "overdueTask": "Task overdue: {{title}}",
+      "deadlineReminder": "Task deadline approaching: {{title}} ({{minutes}} min left)",
+      "taskCompletedTitle": "Task Completed",
+      "taskCompleted": "Task \"{{title}}\" completed",
+      "taskCompletedGeneric": "Task completed",
+      "timeSliceEndTitle": "Focus Session Ended",
+      "timeSliceEnd": "Focus session complete ({{minutes}} min)",
+      "dailySummaryTitle": "Daily Learning Summary",
+      "dailySummary": "Today: {{tasksCompleted}} tasks completed, {{focusMinutes}} min focused, {{cardsReviewed}} cards reviewed; {{pendingReviews}} due reviews, {{overdueTasks}} overdue tasks"
     }
   },
   "todayBrief": {

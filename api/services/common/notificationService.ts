@@ -192,6 +192,49 @@ class NotificationService {
 
     return data;
   }
+
+  /**
+   * 判断当前是否处于用户设置的免打扰（DND）时段。
+   *
+   * 支持跨午夜区间（如 22:00 → 08:00）。DND 期间应抑制主动推送
+   * （SSE / toast / 浏览器通知），但落库仍保留（用户醒来可查看）。
+   * 读取失败时返回 false（保守：不误吞通知）。
+   */
+  async isInDoNotDisturb(
+    supabase: SupabaseClient,
+    userId: string,
+    now: Date = new Date(),
+  ): Promise<boolean> {
+    try {
+      const { data: settings } = await supabase
+        .from('notification_settings')
+        .select('do_not_disturb_enabled, do_not_disturb_start, do_not_disturb_end')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (!settings?.do_not_disturb_enabled) return false;
+
+      const start = (settings.do_not_disturb_start as string) || '22:00';
+      const end = (settings.do_not_disturb_end as string) || '08:00';
+
+      const toMinutes = (time: string): number => {
+        const [h, m] = time.split(':').map(Number);
+        return (h ?? 0) * 60 + (m ?? 0);
+      };
+
+      const current = now.getHours() * 60 + now.getMinutes();
+      const startMin = toMinutes(start);
+      const endMin = toMinutes(end);
+
+      if (startMin === endMin) return false;
+      // 跨午夜区间（start > end）：now >= start 或 now < end
+      if (startMin > endMin) return current >= startMin || current < endMin;
+      return current >= startMin && current < endMin;
+    } catch (error) {
+      logger.error('isInDoNotDisturb error:', error);
+      return false;
+    }
+  }
 }
 
 export const notificationService = new NotificationService();

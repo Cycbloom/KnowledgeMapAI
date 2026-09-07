@@ -1,6 +1,7 @@
 import type { Plugin, KernelAPI } from "../kernel/types";
 import { cacheInvalidationSubscriber } from "../core/subscribers/cacheInvalidationSubscriber";
 import { sseNotificationSubscriber } from "../core/subscribers/sseNotificationSubscriber";
+import { notificationPersistenceSubscriber } from "../core/subscribers/notificationPersistenceSubscriber";
 import authRoutes from "../../routes/system/auth";
 import healthRoutes from "../../routes/system/health";
 import dataRoutes from "../../routes/data";
@@ -39,10 +40,12 @@ export const corePlugin: Plugin = {
   async onActivate(): Promise<void> {
     cacheInvalidationSubscriber.initialize();
     sseNotificationSubscriber.initialize();
+    notificationPersistenceSubscriber.initialize();
   },
 
   async onDeactivate(): Promise<void> {
     cacheInvalidationSubscriber.destroy();
     sseNotificationSubscriber.destroy();
+    notificationPersistenceSubscriber.destroy();
   },
 };

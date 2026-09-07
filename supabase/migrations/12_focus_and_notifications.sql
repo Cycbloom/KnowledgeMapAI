@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS notification_settings (
   time_slice_end_enabled BOOLEAN DEFAULT FALSE,
   deadline_enabled BOOLEAN DEFAULT TRUE,
   break_enabled BOOLEAN DEFAULT TRUE,
-  daily_summary_enabled BOOLEAN DEFAULT FALSE,
+  daily_summary_enabled BOOLEAN DEFAULT TRUE,
   deadline_reminder_minutes INTEGER[] DEFAULT ARRAY[30, 60],
   do_not_disturb_enabled BOOLEAN DEFAULT FALSE,
   do_not_disturb_start TIME DEFAULT '22:00',

@@ -16,6 +16,8 @@ import {
 import { useSchedulerOrchestrator } from "../hooks/scheduler/useSchedulerOrchestrator";
 import { useSchedulerQueues } from "../hooks/scheduler/useScheduler";
 import { useTheme, useIsMobile } from "../hooks";
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "../hooks/queries/config";
 import {
   useLearningPaths,
   useLearningPath,
@@ -24,7 +26,9 @@ import { TodayReview } from "../components/capture/TodayReview";
 import { EmptyState } from "../components/common";
 import { TodayBriefCard } from "../components/Dashboard/TodayBriefCard";
 import { MobileTodayHome } from "../components/Dashboard/MobileTodayHome";
+import { BlindSpotList } from "../components/Study/BlindSpotList";
 import { learningPathsApi, type LearningPathResponse } from "../services/api/learningPaths";
+import { dashboardApi } from "../services/api/study";
 import { message } from "../utils/messageHelper";
 import { getErrorMessage } from "../utils/errors";
 import type { QueueData, UserTask } from "@shared/types";
@@ -76,6 +80,13 @@ export const Dashboard = () => {
 
   const decision = nextStep.data;
   const decisionLoading = nextStep.isLoading;
+
+  /** 首页统计（含 FSRS 低稳定性弱卡盲点榜） */
+  const { data: dashboardStats } = useQuery({
+    queryKey: queryKeys.dashboardStats,
+    queryFn: () => dashboardApi.getStats(),
+    staleTime: 60_000,
+  });
 
   /** 执行「下一步」：复习跳学习中心；进度跳任务详情并自动开始任务 */
   const handleGoNext = () => {
@@ -538,6 +549,9 @@ export const Dashboard = () => {
 
             {/* 今日回顾 / 捕获箱 */}
             <TodayReview />
+
+            {/* 盲点榜：FSRS 低稳定性弱卡（可一键去复习） */}
+            <BlindSpotList data={dashboardStats?.blindSpots ?? []} />
           </div>
         </div>
       </div>

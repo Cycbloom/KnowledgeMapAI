@@ -6,6 +6,7 @@ import { appEventBus } from "../../core/eventBus";
 import type { ScheduleExecutedPayload } from "../../../../shared/types/scheduler";
 import type { NotificationNeededPayload } from "../../../../shared/types/events";
 import { notDeleted } from '../../common/softDeleteHelper';
+import { notificationService } from "../../common/notificationService";
 import { embeddingService } from "../../ai/embeddingService";
 
 interface CronJob {
@@ -61,6 +62,30 @@ class SchedulerCronService {
       name: "backfill_missing_embeddings",
       intervalMs: 24 * 60 * 60 * 1000,
       handler: this.backfillMissingEmbeddings.bind(this),
+    });
+
+    this.registerJob({
+      name: "run_ai_pre_generation",
+      intervalMs: 30 * 60 * 1000,
+      handler: this.runAIPreGeneration.bind(this),
+    });
+
+    this.registerJob({
+      name: "check_deadline_reminders",
+      intervalMs: 15 * 60 * 1000,
+      handler: this.checkDeadlineReminders.bind(this),
+    });
+
+    this.registerJob({
+      name: "generate_daily_summary",
+      intervalMs: 6 * 60 * 60 * 1000,
+      handler: this.generateDailySummary.bind(this),
+    });
+
+    this.registerJob({
+      name: "reschedule_overdue_tasks",
+      intervalMs: 6 * 60 * 60 * 1000,
+      handler: this.rescheduleOverdueTasks.bind(this),
     });
 
     for (const job of this.jobs) {
@@ -325,6 +350,176 @@ class SchedulerCronService {
     }
   }
 
+  /**
+   * AI 预生成：扫描所有用户未来排期的知识点，为缺失学习资料/题目的
+   * 知识点提前入队后台生成任务（详见 preGenerationService）。
+   */
+  private async runAIPreGeneration() {
+    try {
+      const { preGenerationService } = await import("../preGenerationService");
+      await preGenerationService.runForAllUsers();
+    } catch (error) {
+      logger.error("[CronService] Failed to run AI pre-generation:", error);
+    }
+  }
+
+  /**
+   * 任务截止时间提醒：扫描接近 deadline / 已逾期的未完成任务，
+   * 按用户通知偏好（deadline_enabled / deadline_reminder_minutes）提醒一次，
+   * 同时落库 notifications 表（通知中心可见）并发布 SSE 事件（前端 toast）。
+   * 24 小时内已提醒过的任务去重，避免每 15 分钟重复轰炸。
+   */
+  private async checkDeadlineReminders() {
+    const admin = getSupabaseAdmin();
+    const now = new Date();
+    // 默认最多提前 60 分钟扫描（对应默认提醒档 [30, 60]）
+    const windowEnd = new Date(now.getTime() + 60 * 60 * 1000);
+
+    try {
+      const { data: tasks, error } = await admin
+        .from("user_tasks")
+        .select("id, user_id, title, deadline, status")
+        .not("deadline", "is", null)
+        .is("deleted_at", null)
+        .in("status", ["pending", "in_progress", "paused"])
+        .lte("deadline", windowEnd.toISOString())
+        .limit(500);
+
+      if (error) {
+        logger.error("[CronService] Failed to fetch deadline tasks:", error);
+        return;
+      }
+      if (!tasks || tasks.length === 0) return;
+
+      const userIds = [...new Set(tasks.map((t) => t.user_id))];
+
+      const [{ data: settingsRows }, { data: existingNotes }] = await Promise.all([
+        admin
+          .from("notification_settings")
+          .select("user_id, deadline_enabled, deadline_reminder_minutes")
+          .in("user_id", userIds),
+        admin
+          .from("notifications")
+          .select("data")
+          .eq("type", "deadline")
+          .in("user_id", userIds)
+          .gt("created_at", new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()),
+      ]);
+
+      const settingsByUser = new Map<
+        string,
+        { deadline_enabled: boolean; deadline_reminder_minutes: number[] }
+      >();
+      for (const s of settingsRows ?? []) {
+        settingsByUser.set(s.user_id, {
+          deadline_enabled: s.deadline_enabled ?? true,
+          deadline_reminder_minutes: Array.isArray(s.deadline_reminder_minutes)
+            ? s.deadline_reminder_minutes
+            : [30, 60],
+        });
+      }
+
+      // 24 小时内已提醒过的任务去重
+      const notifiedTaskIds = new Set<string>();
+      for (const n of existingNotes ?? []) {
+        const taskId = (n.data as Record<string, unknown> | null)?.taskId;
+        if (typeof taskId === "string") notifiedTaskIds.add(taskId);
+      }
+
+      for (const task of tasks) {
+        const settings = settingsByUser.get(task.user_id);
+        if (!settings?.deadline_enabled) continue;
+        if (notifiedTaskIds.has(task.id)) continue;
+
+        const minutesLeft =
+          (new Date(task.deadline).getTime() - now.getTime()) / 60000;
+        const isOverdue = minutesLeft <= 0;
+        const reminderMinutes =
+          settings.deadline_reminder_minutes.length > 0
+            ? settings.deadline_reminder_minutes
+            : [30, 60];
+        // 逾期提醒一次；未逾期则仅在跨过提醒档位（±2 分钟容差）时提醒
+        const inWindow = reminderMinutes.some(
+          (m) => Math.abs(minutesLeft - m) <= 2,
+        );
+        if (!isOverdue && !inWindow) continue;
+
+        const overdue = isOverdue;
+        const minutes = Math.max(1, Math.round(minutesLeft));
+        const title = overdue
+          ? i18next.t("scheduler.api.messages.overdueTitle")
+          : i18next.t("scheduler.api.messages.deadlineTitle");
+        const message = overdue
+          ? i18next.t("scheduler.api.messages.overdueTask", { title: task.title })
+          : i18next.t("scheduler.api.messages.deadlineReminder", {
+              title: task.title,
+              minutes,
+            });
+
+        try {
+          await notificationService.create(admin, task.user_id, {
+            type: "deadline",
+            title,
+            message,
+            data: { taskId: task.id, taskTitle: task.title, overdue },
+            expires_at: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          });
+        } catch (err) {
+          logger.error(
+            `[CronService] Failed to persist deadline notification for task ${task.id}:`,
+            err,
+          );
+          continue;
+        }
+
+        // 免打扰时段：落库保留（通知中心可见），但不推送
+        const inDnd = await notificationService.isInDoNotDisturb(admin, task.user_id);
+        if (inDnd) continue;
+
+        appEventBus.publish<NotificationNeededPayload>(
+          "notification_needed",
+          {
+            userId: task.user_id,
+            type: "deadline_reminder",
+            message,
+            data: { taskId: task.id, taskTitle: task.title, overdue },
+            cacheKeys: [["notifications"], ["scheduler", "tasks"]],
+          },
+          task.user_id,
+          "cron_service",
+        );
+      }
+    } catch (error) {
+      logger.error("[CronService] Deadline reminders job failed:", error);
+    }
+  }
+
+  /**
+   * 每日学习摘要：晚间（本地时间 20 点后）为活跃用户生成当日小结，
+   * 落库 notifications 表并发布 SSE（详见 dailySummaryService）。
+   */
+  private async generateDailySummary() {
+    try {
+      const { dailySummaryService } = await import("../dailySummaryService");
+      await dailySummaryService.runForAllUsers();
+    } catch (error) {
+      logger.error("[CronService] Failed to generate daily summary:", error);
+    }
+  }
+
+  /**
+   * 逾期任务自动重排：把已过 deadline 的未完成任务顺延到明天（原时刻），
+   * 使任务重新回到日历上、不再停留于逾期状态（详见 overdueRescheduler）。
+   */
+  private async rescheduleOverdueTasks() {
+    try {
+      const { overdueRescheduler } = await import("../overdueRescheduler");
+      await overdueRescheduler.runForAllUsers();
+    } catch (error) {
+      logger.error("[CronService] Failed to reschedule overdue tasks:", error);
+    }
+  }
+
   private async checkReviewReminders() {
     const today = new Date().toISOString().split("T")[0];
 
@@ -349,6 +544,13 @@ class SchedulerCronService {
 
     for (const [userId, count] of userReviews) {
       try {
+        // 免打扰时段不推送复习提醒
+        const inDnd = await notificationService.isInDoNotDisturb(
+          getSupabaseAdmin(),
+          userId,
+        );
+        if (inDnd) continue;
+
         appEventBus.publish<NotificationNeededPayload>(
           "notification_needed",
           {

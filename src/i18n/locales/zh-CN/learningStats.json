@@ -62,6 +62,26 @@
     "noWeakPoints": "太棒了！暂无明显薄弱知识点",
     "unknownGraph": "未知图谱"
   },
+  "masteryHealth": {
+    "title": "知识掌握与记忆健康",
+    "subtitle": "基于知识点掌握度与 FSRS 记忆参数的当前快照",
+    "totalPoints": "知识点",
+    "avgMastery": "平均掌握度",
+    "mastered": "已掌握",
+    "learning": "学习中",
+    "weak": "薄弱",
+    "masteryDistribution": "掌握度分布",
+    "stabilityDistribution": "记忆稳定性分布",
+    "retrievabilityDistribution": "可提取性分布",
+    "avgStability": "平均稳定性",
+    "avgRetrievability": "平均可提取性",
+    "totalCards": "总卡片",
+    "weakPointsTitle": "薄弱知识点 Top",
+    "noWeakPoints": "暂无薄弱知识点",
+    "masteryPercent": "{{value}}%",
+    "unitDays": "天",
+    "unitCards": "张"
+  },
   "learningTimeTrend": {
     "title": "学习时间趋势",
     "last7Days": "近7天共 {{hours}} 小时",

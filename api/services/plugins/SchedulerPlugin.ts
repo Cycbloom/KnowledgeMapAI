@@ -9,6 +9,7 @@ import periodicTasksRouter from "../../routes/periodicTasks";
 import calendarRouter from "../../routes/calendar";
 import notificationsRouter from "../../routes/notifications";
 import statisticsRoutes from "../../routes/learning/statistics";
+import reportsRoutes from "../../routes/learning/reports";
 import templateRoutes from "../../routes/templates";
 import analyticsRoutes from "../../routes/analytics";
 
@@ -26,6 +27,7 @@ export const SchedulerPlugin: Plugin = {
     kernel.registerRoutes("/api/v1/calendar", calendarRouter);
     kernel.registerRoutes("/api/v1/notifications", notificationsRouter);
     kernel.registerRoutes("/api/v1/statistics", statisticsRoutes);
+    kernel.registerRoutes("/api/v1/statistics/reports", reportsRoutes);
     kernel.registerRoutes("/api/v1/templates", templateRoutes);
     kernel.registerRoutes("/api/v1/analytics", analyticsRoutes);
   },

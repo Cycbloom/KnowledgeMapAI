@@ -11,6 +11,9 @@ import type {
   DashboardStats,
   TodaySummary,
   StatisticsResponse,
+  DailyReport,
+  WeeklyReport,
+  MasteryHealthResponse,
 } from "@shared/types/api";
 import type { StudyCard } from "@shared/types/common";
 import type { IStudyApi, IDashboardApi, IStatisticsApi } from "./contracts";
@@ -163,4 +166,14 @@ export const dashboardApi: IDashboardApi = {
 
 export const statisticsApi: IStatisticsApi = {
   getStats: () => request<StatisticsResponse>("/statistics"),
+  getDailyReport: (date?: string) => {
+    const query = date ? `?date=${encodeURIComponent(date)}` : "";
+    return request<DailyReport>(`/statistics/reports/daily${query}`);
+  },
+  getWeeklyReport: (weekStart?: string) => {
+    const query = weekStart ? `?weekStart=${encodeURIComponent(weekStart)}` : "";
+    return request<WeeklyReport>(`/statistics/reports/weekly${query}`);
+  },
+  getMasteryHealth: () =>
+    request<MasteryHealthResponse>("/statistics/mastery-health"),
 };

@@ -253,3 +253,48 @@ export interface StatisticsResponse {
   forecast: Array<{ date: string; count: number }>;
   growth: Array<{ date: string; count: number }>;
 }
+
+/** 学习日报：单日学习与任务聚合（GET /statistics/reports/daily）。 */
+export interface DailyReport {
+  date: string;
+  tasksCompleted: number;
+  tasksPlanned: number;
+  focusMinutes: number;
+  focusSessions: number;
+  cardsReviewed: number;
+  pendingReviews: number;
+  overdueTasks: number;
+  newKnowledgePoints: number;
+  newNotes: number;
+}
+
+/** 学习周报：7 天窗口聚合（GET /statistics/reports/weekly）。 */
+export interface WeeklyReport {
+  weekStart: string;
+  weekEnd: string;
+  activeDays: number;
+  tasksCompleted: number;
+  focusMinutes: number;
+  cardsReviewed: number;
+  newKnowledgePoints: number;
+  newNotes: number;
+  currentPendingReviews: number;
+  currentOverdueTasks: number;
+  dailyBreakdown: DailyReport[];
+}
+
+/** 知识掌握度与记忆健康聚合（GET /statistics/mastery-health）。 */
+export interface MasteryHealthResponse {
+  totalPoints: number;
+  avgMastery: number;
+  masteredCount: number;
+  learningCount: number;
+  weakCount: number;
+  masteryBuckets: Array<{ range: string; count: number }>;
+  weakPoints: Array<{ id: string; title: string; mastery: number }>;
+  totalCards: number;
+  avgStability: number;
+  avgRetrievability: number;
+  stabilityBuckets: Array<{ range: string; count: number }>;
+  retrievabilityBuckets: Array<{ range: string; count: number }>;
+}

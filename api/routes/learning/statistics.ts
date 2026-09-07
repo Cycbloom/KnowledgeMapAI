@@ -1,8 +1,18 @@
 import { Router, type Response } from 'express';
 import { requireAuth, type AuthedRequest } from '../../middleware/auth';
 import { studyService } from "../../services/study";
+import { masteryHealthService } from "../../services/study/masteryHealthService";
 
 const router = Router();
+
+// GET /statistics/mastery-health：知识掌握度与记忆健康聚合
+router.get('/mastery-health', requireAuth, async (req: AuthedRequest, res: Response) => {
+  const health = await masteryHealthService.getMasteryHealth(
+    req.supabase,
+    req.user.id,
+  );
+  res.json(health);
+});
 
 // Get aggregated statistics
 router.get('/', requireAuth, async (req: AuthedRequest, res: Response) => {

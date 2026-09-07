@@ -5,6 +5,7 @@
   "tabs": {
     "learning": "Learning Statistics",
     "tasks": "Task Statistics",
+    "reports": "Learning Reports",
     "overview": "Overview",
     "graphs": "Graphs"
   },
@@ -56,5 +57,53 @@
     "newCards": "New Cards"
   },
   "studyStatistics": "Learning Statistics",
-  "taskStatistics": "Task Statistics"
+  "taskStatistics": "Task Statistics",
+  "reports": {
+    "subtitle": "Review your daily and weekly learning, focus and review data",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "selectDate": "Select date",
+    "weekRange": "{{start}} ~ {{end}}",
+    "prevWeek": "Previous week",
+    "nextWeek": "Next week",
+    "currentWeek": "This week",
+    "empty": "No learning data for this period yet — go learn something",
+    "dailyMetrics": {
+      "tasksCompleted": "Tasks Completed",
+      "tasksCompletedHint": "Tasks completed on this day",
+      "tasksPlanned": "Planned Tasks",
+      "tasksPlannedHint": "Tasks scheduled to start this day",
+      "focusMinutes": "Focus Minutes",
+      "focusMinutesHint": "Total focus duration (minutes) this day",
+      "focusSessions": "Focus Sessions",
+      "focusSessionsHint": "Number of focus sessions this day",
+      "cardsReviewed": "Cards Reviewed",
+      "cardsReviewedHint": "Cards reviewed this day",
+      "pendingReviews": "Pending Reviews",
+      "pendingReviewsHint": "Cards due at the end of this day",
+      "overdueTasks": "Overdue Tasks",
+      "overdueTasksHint": "Overdue tasks at the end of this day",
+      "newKnowledgePoints": "New Knowledge Points",
+      "newKnowledgePointsHint": "Knowledge points created this day",
+      "newNotes": "New Notes",
+      "newNotesHint": "Notes created this day"
+    },
+    "weeklyMetrics": {
+      "activeDays": "Active Days",
+      "activeDaysHint": "Days with learning or task activity",
+      "tasksCompleted": "Tasks Completed",
+      "focusMinutes": "Focus Minutes",
+      "cardsReviewed": "Cards Reviewed",
+      "newKnowledgePoints": "New Knowledge Points",
+      "newNotes": "New Notes",
+      "currentPendingReviews": "Pending Reviews Now",
+      "currentOverdueTasks": "Overdue Tasks Now"
+    },
+    "trend": {
+      "title": "Daily Trend",
+      "tasks": "Tasks Completed",
+      "focus": "Focus Minutes",
+      "reviews": "Cards Reviewed"
+    }
+  }
 }

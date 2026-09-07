@@ -39,6 +39,7 @@ import type { Graph } from "../../types";
 import { formatNumber } from "../../utils/formatters";
 import { Skeleton, ErrorState } from "../common";
 import { queryKeys } from "../../hooks/queries/config";
+import { MasteryHealthPanel } from "./MasteryHealthPanel";
 
 interface MetricCardProps {
   title: string;
@@ -680,6 +681,8 @@ export const LearningStatsCenter = () => {
       </div>
 
       <GrowthChart data={stats.growth || []} isDark={isDark} t={t} />
+
+      <MasteryHealthPanel />
     </div>
   );
 };

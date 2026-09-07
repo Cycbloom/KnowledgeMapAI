@@ -5,6 +5,7 @@
   "tabs": {
     "learning": "学习统计",
     "tasks": "任务统计",
+    "reports": "学习报告",
     "overview": "概览",
     "graphs": "图谱"
   },
@@ -56,5 +57,53 @@
     "newCards": "新增卡片"
   },
   "studyStatistics": "学习统计",
-  "taskStatistics": "任务统计"
+  "taskStatistics": "任务统计",
+  "reports": {
+    "subtitle": "回看每日与每周的学习、专注与复习数据",
+    "daily": "日报",
+    "weekly": "周报",
+    "selectDate": "选择日期",
+    "weekRange": "{{start}} ~ {{end}}",
+    "prevWeek": "上一周",
+    "nextWeek": "下一周",
+    "currentWeek": "本周",
+    "empty": "该时段暂无学习数据，先去学点什么吧",
+    "dailyMetrics": {
+      "tasksCompleted": "完成任务",
+      "tasksCompletedHint": "当日完成的任务数",
+      "tasksPlanned": "计划任务",
+      "tasksPlannedHint": "当日计划开始的任务数",
+      "focusMinutes": "专注时长",
+      "focusMinutesHint": "当日专注总时长（分钟）",
+      "focusSessions": "专注次数",
+      "focusSessionsHint": "当日专注会话数",
+      "cardsReviewed": "复习卡片",
+      "cardsReviewedHint": "当日复习的卡片数",
+      "pendingReviews": "待复习",
+      "pendingReviewsHint": "当日结束时待复习的卡片数",
+      "overdueTasks": "逾期任务",
+      "overdueTasksHint": "当日结束时逾期的任务数",
+      "newKnowledgePoints": "新增知识点",
+      "newKnowledgePointsHint": "当日新建的知识点数",
+      "newNotes": "新增笔记",
+      "newNotesHint": "当日新建的笔记数"
+    },
+    "weeklyMetrics": {
+      "activeDays": "活跃天数",
+      "activeDaysHint": "有学习或任务记录的天数",
+      "tasksCompleted": "完成任务",
+      "focusMinutes": "专注时长",
+      "cardsReviewed": "复习卡片",
+      "newKnowledgePoints": "新增知识点",
+      "newNotes": "新增笔记",
+      "currentPendingReviews": "当前待复习",
+      "currentOverdueTasks": "当前逾期任务"
+    },
+    "trend": {
+      "title": "每日趋势",
+      "tasks": "完成任务",
+      "focus": "专注分钟",
+      "reviews": "复习卡片"
+    }
+  }
 }

@@ -1,21 +1,23 @@
 import React, { useState, useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, CheckSquare } from "lucide-react";
+import { BookOpen, CheckSquare, FileText } from "lucide-react";
 import { useTheme } from "../hooks";
 import { useTranslation } from "react-i18next";
 import { LearningStatsTab } from "../components/Statistics/LearningStatsTab";
 import { TaskStatsTab } from "../components/Statistics/TaskStatsTab";
+import { ReportsTab } from "../components/Statistics/ReportsTab";
 
-type StatsTab = "learning" | "tasks";
+type StatsTab = "learning" | "tasks" | "reports";
 
 export const StatisticsCenter: React.FC = () => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<StatsTab>("learning");
 
-  const tabs: { id: StatsTab; label: string; icon: React.ReactNode; translationKey: "statistics.tabs.learning" | "statistics.tabs.tasks" }[] = [
+  const tabs: { id: StatsTab; label: string; icon: React.ReactNode; translationKey: "statistics.tabs.learning" | "statistics.tabs.tasks" | "statistics.tabs.reports" }[] = [
     { id: "learning", label: t("statistics.studyStatistics"), icon: <BookOpen size={18} />, translationKey: "statistics.tabs.learning" },
     { id: "tasks", label: t("statistics.taskStatistics"), icon: <CheckSquare size={18} />, translationKey: "statistics.tabs.tasks" },
+    { id: "reports", label: t("statistics.tabs.reports"), icon: <FileText size={18} />, translationKey: "statistics.tabs.reports" },
   ];
 
   const tablistId = useId();
@@ -119,6 +121,7 @@ export const StatisticsCenter: React.FC = () => {
           >
             {activeTab === "learning" && <LearningStatsTab />}
             {activeTab === "tasks" && <TaskStatsTab />}
+            {activeTab === "reports" && <ReportsTab />}
           </motion.div>
         </AnimatePresence>
       </div>

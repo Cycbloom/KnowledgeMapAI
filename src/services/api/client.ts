@@ -94,7 +94,7 @@ export const requestData = async <T>(url: string, options: RequestInit = {}): Pr
  * 走 apiClient 统一出口：鉴权/CSRF/移动端标识头由拦截器补齐，
  * Content-Type 由浏览器按 multipart 自动设置，调用方不得手工指定。
  */
-export const requestUpload = async <T = any>(url: string, formData: FormData): Promise<T> => {
+export const requestUpload = async <T = unknown>(url: string, formData: FormData): Promise<T> => {
   return apiClient.request<T, T>({
     url,
     method: 'POST',

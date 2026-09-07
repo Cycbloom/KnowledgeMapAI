@@ -81,7 +81,7 @@ export function useNetworkStatus(options: NetworkStatusOptions = {}): NetworkSta
     try {
       const startTime = Date.now();
 
-      const healthUrl = (await getApiUrl()) + '/health/system';
+      const healthUrl = `${await getApiUrl()}/health/system`;
 
       const response = await fetch(healthUrl, {
         method: 'HEAD',

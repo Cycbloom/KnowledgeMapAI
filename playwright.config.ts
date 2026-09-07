@@ -1,7 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// Windows 上 Hyper-V 会保留动态端口范围（常见如 5141-5240），可能覆盖默认的 5173，
-// 导致 Vite 启动时报 EACCES。允许通过 E2E_PORT 环境变量覆盖（本地用 5341，CI 仍用 5173）。
+// Windows 上 Hyper-V 会保留动态端口范围（如 5141-5240、5337-5436），可能覆盖默认的 5173，
+// 导致 Vite 启动时报 EACCES。允许通过 E2E_PORT 环境变量覆盖（本地用 5900，CI 仍用 5173）。
+// 注意：保留范围会随时间变化，换端口前用 `netsh interface ipv4 show excludedportrange protocol=tcp`
+// 确认端口可用，且避开浏览器不安全端口列表（如 6000）。
 const e2ePort = process.env.E2E_PORT || '5173';
 const e2eBaseUrl = `http://localhost:${e2ePort}`;
 // API 服务器端口同样可能被 Hyper-V 保留（如 2996-3095 覆盖 3001）。

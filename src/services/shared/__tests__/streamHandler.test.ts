@@ -21,7 +21,7 @@ import { createStreamHandler } from '../streamHandler';
 import { getApiUrl, getCsrfToken } from '../../api/client';
 import { isCapacitorMobile } from '../../../config/mobileApiConfig';
 import { useStore } from '../../../store/useStore';
-import { AppError, SharedErrorCodes } from '../../../utils/errors';
+import { SharedErrorCodes } from '../../../utils/errors';
 
 // --- Helpers ---
 

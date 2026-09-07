@@ -21,14 +21,15 @@ export default async function globalSetup(config: FullConfig) {
   const page = await context.newPage();
 
   try {
-    await page.goto(baseURL, { waitUntil: "domcontentloaded" });
+    // Vite 冷启动首次递归编译模块链可能超过默认 30s 导航超时，与 test timeout (120s) 对齐
+    await page.goto(baseURL, { waitUntil: "domcontentloaded", timeout: 120_000 });
 
     // 等待无感知会话完成：离开 /login 进入应用，且专属凭证已落盘
     await page.waitForFunction(
       () =>
         !window.location.pathname.includes("login") &&
         localStorage.getItem("km-owner-credentials") !== null,
-      { timeout: 90_000 },
+      { timeout: 120_000 },
     );
 
     await context.storageState({ path: stateFile });

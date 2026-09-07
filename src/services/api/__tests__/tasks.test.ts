@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AppError, SharedErrorCodes } from '../../../utils/errors';
 
 // Mock request/requestBlob from ../client（tasks.ts 统一走 client 出口，
@@ -11,7 +11,6 @@ vi.mock('../client', () => ({
 
 import { tasksApi, searchApi, dataApi } from '../tasks';
 import { request, requestBlob } from '../client';
-import { AppError, SharedErrorCodes } from '../../../utils/errors';
 
 beforeEach(() => {
   vi.mocked(request).mockClear();

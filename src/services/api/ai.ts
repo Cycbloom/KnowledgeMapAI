@@ -113,6 +113,19 @@ export const aiApi: IAiApi = {
     });
   },
 
+  /** 异步生成学习资料：入队后台任务并返回 taskId（替代同步等待，前端轮询进度） */
+  generateLearningMaterialAsync: (data: {
+    knowledge_point_id: string;
+    language?: string;
+    graph_id?: string;
+    schema_id?: string;
+    force?: boolean;
+  }) =>
+    request<{ taskId: string; reused: boolean }>("/ai/learning-material/task", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
   assistLearningSchema: (data: {
     mode: "generate" | "optimize";
     topic: string;
@@ -245,6 +258,40 @@ export const aiApi: IAiApi = {
 
   getTaskStatus: (id: string) => request(`/ai/tasks/${id}`),
 
+  runPreGeneration: () =>
+    request<{
+      enabled: boolean;
+      candidatesFound: number;
+      knowledgePointsProcessed: number;
+      tasksEnqueued: number;
+      skipped: {
+        materialExists: number;
+        cardsExists: number;
+        taskInFlight: number;
+        noContent: number;
+      };
+      enqueued: Array<{
+        knowledge_point_id: string;
+        type: string;
+        taskId: string;
+        language?: string;
+      }>;
+    }>("/ai/pre-generation/run", { method: "POST" }),
+
+  getPreGenerationStatus: (knowledgePointId?: string) =>
+    request<{
+      active: number;
+      completed: number;
+      hasActiveTaskForKnowledgePoint: boolean;
+      recent: Array<Record<string, unknown>>;
+    }>(
+      `/ai/pre-generation/status${
+        knowledgePointId
+          ? `?knowledge_point_id=${encodeURIComponent(knowledgePointId)}`
+          : ""
+      }`,
+    ),
+
   textToGraph: (data: {
     text?: string;
     graph_id: string;
@@ -278,11 +325,17 @@ export const aiApi: IAiApi = {
     if (config.provider) formData.append("provider", config.provider);
     if (config.model) formData.append("model", config.model);
     // multipart 统一走 requestUpload（此前经 request 会对 FormData 做 JSON.parse 而崩溃）
-    return requestUpload("/ai/document-to-graph", formData);
+    return requestUpload<{ nodes: unknown[]; edges: unknown[] }>(
+      "/ai/document-to-graph",
+      formData,
+    );
   },
 
   imageToGraph: (formData: FormData) =>
-    requestUpload("/ai/image-to-graph", formData),
+    requestUpload<{ nodes: unknown[]; edges: unknown[] }>(
+      "/ai/image-to-graph",
+      formData,
+    ),
 
   urlToText: (url: string) =>
     request("/ai/url-to-text", {

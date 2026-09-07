@@ -46,6 +46,7 @@ import {
   ShortcutSettings,
   QuizModeSettings,
   NotificationSettings,
+  PreGenerationSettings,
 } from "../components/Settings";
 import { DEFAULT_AVAILABLE_MODES, type DatabaseConfig } from "../components/Settings/settingsConstants";
 import { TagManagerDialog } from "../components/common/TagManagerDialog";
@@ -112,6 +113,7 @@ export const Settings = () => {
     { id: "database", label: t("settings.sections.database") },
     { id: "studyStrategy", label: t("settings.sections.studyStrategy") },
     { id: "studyAlgorithm", label: t("settings.sections.studyAlgorithm") },
+    { id: "preGeneration", label: t("settings.sections.preGeneration") },
     { id: "graphEditor", label: t("settings.sections.graphEditor") },
     { id: "quizMode", label: t("settings.sections.quizMode") },
     { id: "shortcuts", label: t("settings.sections.shortcuts") },
@@ -435,6 +437,14 @@ export const Settings = () => {
               }}
             >
               <StudyAlgorithmSettings />
+            </section>
+            <section
+              id="preGeneration"
+              ref={(el) => {
+                if (el) sectionRefs.current.preGeneration = el;
+              }}
+            >
+              <PreGenerationSettings settings={settings} />
             </section>
             <section
               id="graphEditor"

@@ -13,6 +13,7 @@ import type {
   UserSettingsNoisePreset,
   UserSettingsNotifications,
   UserSettingsPaginationMode,
+  UserSettingsPreGeneration,
   UserSettingsProviderConfig,
   UserSettingsReadingMode,
   UserSettingsShortcutKey,
@@ -386,6 +387,32 @@ export const settingsService = {
     listInstalled: api.plugins.listInstalled,
     checkUpdates: api.plugins.checkUpdates,
     rate: api.plugins.rate,
+  },
+
+  /**
+   * AI pre-generation. Backed by `authApi.updateProfile` (server:
+   * users.settings JSONB key "pre_generation") + `api.ai` run/status endpoints.
+   */
+  preGeneration: {
+    get: (): UserSettingsPreGeneration | undefined => {
+      const settings = useStore.getState().user?.profile?.settings as
+        | Record<string, unknown>
+        | undefined;
+      const raw = settings?.pre_generation;
+      return raw && typeof raw === "object" && !Array.isArray(raw)
+        ? (raw as UserSettingsPreGeneration)
+        : undefined;
+    },
+    save: (values: UserSettingsPreGeneration) => {
+      const existing = useStore.getState().user?.profile?.settings as
+        | Record<string, unknown>
+        | undefined;
+      return authApi.updateProfile({
+        settings: { ...existing, pre_generation: values },
+      });
+    },
+    runNow: api.ai.runPreGeneration,
+    status: api.ai.getPreGenerationStatus,
   },
 
 };

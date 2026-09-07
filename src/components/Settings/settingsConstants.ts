@@ -189,3 +189,65 @@ export const DEFAULT_AVAILABLE_MODES: Record<string, string[]> = {
   volcengine: ["doubao-pro-4k", "doubao-pro-32k", "doubao-embedding-1.5"],
   aliyun: ["qwen-max", "qwen-plus", "qwen-turbo"],
 };
+
+// ---------------------------------------------------------------------------
+// AI 预生成（设置页「AI 预生成」分区）
+// 默认值与后端 api/services/scheduler/preGenerationService.ts 保持一致，
+// 存储于 users.settings JSONB key = "pre_generation"。
+// ---------------------------------------------------------------------------
+
+export interface PreGenerationFormValues {
+  enabled: boolean;
+  lead_days: number;
+  max_knowledge_points_per_run: number;
+  learning_material: boolean;
+  generate_cards: boolean;
+  cards_per_knowledge_point: number;
+  card_types: string[];
+  card_difficulty: "easy" | "medium" | "hard" | "mixed";
+  card_coverage: "current_only" | "with_children" | "with_siblings" | "graph";
+  languages: string[];
+}
+
+export const PRE_GENERATION_DEFAULTS: PreGenerationFormValues = {
+  enabled: true,
+  lead_days: 3,
+  max_knowledge_points_per_run: 10,
+  learning_material: true,
+  generate_cards: true,
+  cards_per_knowledge_point: 20,
+  card_types: ["qa", "choice", "true_false"],
+  card_difficulty: "mixed",
+  card_coverage: "current_only",
+  languages: ["zh-CN"],
+};
+
+export type PreGenerationForm = PreGenerationFormValues;
+
+export const PREGEN_CARD_TYPE_OPTIONS = [
+  { value: "qa", labelKey: "settings.preGeneration.cardTypes.qa" },
+  { value: "choice", labelKey: "settings.preGeneration.cardTypes.choice" },
+  { value: "true_false", labelKey: "settings.preGeneration.cardTypes.true_false" },
+  { value: "multi_choice", labelKey: "settings.preGeneration.cardTypes.multi_choice" },
+  { value: "fill_in_the_blank", labelKey: "settings.preGeneration.cardTypes.fill_in_the_blank" },
+  { value: "essay", labelKey: "settings.preGeneration.cardTypes.essay" },
+] as const;
+
+export const PREGEN_CARD_DIFFICULTY_OPTIONS = [
+  { value: "easy", labelKey: "settings.preGeneration.difficulty.easy" },
+  { value: "medium", labelKey: "settings.preGeneration.difficulty.medium" },
+  { value: "hard", labelKey: "settings.preGeneration.difficulty.hard" },
+  { value: "mixed", labelKey: "settings.preGeneration.difficulty.mixed" },
+] as const;
+
+export const PREGEN_CARD_COVERAGE_OPTIONS = [
+  { value: "current_only", labelKey: "settings.preGeneration.coverage.current_only" },
+  { value: "with_children", labelKey: "settings.preGeneration.coverage.with_children" },
+  { value: "with_siblings", labelKey: "settings.preGeneration.coverage.with_siblings" },
+  { value: "graph", labelKey: "settings.preGeneration.coverage.graph" },
+] as const;
+
+export const PREGEN_LANGUAGE_OPTIONS = [
+  { value: "zh-CN", labelKey: "settings.preGeneration.languages.zhCN" },
+  { value: "en-US", labelKey: "settings.preGeneration.languages.enUS" },
+] as const;

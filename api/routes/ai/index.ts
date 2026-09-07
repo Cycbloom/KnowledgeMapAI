@@ -8,6 +8,7 @@ import ttsRouter from './tts';
 import sttRoutes from './stt';
 import performanceRouter from './performance';
 import configRouter from './config';
+import preGenerationRouter from './preGeneration';
 
 const router = Router();
 
@@ -19,5 +20,6 @@ router.use(ttsRouter);
 router.use(sttRoutes);
 router.use('/performance', performanceRouter);
 router.use('/config', configRouter);
+router.use(preGenerationRouter);
 
 export default router;

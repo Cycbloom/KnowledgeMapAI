@@ -66,6 +66,15 @@ export interface IAiApi {
     sections?: Array<{ title: string; content: string }>;
   }>;
 
+  /** 异步生成学习资料：入队后台任务并返回 taskId（替代同步等待，前端轮询进度） */
+  generateLearningMaterialAsync(data: {
+    knowledge_point_id: string;
+    language?: string;
+    graph_id?: string;
+    schema_id?: string;
+    force?: boolean;
+  }): Promise<{ taskId: string; reused: boolean }>;
+
   /** AI 辅助设计/优化学习材料章节结构 */
   assistLearningSchema(data: {
     mode: "generate" | "optimize";
@@ -160,7 +169,41 @@ export interface IAiApi {
 
   batchExpandGraph(node_ids: string[]): Promise<{ success: boolean; taskIds: string[]; message: string }>;
 
-  getTaskStatus(id: string): Promise<{ status: string; progress?: number; result?: unknown }>;
+  getTaskStatus(id: string): Promise<{
+    id: string;
+    status: string;
+    runtime_progress?: Record<string, unknown> | null;
+    error_message?: string | null;
+    result?: unknown;
+  }>;
+
+  /** 立即执行一轮 AI 预生成（设置页「立即预生成」按钮） */
+  runPreGeneration(): Promise<{
+    enabled: boolean;
+    candidatesFound: number;
+    knowledgePointsProcessed: number;
+    tasksEnqueued: number;
+    skipped: {
+      materialExists: number;
+      cardsExists: number;
+      taskInFlight: number;
+      noContent: number;
+    };
+    enqueued: Array<{
+      knowledge_point_id: string;
+      type: string;
+      taskId: string;
+      language?: string;
+    }>;
+  }>;
+
+  /** 预生成任务状态查询；传 knowledge_point_id 时返回该知识点是否有在途任务 */
+  getPreGenerationStatus(knowledgePointId?: string): Promise<{
+    active: number;
+    completed: number;
+    hasActiveTaskForKnowledgePoint: boolean;
+    recent: Array<Record<string, unknown>>;
+  }>;
 
   textToGraph(data: {
     text?: string;

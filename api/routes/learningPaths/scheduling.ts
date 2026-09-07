@@ -6,6 +6,8 @@ import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { pathSchedulerService } from "../../services/scheduler/planning/pathSchedulerService";
+import { preGenerationService } from "../../services/scheduler/preGenerationService";
+import { logger } from "../../utils/logger";
 import { uuidParamSchema } from "./shared";
 
 const router = Router();
@@ -45,6 +47,10 @@ router.post(
       req.params.id,
       { start_date: req.body.start_date },
     );
+    // 重排后同步触发一轮 AI 预生成（fire-and-forget）
+    preGenerationService.runPreGeneration(req.supabase, req.user.id).catch((err) => {
+      logger.warn(`[scheduling] pre-generation trigger failed for user ${req.user.id}:`, err);
+    });
     res.json(result);
   },
 );

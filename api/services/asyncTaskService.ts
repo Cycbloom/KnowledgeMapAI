@@ -18,6 +18,7 @@ import "./taskProcessors/translateNodesProcessor.js";
 import "./taskProcessors/discoverNodeRelationsProcessor.js";
 import "./taskProcessors/autoClassifyDomainsProcessor.js";
 import "./taskProcessors/crossGraphVariantProcessor.js";
+import "./taskProcessors/generateLearningMaterialProcessor.js";
 
 export interface TaskProgress {
   stage?: string;
@@ -92,6 +93,7 @@ export class AsyncTaskService {
     const typeMap: Record<string, SystemTaskType> = {
       "generate_questions": "ai_generation",
       "generate_quiz": "ai_generation",
+      "generate_learning_material": "ai_generation",
       "batch_generate_questions": "ai_generation",
       "expand_graph": "graph_expansion",
       "recursive_graph_generation": "graph_expansion",

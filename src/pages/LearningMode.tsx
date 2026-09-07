@@ -52,13 +52,17 @@ import { addQuote } from "../components/RAGChat";
 import { NodeLevel, Keyword, StudyCard } from "../types";
 import { useFocusStore } from "../store/useFocusStore";
 import { useShallow } from "zustand/react/shallow";
+import { TaskProgressBar } from "../components/common/TaskProgressBar";
+import { mapToRuntimeProgress } from "../hooks/scheduler/useTaskEvents";
+import type { TaskRuntimeProgress } from "@shared/types/common";
 
 type OutlineMode = "graph" | "learning-path";
 type RightPanelMode =
   | "chat"
   | "learning-path"
   | "literature-extract"
-  | "concept-aggregation";
+  | "concept-aggregation"
+  | "knowledge-gaps";
 
 export const LearningMode = () => {
   const { t } = useTranslation();
@@ -131,12 +135,60 @@ export const LearningMode = () => {
   const [isOverviewEditModalOpen, setIsOverviewEditModalOpen] = useState(false);
   const [isSchemaEditorOpen, setIsSchemaEditorOpen] = useState(false);
   const [selectedSchemaId, setSelectedSchemaId] = useState<string | undefined>(undefined);
-  const [generateProgress] = useState<{
+  const [generateProgress, setGenerateProgress] = useState<{
     current: number; total: number; isGenerating: boolean;
   } | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  // 题目生成进度跟踪：批量出题任务 taskIds + 轮询定时器（模态框进度条数据源）
+  const cardGenTaskIdsRef = useRef<string[]>([]);
+  const cardGenPollRef = useRef<number | null>(null);
   // 挑战意图：节点无题打开发题对话框时置位，生成完成后以右下角通知提醒手动进入测验
   const isChallengePendingRef = useRef(false);
+  // AI 预生成联动：当前知识点的学习资料若正由后台预生成任务产出，
+  // 轮询等待其完成，避免与按需生成重复调用 AI
+  const [isPreGenPending, setIsPreGenPending] = useState(false);
+  const preGenPollRef = useRef<number | null>(null);
+  const preGenSessionRef = useRef(0);
+  const generationNodeRef = useRef<string | null>(null);
+  // 学习资料异步生成进度（TaskProgressBar 数据源）
+  const [materialProgress, setMaterialProgress] = useState<TaskRuntimeProgress | null>(null);
+  const materialPollRef = useRef<number | null>(null);
+
+  const stopPreGenPoll = () => {
+    if (preGenPollRef.current !== null) {
+      window.clearTimeout(preGenPollRef.current);
+      preGenPollRef.current = null;
+    }
+    if (materialPollRef.current !== null) {
+      window.clearTimeout(materialPollRef.current);
+      materialPollRef.current = null;
+    }
+  };
+
+  const stopCardGenPoll = () => {
+    if (cardGenPollRef.current !== null) {
+      window.clearTimeout(cardGenPollRef.current);
+      cardGenPollRef.current = null;
+    }
+  };
+
+  // 卸载时终止预生成/异步生成轮询，并作废所有在途生成回调
+  useEffect(() => {
+    return () => {
+      preGenSessionRef.current += 1;
+      if (preGenPollRef.current !== null) {
+        window.clearTimeout(preGenPollRef.current);
+        preGenPollRef.current = null;
+      }
+      if (materialPollRef.current !== null) {
+        window.clearTimeout(materialPollRef.current);
+        materialPollRef.current = null;
+      }
+      if (cardGenPollRef.current !== null) {
+        window.clearTimeout(cardGenPollRef.current);
+        cardGenPollRef.current = null;
+      }
+    };
+  }, []);
 
   const { enterFocusMode, exitFocusMode, highlightEnabled, setHighlightEnabled } = useFocusStore(
     useShallow((s) => ({
@@ -168,6 +220,174 @@ export const LearningMode = () => {
   const isEn = nodeContentLang === "en-US";
   const materialLangCode = isEn ? "en-US" : "zh-CN";
   const queryClient = useQueryClient();
+
+  // 学习资料异步生成：入队后台任务 → 轮询进度 → 完成后回读节点内容。
+  // 端点层已做在途去重（reused=true 表示复用已有预生成/在途任务），
+  // 因此「按需生成」与「预生成在途」走同一路径，避免重复调用 AI。
+  const runAsyncMaterialGeneration = async (
+    genSession: number,
+    opts?: { force?: boolean; schema_id?: string; successKey?: string },
+  ) => {
+    if (preGenSessionRef.current !== genSession) return;
+    if (!nodeId) return;
+    const schemaId =
+      opts?.schema_id !== undefined ? opts.schema_id : selectedSchemaId;
+    try {
+      setIsGenerating(true);
+      const { taskId, reused } = await api.ai.generateLearningMaterialAsync({
+        knowledge_point_id: nodeId,
+        language: materialLangCode,
+        graph_id: graphId || undefined,
+        schema_id: schemaId,
+        force: opts?.force,
+      });
+      if (preGenSessionRef.current !== genSession) return;
+      setIsPreGenPending(reused);
+      setMaterialProgress({
+        stage: "queued",
+        stageLabel: t("learning.material.queued"),
+        percent: 0,
+      });
+      const poll = async (attempt: number) => {
+        if (preGenSessionRef.current !== genSession) return;
+        try {
+          const s = await api.ai.getTaskStatus(taskId);
+          if (preGenSessionRef.current !== genSession) return;
+          if (s.status === "completed") {
+            setMaterialProgress(null);
+            setIsPreGenPending(false);
+            const fresh = await api.nodes.get(nodeId);
+            if (preGenSessionRef.current !== genSession) return;
+            const freshMaterial = fresh.learning_material?.[materialLangCode];
+            if (freshMaterial && freshMaterial.trim().length > 0) {
+              setArticleContent(freshMaterial);
+              setKeywords(fresh.keywords?.[materialLangCode] || []);
+              msgHelper.success(
+                t((opts?.successKey || "learning.material.generated") as never),
+                {
+                  duration: 8000,
+                  ...(opts?.force
+                    ? {}
+                    : {
+                        action: {
+                          label: t("learning.material.generateCards"),
+                          onClick: () => handleGenerateCards(nodeId),
+                        },
+                      }),
+                },
+              );
+            }
+            queryClient.invalidateQueries({ queryKey: queryKeys.nodeDetail(nodeId) });
+            if (graphId) {
+              queryClient.invalidateQueries({ queryKey: queryKeys.graphData(graphId) });
+            }
+            setIsGenerating(false);
+            return;
+          }
+          if (s.status === "failed" || s.status === "cancelled") {
+            setMaterialProgress(null);
+            setIsPreGenPending(false);
+            msgHelper.error(t("learning.material.generateFailed"));
+            setIsGenerating(false);
+            return;
+          }
+          const mapped = mapToRuntimeProgress(s.runtime_progress);
+          if (mapped) setMaterialProgress(mapped);
+          if (attempt >= 90) {
+            // 看门狗（约 3 分钟）：停止轮询，提示可去任务中心查看
+            setMaterialProgress(null);
+            setIsPreGenPending(false);
+            setIsGenerating(false);
+            msgHelper.info(t("learning.material.taskInProgress"));
+            return;
+          }
+          materialPollRef.current = window.setTimeout(() => poll(attempt + 1), 2000);
+        } catch {
+          if (preGenSessionRef.current !== genSession) return;
+          setMaterialProgress(null);
+          setIsPreGenPending(false);
+          setIsGenerating(false);
+          msgHelper.error(t("learning.material.generateFailed"));
+        }
+      };
+      await poll(0);
+    } catch (error) {
+      if (preGenSessionRef.current !== genSession) return;
+      console.error("Failed to enqueue learning material:", error);
+      setIsGenerating(false);
+      msgHelper.error(t("learning.material.generateFailed"));
+    }
+  };
+
+  // 题目生成进度跟踪：轮询批量任务状态，更新模态框进度条（generateProgress）。
+  const trackCardGeneration = (taskIds: string[]) => {
+    stopCardGenPoll();
+    cardGenTaskIdsRef.current = taskIds;
+    if (!taskIds.length) return;
+    setGenerateProgress({ current: 0, total: taskIds.length, isGenerating: true });
+    const poll = async (attempt: number) => {
+      if (cardGenTaskIdsRef.current !== taskIds) return;
+      try {
+        const statuses = await Promise.all(
+          taskIds.map((id) =>
+            api.ai.getTaskStatus(id).catch(() => null as { status: string } | null),
+          ),
+        );
+        if (cardGenTaskIdsRef.current !== taskIds) return;
+        const done = statuses.filter(
+          (s) => s && ["completed", "failed", "cancelled"].includes(s.status),
+        ).length;
+        if (done >= taskIds.length) {
+          cardGenTaskIdsRef.current = [];
+          setGenerateProgress({
+            current: taskIds.length,
+            total: taskIds.length,
+            isGenerating: false,
+          });
+          msgHelper.success(
+            t("learning.cards.generatedComplete", { count: taskIds.length }),
+            { duration: 6000 },
+          );
+          if (graphId) queryClient.invalidateQueries({ queryKey: queryKeys.graphData(graphId) });
+          if (nodeId) queryClient.invalidateQueries({ queryKey: queryKeys.nodeDetail(nodeId) });
+          return;
+        }
+        setGenerateProgress({ current: done, total: taskIds.length, isGenerating: true });
+        if (attempt >= 150) {
+          // 看门狗（约 5 分钟）：停止轮询，提示可去任务中心查看
+          cardGenTaskIdsRef.current = [];
+          setGenerateProgress({ current: done, total: taskIds.length, isGenerating: false });
+          msgHelper.info(t("learning.cards.taskInProgress"));
+          return;
+        }
+        cardGenPollRef.current = window.setTimeout(() => poll(attempt + 1), 2000);
+      } catch {
+        if (cardGenTaskIdsRef.current !== taskIds) return;
+        if (attempt >= 150) {
+          cardGenTaskIdsRef.current = [];
+          setGenerateProgress({ current: taskIds.length, total: taskIds.length, isGenerating: false });
+          return;
+        }
+        cardGenPollRef.current = window.setTimeout(() => poll(attempt + 1), 3000);
+      }
+    };
+    poll(0);
+  };
+
+  // 取消当前跟踪的题目生成任务（Header「取消」按钮）
+  const cancelCardGeneration = async () => {
+    const ids = cardGenTaskIdsRef.current;
+    stopCardGenPoll();
+    cardGenTaskIdsRef.current = [];
+    setGenerateProgress(null);
+    if (!ids.length) return;
+    try {
+      await Promise.allSettled(ids.map((id) => api.tasks.cancel(id)));
+      msgHelper.info(t("learning.cards.cancelled"));
+    } catch {
+      msgHelper.error(t("learning.cards.cancelFailed"));
+    }
+  };
 
   // 后台拓展任务全部完成后刷新图谱节点与学习路径缓存，使大纲视图即时显示新拓展节点
   useTaskSettledInvalidator({
@@ -283,44 +503,20 @@ export const LearningMode = () => {
       setIsGenerating(false);
       return;
     }
-    // 当前语言的学习材料缺失,调用 AI 按该语言生成（生成后回写对应字段）
-    if (isGenerating) return;
-    const generateMaterial = async () => {
-      try {
-        setIsGenerating(true);
-        const response = await api.ai.generateLearningMaterial({
-          topic: node.title || "", context: node.content, level: node.level,
-          graph_id: graphId || undefined, language: materialLangCode,
-        });
-        if (response.content) {
-          setArticleContent(response.content);
-          const responseKeywords = response.keywords || [];
-          setKeywords(responseKeywords);
-          try {
-            await api.nodes.update(nodeId, {
-              learning_material: { ...(node.learning_material || {}), [materialLangCode]: response.content },
-              keywords: { ...(node.keywords || {}), [materialLangCode]: responseKeywords },
-            });
-            queryClient.invalidateQueries({ queryKey: queryKeys.nodeDetail(nodeId) });
-            msgHelper.success(isEn ? t("learning.material.englishGenerated") : t("learning.material.generated"), {
-              duration: 8000,
-              action: { label: t("learning.material.generateCards"), onClick: () => handleGenerateCards(nodeId) },
-            });
-          } catch (saveError) {
-            console.error("Failed to save learning material:", saveError);
-            msgHelper.error(t("learning.material.saveFailed"));
-          }
-        } else {
-          msgHelper.error(t("learning.material.aiFailed"));
-        }
-      } catch (error) {
-        console.error("Failed to load learning material:", error);
-        msgHelper.error(t("learning.material.generateFailed"));
-      } finally {
-        setIsGenerating(false);
-      }
-    };
-    generateMaterial();
+    // 当前语言学习材料缺失 → 入队后台异步任务生成（带进度），避免同步阻塞等待。
+    // 已在为该知识点生成（进行中）时跳过，避免重复触发。
+    if (isGenerating && generationNodeRef.current === nodeId) return;
+    if (isGenerating) {
+      // 上一个生成流程针对其它节点 → 作废旧流程，重新评估当前节点
+      stopPreGenPoll();
+      preGenSessionRef.current += 1;
+      setIsGenerating(false);
+      setIsPreGenPending(false);
+      setMaterialProgress(null);
+    }
+    const session = ++preGenSessionRef.current;
+    generationNodeRef.current = nodeId;
+    runAsyncMaterialGeneration(session);
     // 依赖 node (来自 useQuery) + nodeContentLang 触发;其余依赖通过闭包在触发时获取最新值
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeId, node, nodeContentLang]);
@@ -395,31 +591,12 @@ export const LearningMode = () => {
   const handleRegenerateMaterial = async () => {
     if (!nodeId || !graphId) { msgHelper.warning(t("learning.challenge.missingParams")); return; }
     if (!isOnline) { msgHelper.error(t("learning.material.regenerateOffline")); return; }
-    setIsGenerating(true); setArticleContent("");
-    try {
-      const node = await api.nodes.get(nodeId);
-      const isEn = nodeContentLang === "en-US";
-      const response = await api.ai.generateLearningMaterial({
-        topic: node.title || "", context: node.content, level: node.level,
-        graph_id: graphId, language: isEn ? "en-US" : "zh-CN",
-        schema_id: selectedSchemaId,
-      });
-      if (response.content) {
-        setArticleContent(response.content);
-        setKeywords(response.keywords || []);
-        const materialLangCode = isEn ? "en-US" : "zh-CN";
-        await api.nodes.update(nodeId, {
-          learning_material: { ...(node.learning_material || {}), [materialLangCode]: response.content },
-          keywords: { ...(node.keywords || {}), [materialLangCode]: response.keywords || [] },
-        });
-        queryClient.invalidateQueries({ queryKey: queryKeys.graphData(graphId) });
-        queryClient.invalidateQueries({ queryKey: queryKeys.nodeDetail(nodeId) });
-        msgHelper.success(t("learning.material.regenerated"));
-      }
-    } catch (error) {
-      console.error("Failed to regenerate learning material:", error);
-      msgHelper.error(t("learning.material.regenerateFailed"));
-    } finally { setIsGenerating(false); }
+    setArticleContent("");
+    await runAsyncMaterialGeneration(preGenSessionRef.current, {
+      force: true,
+      schema_id: selectedSchemaId,
+      successKey: "learning.material.regenerated",
+    });
   };
 
   const handleManualGenerateCards = async (config: {
@@ -489,6 +666,8 @@ export const LearningMode = () => {
             .startGenerationTracking(result.taskIds, challengeNodeId, challengeGraphId, "learning");
           return;
         }
+        // 普通出题：跟踪进度并保持模态框打开，实时展示生成进度
+        trackCardGeneration(result.taskIds ?? []);
         msgHelper.success(t("learning.cards.taskSubmitted"), {
           duration: 5000,
           action: { label: t("learning.cards.viewTasks"), onClick: () => navigate("/tasks") },
@@ -511,7 +690,7 @@ export const LearningMode = () => {
   };
 
   const handleCancelGenerate = () => {
-    if (abortControllerRef.current) { abortControllerRef.current.abort(); msgHelper.info(t("learning.cards.cancelling")); }
+    cancelCardGeneration();
   };
 
   const handleBatchAction = async (
@@ -646,6 +825,19 @@ export const LearningMode = () => {
 
         {nodeId ? (
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            {(isPreGenPending || materialProgress) && (
+              <div className="flex items-center gap-3 px-4 py-2 bg-primary-50 dark:bg-primary-900/20 border-b border-primary-100 dark:border-primary-800">
+                {isPreGenPending && !materialProgress && (
+                  <div className="flex items-center gap-2 text-xs text-primary-700 dark:text-primary-300 animate-pulse">
+                    <span className="inline-block w-2 h-2 rounded-full bg-primary-500 animate-ping" />
+                    {t("learning.material.preGenerating")}
+                  </div>
+                )}
+                {materialProgress && (
+                  <TaskProgressBar progress={materialProgress} className="flex-1" />
+                )}
+              </div>
+            )}
             <div className="flex-1 flex overflow-hidden">
               <LearningArticleReader
                 isDark={isDark} isMobile={isMobile} nodeId={nodeId} graphId={graphId}
@@ -688,7 +880,13 @@ export const LearningMode = () => {
       <Suspense fallback={null}>
       <GenerateCardsModal
         isOpen={isGenModalOpen}
-        onClose={() => { setIsGenModalOpen(false); isChallengePendingRef.current = false; }}
+        onClose={() => {
+          setIsGenModalOpen(false);
+          isChallengePendingRef.current = false;
+          stopCardGenPoll();
+          cardGenTaskIdsRef.current = [];
+          setGenerateProgress(null);
+        }}
         onGenerate={handleManualGenerateCards}
         nodeTitle={nodeTitle}
         graphId={graphId ?? undefined}

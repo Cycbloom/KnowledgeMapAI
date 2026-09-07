@@ -1,4 +1,5 @@
 import { Router, type Response } from "express";
+import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../../../middleware/auth";
 import { validate } from "../../../middleware/validate";
 import {
@@ -8,6 +9,7 @@ import {
 } from "../../../schemas/index";
 import { ErrorCodes } from "../../../../shared/types/errorCodes";
 import { AppError } from "../../../middleware/errorHandler";
+import { asyncTaskService } from "../../../services/asyncTaskService";
 import {
   aiService,
   getMockResponse,
@@ -128,6 +130,59 @@ router.post(
       schema_id,
     });
     res.json({ content: result.content, keywords: result.keywords });
+  },
+);
+
+// 异步生成学习资料：入队后台任务并返回 taskId，供前端轮询进度（替代同步等待）。
+const generateLearningMaterialTaskSchema = z.object({
+  knowledge_point_id: z.string().uuid(),
+  language: z.string().min(2).max(10).optional(),
+  graph_id: z.string().uuid().optional(),
+  schema_id: z.string().uuid().optional(),
+  force: z.boolean().optional(),
+});
+
+router.post(
+  "/learning-material/task",
+  requireAuth,
+  validate(generateLearningMaterialTaskSchema),
+  async (req: AuthedRequest, res: Response) => {
+    const { knowledge_point_id, language, graph_id, schema_id, force } = req.body;
+
+    // 非强制时去重：该知识点已有在途生成任务则复用，避免重复消耗 AI 额度
+    if (!force) {
+      const { data: existing } = await req.supabase
+        .from("system_tasks")
+        .select("id")
+        .eq("user_id", req.user.id)
+        .eq("title", "generate_learning_material")
+        .contains("input_data", { knowledge_point_id })
+        .in("status", ["pending", "in_progress", "running", "paused"])
+        .order("created_at", { ascending: true })
+        .limit(1);
+
+      if (existing && existing.length > 0) {
+        res.json({ taskId: existing[0].id, reused: true });
+        return;
+      }
+    }
+
+    const task = await asyncTaskService.createTask(
+      req.user.id,
+      "generate_learning_material",
+      {
+        knowledge_point_id,
+        language: (language as string) || "zh-CN",
+        graph_id,
+        schema_id,
+        force: force ?? false,
+      },
+      // title 必须等于 processor 类型 key：asyncTaskService 恢复（retry/resume/重启）
+      // 依赖 getOriginalTaskType 用 title 反查 processor，展示标签由前端 getTypeLabel 本地化
+      "generate_learning_material",
+    );
+
+    res.json({ taskId: task.id, reused: false });
   },
 );
 

@@ -342,6 +342,42 @@ export interface UserSettingsGestures {
 }
 
 // ---------------------------------------------------------------------------
+// AI 预生成 — 服务端持久化（users.settings JSONB key = "pre_generation"）。
+// 字段沿用 snake_case 以匹配 JSONB 存储与服务端 preGenerationService 默认值。
+// 由设置页「AI 预生成」分区读写。
+// ---------------------------------------------------------------------------
+
+export type UserSettingsCardDifficulty = "easy" | "medium" | "hard" | "mixed";
+export type UserSettingsCardCoverage =
+  | "current_only"
+  | "with_children"
+  | "with_siblings"
+  | "graph";
+
+export interface UserSettingsPreGeneration {
+  /** 总开关：关闭时 cron / 排课触发均跳过 */
+  enabled: boolean;
+  /** 提前生成窗口（天）：排课日历中未来 N 天内的知识点会被预生成 */
+  lead_days: number;
+  /** 单轮预生成最多处理的知识点数量（控制 AI 调用规模） */
+  max_knowledge_points_per_run: number;
+  /** 是否预生成学习资料 */
+  learning_material: boolean;
+  /** 是否预生成练习题目 */
+  generate_cards: boolean;
+  /** 每个知识点预生成题目数 */
+  cards_per_knowledge_point: number;
+  /** 预生成题型 */
+  card_types: string[];
+  /** 预生成题目难度 */
+  card_difficulty: UserSettingsCardDifficulty;
+  /** 预生成题目覆盖范围（干扰项/子节点来源） */
+  card_coverage: UserSettingsCardCoverage;
+  /** 预生成语言（如 ["zh-CN"]） */
+  languages: string[];
+}
+
+// ---------------------------------------------------------------------------
 // Root type
 // ---------------------------------------------------------------------------
 
@@ -360,4 +396,5 @@ export interface UserSettings {
   shortcuts: UserSettingsShortcuts;
   noise: UserSettingsNoise;
   gestures: UserSettingsGestures;
+  preGeneration: UserSettingsPreGeneration;
 }

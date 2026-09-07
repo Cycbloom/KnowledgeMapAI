@@ -74,6 +74,7 @@
   "translateNodes": "节点翻译",
   "discoverNodeRelations": "节点关系发现",
   "generateLearningPathCandidates": "生成候选学习路径",
+  "generateLearningMaterial": "预生成学习资料",
   "continueRelationCreation": "继续创建关系",
   "searchPlaceholder": "搜索任务...",
   "noSearchResults": "未找到匹配的任务",

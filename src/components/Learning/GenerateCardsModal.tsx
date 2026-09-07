@@ -787,9 +787,7 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
         customPrompt: customPrompt.trim() || '',
         targetNodeIds,
       });
-      if (!isMobile) {
-        onClose();
-      }
+      // 提交后保持模态框打开，由 generateProgress 驱动显示实时生成进度
     } catch (error) {
       console.error(error);
     } finally {
@@ -1390,29 +1388,42 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
         className="bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 px-5 py-3.5 flex justify-end gap-3 items-center flex-shrink-0"
         aria-busy={isGenerating}
       >
-        {isMobile && isGenerating && generateProgress ? (
-          <div role="status" className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">
-                {t('learning.generateCards.generating')}
-              </span>
-              <span className="text-sm font-bold text-primary-600 dark:text-primary-400 shrink-0 ml-2">
-                {t('learning.generateCards.progress', {
-                  current: generateProgress.current,
-                  total: generateProgress.total,
-                })}
-              </span>
+        {generateProgress ? (
+          <>
+            <div role="status" className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">
+                  {generateProgress.isGenerating
+                    ? t('learning.generateCards.generating')
+                    : t('learning.generateCards.generatedDone')}
+                </span>
+                <span className="text-sm font-bold text-primary-600 dark:text-primary-400 shrink-0 ml-2">
+                  {t('learning.generateCards.progress', {
+                    current: generateProgress.current,
+                    total: generateProgress.total,
+                  })}
+                </span>
+              </div>
+              <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-primary-500 to-violet-500 h-full rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 text-center">
+                {generateProgress.isGenerating
+                  ? t('learning.generateCards.keepForeground')
+                  : t('learning.generateCards.generatedDoneHint')}
+              </p>
             </div>
-            <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
-              <div
-                className="bg-gradient-to-r from-primary-500 to-violet-500 h-full rounded-full transition-all duration-300 ease-out"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 text-center">
-              {t('learning.generateCards.keepForeground')}
-            </p>
-          </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-sm font-bold transition-colors"
+            >
+              {t('learning.generateCards.close')}
+            </button>
+          </>
         ) : (
           <>
             <div className="mr-auto flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400 flex-wrap">

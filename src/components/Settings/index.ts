@@ -10,3 +10,4 @@ export { GraphEditorSettings } from "./GraphEditorSettings";
 export { ShortcutSettings } from "./ShortcutSettings";
 export { QuizModeSettings } from "./QuizModeSettings";
 export { NotificationSettings } from "./NotificationSettings";
+export { PreGenerationSettings } from "./PreGenerationSettings";

@@ -74,6 +74,7 @@
   "translateNodes": "Translate Nodes",
   "discoverNodeRelations": "Discover Node Relations",
   "generateLearningPathCandidates": "Generate Candidate Learning Paths",
+  "generateLearningMaterial": "Pre-generate Learning Material",
   "continueRelationCreation": "Continue Creating Relations",
   "searchPlaceholder": "Search tasks...",
   "noSearchResults": "No matching tasks found",

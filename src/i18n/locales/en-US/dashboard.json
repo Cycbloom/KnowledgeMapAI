@@ -192,5 +192,48 @@
     "saveError": "Failed to save tags",
     "removeTag": "Remove tag {{tag}}",
     "limitReached": "You can add up to {{count}} tags"
+  },
+  "learningLoop": {
+    "title": "Active Learning Loops",
+    "subtitle": "Learn → Test → Review → Iterate to master a knowledge point",
+    "empty": "No active learning loops",
+    "stage": {
+      "learn": "Learn",
+      "test": "Test",
+      "review": "Review",
+      "iterate": "Iterate"
+    },
+    "loopCount": "Loop {{count}}",
+    "mastery": "Mastery {{value}}%",
+    "enter": "Continue learning",
+    "lastChange": "Updated {{time}}"
+  },
+  "goals": {
+    "title": "Learning Goals",
+    "subtitle": "Set weekly / monthly goals and track progress",
+    "empty": "No goals yet — add one to start tracking",
+    "week": "This week",
+    "month": "This month",
+    "metrics": {
+      "focus_minutes": "Focus Minutes",
+      "tasks_completed": "Tasks Completed",
+      "cards_reviewed": "Cards Reviewed",
+      "new_knowledge_points": "New Knowledge Points"
+    },
+    "metricUnit": {
+      "focus_minutes": "min",
+      "tasks_completed": "",
+      "cards_reviewed": "",
+      "new_knowledge_points": ""
+    },
+    "target": "Target",
+    "current": "Current",
+    "addGoal": "Add Goal",
+    "periodLabel": "Period",
+    "metricLabel": "Metric",
+    "targetLabel": "Target value",
+    "save": "Save",
+    "deleteHint": "Delete goal",
+    "achieved": "Achieved"
   }
 }

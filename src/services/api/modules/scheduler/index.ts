@@ -88,6 +88,7 @@ import { activitiesApi } from "./activities";
 import { orchestratorApi } from "./orchestrator";
 import { systemTasksApi } from "./systemTasks";
 import { calendarScheduleApi } from "./calendarSchedule";
+import { goalsApi } from "./goals";
 
 export const schedulerApi = {
   ...tasksApi,
@@ -109,6 +110,7 @@ export const schedulerApi = {
   ...orchestratorApi,
   ...systemTasksApi,
   ...calendarScheduleApi,
+  ...goalsApi,
 };
 
 // Type assertion to ensure schedulerApi satisfies ISchedulerApi at compile time

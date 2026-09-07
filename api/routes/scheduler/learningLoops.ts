@@ -99,6 +99,23 @@ router.post(
 );
 
 router.get(
+  "/learning-loops",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    }
+
+    const loops = await learningLoopOrchestrator.listActiveLoops(
+      supabase,
+      req.user.id,
+    );
+    res.json({ success: true, data: loops });
+  },
+);
+
+router.get(
   "/learning-loops/active",
   requireAuth,
   async (req: AuthRequest, res: Response) => {

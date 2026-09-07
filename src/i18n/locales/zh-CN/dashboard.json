@@ -192,5 +192,48 @@
     "saveError": "标签保存失败",
     "removeTag": "移除标签 {{tag}}",
     "limitReached": "最多添加 {{count}} 个标签"
+  },
+  "learningLoop": {
+    "title": "当前学习循环",
+    "subtitle": "学 → 测 → 复习 → 迭代，掌握一个知识点",
+    "empty": "暂无进行中的学习循环",
+    "stage": {
+      "learn": "学习",
+      "test": "测验",
+      "review": "复习",
+      "iterate": "迭代"
+    },
+    "loopCount": "第 {{count}} 轮",
+    "mastery": "掌握度 {{value}}%",
+    "enter": "继续学习",
+    "lastChange": "更新于 {{time}}"
+  },
+  "goals": {
+    "title": "学习目标",
+    "subtitle": "设定每周 / 每月目标并追踪达成",
+    "empty": "尚未设定目标，添加一个开始追踪吧",
+    "week": "本周",
+    "month": "本月",
+    "metrics": {
+      "focus_minutes": "专注时长",
+      "tasks_completed": "完成任务",
+      "cards_reviewed": "复习卡片",
+      "new_knowledge_points": "新增知识点"
+    },
+    "metricUnit": {
+      "focus_minutes": "分钟",
+      "tasks_completed": "个",
+      "cards_reviewed": "张",
+      "new_knowledge_points": "个"
+    },
+    "target": "目标",
+    "current": "当前",
+    "addGoal": "添加目标",
+    "periodLabel": "周期",
+    "metricLabel": "指标",
+    "targetLabel": "目标值",
+    "save": "保存",
+    "deleteHint": "删除目标",
+    "achieved": "已达成"
   }
 }

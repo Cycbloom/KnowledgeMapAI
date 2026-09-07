@@ -27,6 +27,8 @@ import { EmptyState } from "../components/common";
 import { TodayBriefCard } from "../components/Dashboard/TodayBriefCard";
 import { MobileTodayHome } from "../components/Dashboard/MobileTodayHome";
 import { BlindSpotList } from "../components/Study/BlindSpotList";
+import { LearningLoopTracker } from "../components/Dashboard/LearningLoopTracker";
+import { GoalsTracker } from "../components/Dashboard/GoalsTracker";
 import { learningPathsApi, type LearningPathResponse } from "../services/api/learningPaths";
 import { dashboardApi } from "../services/api/study";
 import { message } from "../utils/messageHelper";
@@ -549,6 +551,12 @@ export const Dashboard = () => {
 
             {/* 今日回顾 / 捕获箱 */}
             <TodayReview />
+
+            {/* 学习循环：进行中的学→测→复习→迭代可视化 */}
+            <LearningLoopTracker />
+
+            {/* 长期目标：周/月目标设定与达成追踪 */}
+            <GoalsTracker />
 
             {/* 盲点榜：FSRS 低稳定性弱卡（可一键去复习） */}
             <BlindSpotList data={dashboardStats?.blindSpots ?? []} />

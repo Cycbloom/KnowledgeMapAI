@@ -326,6 +326,61 @@ class LearningLoopOrchestrator {
     };
   }
 
+  /** 用户所有进行中的学习循环（含知识点标题），供可视化展示。 */
+  async listActiveLoops(
+    supabase: SupabaseClient,
+    userId: string,
+  ): Promise<
+    Array<{
+      id: string;
+      knowledgePointId?: string;
+      knowledgePointTitle: string;
+      graphId?: string;
+      currentStage: LoopStage;
+      loopCount: number;
+      masteryLevel: number;
+      lastStageChangeAt: string;
+    }>
+  > {
+    const { data, error } = await supabase
+      .from("learning_loops")
+      .select(
+        "id, knowledge_point_id, graph_id, current_stage, loop_count, mastery_level, last_stage_change_at, knowledge_points(title)",
+      )
+      .eq("user_id", userId)
+      .neq("current_stage", "iterate")
+      .order("last_stage_change_at", { ascending: false })
+      .limit(20);
+
+    if (error) {
+      logger.error("[LearningLoop] Failed to list active loops:", error);
+      return [];
+    }
+
+    return (data ?? []).map((row) => ({
+      id: row.id,
+      knowledgePointId: row.knowledge_point_id ?? undefined,
+      knowledgePointTitle: this.resolveTitle(
+        (row.knowledge_points as { title?: unknown } | null)?.title,
+      ),
+      graphId: row.graph_id ?? undefined,
+      currentStage: (row.current_stage ?? "learn") as LoopStage,
+      loopCount: row.loop_count ?? 0,
+      masteryLevel: row.mastery_level ?? 0,
+      lastStageChangeAt: row.last_stage_change_at ?? "",
+    }));
+  }
+
+  /** knowledge_points.title 为 Json（字符串或 {zh,en}），归一化为字符串。 */
+  private resolveTitle(raw: unknown): string {
+    if (typeof raw === "string") return raw;
+    if (raw && typeof raw === "object") {
+      const obj = raw as Record<string, unknown>;
+      return String(obj.zh ?? obj["zh-CN"] ?? obj.en ?? obj["en-US"] ?? "");
+    }
+    return "";
+  }
+
   async startLearningWithTask(
     supabase: SupabaseClient,
     userId: string,

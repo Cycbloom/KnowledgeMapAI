@@ -113,6 +113,10 @@ export type {
   StudyModePreset,
   LoopStage,
   LearningLoop,
+  ActiveLoopInfo,
+  GoalPeriodType,
+  GoalMetric,
+  LearningGoal,
 } from "./scheduler-study";
 
 export { LEARNING_STATE_CONFIGS } from "./scheduler-study";

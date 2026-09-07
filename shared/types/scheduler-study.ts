@@ -172,3 +172,36 @@ export interface LearningLoop {
   };
   taskId?: string;
 }
+
+/** 进行中的学习循环摘要（含知识点标题），供循环可视化展示。 */
+export interface ActiveLoopInfo {
+  id: string;
+  knowledgePointId?: string;
+  knowledgePointTitle: string;
+  graphId?: string;
+  currentStage: LoopStage;
+  loopCount: number;
+  masteryLevel: number;
+  lastStageChangeAt: string;
+}
+
+export type GoalPeriodType = "week" | "month";
+export type GoalMetric =
+  | "focus_minutes"
+  | "tasks_completed"
+  | "cards_reviewed"
+  | "new_knowledge_points";
+
+/** 个人长期学习目标（含当前周期进度）。 */
+export interface LearningGoal {
+  id: string;
+  period_type: GoalPeriodType;
+  metric: GoalMetric;
+  target_value: number;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+  current_value: number;
+  progress_percent: number;
+  period_start: string;
+}

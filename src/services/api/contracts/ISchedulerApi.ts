@@ -79,6 +79,10 @@ import type {
   LinkedTaskResult,
   GraphTaskInfo,
   LearningLoop,
+  ActiveLoopInfo,
+  LearningGoal,
+  GoalMetric,
+  GoalPeriodType,
 } from "@shared/types";
 
 // --- Module-local types (not in @shared/types) ---
@@ -307,10 +311,18 @@ export interface ISchedulerOrchestratorApi {
   startLearningLoop: (knowledgePointId?: string, graphId?: string) => Promise<LearningLoop>;
   advanceLearningLoop: (loopId: string) => Promise<LearningLoop>;
   getActiveLearningLoop: (knowledgePointId?: string) => Promise<LearningLoop | null>;
+  listActiveLearningLoops: () => Promise<ActiveLoopInfo[]>;
   startLearningWithTask: (knowledgePointId: string, graphId?: string) => Promise<LearningLoop | null>;
   getNextStep: (overdueThreshold?: number) => Promise<NextStepDecision>;
   getLoops: (overdueThreshold?: number) => Promise<LoopsDecision>;
   getReviewInterrupt: () => Promise<{ overdueCount: number; shouldInterrupt: boolean }>;
+  listGoals: () => Promise<LearningGoal[]>;
+  upsertGoal: (input: {
+    period_type: GoalPeriodType;
+    metric: GoalMetric;
+    target_value: number;
+  }) => Promise<LearningGoal>;
+  deleteGoal: (id: string) => Promise<{ success: boolean }>;
   getNextActionForTask: (taskId: string) => Promise<{ action: (SmallLoopDecision["nextAction"] & { graphId?: string; url?: string; taskTitle?: string }) | null }>;
 }
 

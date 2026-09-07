@@ -20,6 +20,7 @@ import learningFlowRouter from "./learningFlow";
 import graphLearningRouter from "./graphLearning";
 import decisionRouter from "./decision";
 import activitiesRouter from "./activities";
+import goalsRouter from "./goals";
 
 const router = Router();
 
@@ -44,5 +45,6 @@ router.use(learningFlowRouter);
 router.use(graphLearningRouter);
 router.use(decisionRouter);
 router.use("/activities", activitiesRouter);
+router.use(goalsRouter);
 
 export default router;

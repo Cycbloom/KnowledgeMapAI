@@ -487,7 +487,7 @@ export type Database = {
           embedding: string | null
           id: string
           knowledge_point_id: string
-          sparse_embedding: string | null
+          sparse_embedding: unknown
         }
         Insert: {
           chunk_index: number
@@ -497,7 +497,7 @@ export type Database = {
           embedding?: string | null
           id?: string
           knowledge_point_id: string
-          sparse_embedding?: string | null
+          sparse_embedding?: unknown
         }
         Update: {
           chunk_index?: number
@@ -507,7 +507,7 @@ export type Database = {
           embedding?: string | null
           id?: string
           knowledge_point_id?: string
-          sparse_embedding?: string | null
+          sparse_embedding?: unknown
         }
         Relationships: [
           {
@@ -1160,7 +1160,7 @@ export type Database = {
           last_used_at: string | null
           parent_graph_id: string | null
           settings: Json | null
-          sparse_embedding: string | null
+          sparse_embedding: unknown
           tags: string[] | null
           task_id: string | null
           template_type: string | null
@@ -1183,7 +1183,7 @@ export type Database = {
           last_used_at?: string | null
           parent_graph_id?: string | null
           settings?: Json | null
-          sparse_embedding?: string | null
+          sparse_embedding?: unknown
           tags?: string[] | null
           task_id?: string | null
           template_type?: string | null
@@ -1206,7 +1206,7 @@ export type Database = {
           last_used_at?: string | null
           parent_graph_id?: string | null
           settings?: Json | null
-          sparse_embedding?: string | null
+          sparse_embedding?: unknown
           tags?: string[] | null
           task_id?: string | null
           template_type?: string | null
@@ -1305,6 +1305,7 @@ export type Database = {
           owner_id: string
           properties: Json | null
           source_knowledge_point_id: string | null
+          sparse_embedding: unknown
           summary: Json | null
           title: Json
           total_study_duration: number | null
@@ -1326,7 +1327,7 @@ export type Database = {
           owner_id: string
           properties?: Json | null
           source_knowledge_point_id?: string | null
-          sparse_embedding?: string | null
+          sparse_embedding?: unknown
           summary?: Json | null
           title?: Json
           total_study_duration?: number | null
@@ -1348,7 +1349,7 @@ export type Database = {
           owner_id?: string
           properties?: Json | null
           source_knowledge_point_id?: string | null
-          sparse_embedding?: string | null
+          sparse_embedding?: unknown
           summary?: Json | null
           title?: Json
           total_study_duration?: number | null
@@ -1366,6 +1367,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      learning_goals: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          metric: string
+          period_type: string
+          target_value: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          metric: string
+          period_type: string
+          target_value: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          metric?: string
+          period_type?: string
+          target_value?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       learning_loops: {
         Row: {
@@ -1655,75 +1689,6 @@ export type Database = {
           },
         ]
       }
-      learning_paths: {
-        Row: {
-          ai_generated: boolean | null
-          created_at: string | null
-          daily_minutes_target: number | null
-          description: string | null
-          domain_id: string | null
-          goal: string | null
-          id: string
-          path_type: string | null
-          source_graph_id: string | null
-          status: string | null
-          target_date: string | null
-          title: string
-          total_estimated_time: number | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          ai_generated?: boolean | null
-          created_at?: string | null
-          daily_minutes_target?: number | null
-          description?: string | null
-          domain_id?: string | null
-          goal?: string | null
-          id?: string
-          path_type?: string | null
-          source_graph_id?: string | null
-          status?: string | null
-          target_date?: string | null
-          title: string
-          total_estimated_time?: number | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          ai_generated?: boolean | null
-          created_at?: string | null
-          daily_minutes_target?: number | null
-          description?: string | null
-          domain_id?: string | null
-          goal?: string | null
-          id?: string
-          path_type?: string | null
-          source_graph_id?: string | null
-          status?: string | null
-          target_date?: string | null
-          title?: string
-          total_estimated_time?: number | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "learning_paths_domain_id_fkey"
-            columns: ["domain_id"]
-            isOneToOne: false
-            referencedRelation: "domains"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "learning_paths_source_graph_id_fkey"
-            columns: ["source_graph_id"]
-            isOneToOne: false
-            referencedRelation: "knowledge_graphs"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       learning_path_schedule: {
         Row: {
           created_at: string | null
@@ -1776,11 +1741,149 @@ export type Database = {
             referencedRelation: "learning_paths"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      learning_path_stage_windows: {
+        Row: {
+          created_at: string | null
+          graph_id: string | null
+          graph_node_id: string | null
+          id: string
+          path_id: string
+          planned_minutes: number | null
+          stage_index: number
+          status: string | null
+          updated_at: string | null
+          user_id: string
+          week_end_date: string
+          week_start_date: string
+        }
+        Insert: {
+          created_at?: string | null
+          graph_id?: string | null
+          graph_node_id?: string | null
+          id?: string
+          path_id: string
+          planned_minutes?: number | null
+          stage_index: number
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+          week_end_date: string
+          week_start_date: string
+        }
+        Update: {
+          created_at?: string | null
+          graph_id?: string | null
+          graph_node_id?: string | null
+          id?: string
+          path_id?: string
+          planned_minutes?: number | null
+          stage_index?: number
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+          week_end_date?: string
+          week_start_date?: string
+        }
+        Relationships: [
           {
-            foreignKeyName: "learning_path_schedule_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: "learning_path_stage_windows_graph_id_fkey"
+            columns: ["graph_id"]
             isOneToOne: false
-            referencedRelation: "auth_users"
+            referencedRelation: "knowledge_graphs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learning_path_stage_windows_graph_node_id_fkey"
+            columns: ["graph_node_id"]
+            isOneToOne: false
+            referencedRelation: "learning_path_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learning_path_stage_windows_path_id_fkey"
+            columns: ["path_id"]
+            isOneToOne: false
+            referencedRelation: "learning_paths"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      learning_paths: {
+        Row: {
+          ai_generated: boolean | null
+          created_at: string | null
+          daily_minutes_target: number | null
+          description: string | null
+          domain_id: string | null
+          goal: string | null
+          id: string
+          path_type: string | null
+          priority: number | null
+          scheduled_end_date: string | null
+          scheduled_start_date: string | null
+          source_graph_id: string | null
+          status: string | null
+          target_date: string | null
+          title: string
+          total_estimated_time: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          ai_generated?: boolean | null
+          created_at?: string | null
+          daily_minutes_target?: number | null
+          description?: string | null
+          domain_id?: string | null
+          goal?: string | null
+          id?: string
+          path_type?: string | null
+          priority?: number | null
+          scheduled_end_date?: string | null
+          scheduled_start_date?: string | null
+          source_graph_id?: string | null
+          status?: string | null
+          target_date?: string | null
+          title: string
+          total_estimated_time?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          ai_generated?: boolean | null
+          created_at?: string | null
+          daily_minutes_target?: number | null
+          description?: string | null
+          domain_id?: string | null
+          goal?: string | null
+          id?: string
+          path_type?: string | null
+          priority?: number | null
+          scheduled_end_date?: string | null
+          scheduled_start_date?: string | null
+          source_graph_id?: string | null
+          status?: string | null
+          target_date?: string | null
+          title?: string
+          total_estimated_time?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_paths_domain_id_fkey"
+            columns: ["domain_id"]
+            isOneToOne: false
+            referencedRelation: "domains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learning_paths_source_graph_id_fkey"
+            columns: ["source_graph_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_graphs"
             referencedColumns: ["id"]
           },
         ]
@@ -2038,7 +2141,7 @@ export type Database = {
           embedding: string
           id: string
           note_id: string
-          sparse_embedding: string | null
+          sparse_embedding: unknown
           updated_at: string
         }
         Insert: {
@@ -2047,7 +2150,7 @@ export type Database = {
           embedding: string
           id?: string
           note_id: string
-          sparse_embedding?: string | null
+          sparse_embedding?: unknown
           updated_at?: string
         }
         Update: {
@@ -2056,7 +2159,7 @@ export type Database = {
           embedding?: string
           id?: string
           note_id?: string
-          sparse_embedding?: string | null
+          sparse_embedding?: unknown
           updated_at?: string
         }
         Relationships: [
@@ -3368,31 +3471,46 @@ export type Database = {
       task_settings: {
         Row: {
           break_duration: number | null
+          daily_capacity_minutes: number | null
+          graph_estimated_node_count: number | null
+          graph_extra_time_ratio: number | null
           id: string
+          node_learning_minutes: number | null
           notification_enabled: boolean | null
           q0_time_slice: number | null
           q1_time_slice: number | null
           q2_time_slice: number | null
+          review_buffer_ratio: number | null
           sound_enabled: boolean | null
           user_id: string
         }
         Insert: {
           break_duration?: number | null
+          daily_capacity_minutes?: number | null
+          graph_estimated_node_count?: number | null
+          graph_extra_time_ratio?: number | null
           id?: string
+          node_learning_minutes?: number | null
           notification_enabled?: boolean | null
           q0_time_slice?: number | null
           q1_time_slice?: number | null
           q2_time_slice?: number | null
+          review_buffer_ratio?: number | null
           sound_enabled?: boolean | null
           user_id: string
         }
         Update: {
           break_duration?: number | null
+          daily_capacity_minutes?: number | null
+          graph_estimated_node_count?: number | null
+          graph_extra_time_ratio?: number | null
           id?: string
+          node_learning_minutes?: number | null
           notification_enabled?: boolean | null
           q0_time_slice?: number | null
           q1_time_slice?: number | null
           q2_time_slice?: number | null
+          review_buffer_ratio?: number | null
           sound_enabled?: boolean | null
           user_id?: string
         }
@@ -3953,6 +4071,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "user_tasks_active_learning_path_id_fkey"
+            columns: ["active_learning_path_id"]
+            isOneToOne: false
+            referencedRelation: "learning_paths"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "user_tasks_graph_id_fkey"
             columns: ["graph_id"]
             isOneToOne: false
@@ -4368,6 +4493,22 @@ export type Database = {
           similarity: number
         }[]
       }
+      match_document_chunks_sparse: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          p_graph_id?: string
+          p_user_id?: string
+          query_sparse: unknown
+        }
+        Returns: {
+          chunk_index: number
+          content: string
+          id: string
+          knowledge_point_id: string
+          similarity: number
+        }[]
+      }
       match_knowledge_points: {
         Args: {
           match_count?: number
@@ -4397,6 +4538,35 @@ export type Database = {
           title: string
         }[]
       }
+      match_knowledge_points_sparse: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          p_graph_id?: string
+          p_user_id?: string
+          query_sparse: unknown
+        }
+        Returns: {
+          content: string
+          id: string
+          similarity: number
+          title: string
+        }[]
+      }
+      match_knowledge_points_sparse_global: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          p_user_id?: string
+          query_sparse: unknown
+        }
+        Returns: {
+          content: string
+          id: string
+          similarity: number
+          title: string
+        }[]
+      }
       match_notes: {
         Args: {
           match_count?: number
@@ -4412,57 +4582,12 @@ export type Database = {
           title: string
         }[]
       }
-      match_document_chunks_sparse: {
-        Args: {
-          match_count?: number
-          match_threshold?: number
-          p_graph_id?: string
-          p_user_id?: string
-          query_sparse: string
-        }
-        Returns: {
-          chunk_index: number
-          content: string
-          id: string
-          knowledge_point_id: string
-          similarity: number
-        }[]
-      }
-      match_knowledge_points_sparse: {
-        Args: {
-          match_count?: number
-          match_threshold?: number
-          p_graph_id?: string
-          p_user_id?: string
-          query_sparse: string
-        }
-        Returns: {
-          content: string
-          id: string
-          similarity: number
-          title: string
-        }[]
-      }
-      match_knowledge_points_sparse_global: {
-        Args: {
-          match_count?: number
-          match_threshold?: number
-          p_user_id?: string
-          query_sparse: string
-        }
-        Returns: {
-          content: string
-          id: string
-          similarity: number
-          title: string
-        }[]
-      }
       match_notes_sparse: {
         Args: {
           match_count?: number
           match_threshold?: number
           p_user_id?: string
-          query_sparse: string
+          query_sparse: unknown
         }
         Returns: {
           chunk_text: string

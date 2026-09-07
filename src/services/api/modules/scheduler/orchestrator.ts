@@ -1,5 +1,5 @@
 import { requestData } from "../../client";
-import type { LearningLoop } from "@shared/types";
+import type { LearningLoop, ActiveLoopInfo } from "@shared/types";
 
 export interface CompleteLearningResult {
   subtaskId?: string;
@@ -236,6 +236,10 @@ export const orchestratorApi = {
   getActiveLearningLoop: async (knowledgePointId?: string) => {
     const params = knowledgePointId ? `?knowledge_point_id=${knowledgePointId}` : "";
     return requestData<LearningLoop | null>(`/scheduler/learning-loops/active${params}`);
+  },
+
+  listActiveLearningLoops: async () => {
+    return requestData<ActiveLoopInfo[]>("/scheduler/learning-loops");
   },
 
   startLearningWithTask: async (knowledgePointId: string, graphId?: string) => {

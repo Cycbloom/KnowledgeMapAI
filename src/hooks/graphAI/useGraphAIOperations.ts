@@ -321,7 +321,10 @@ export const useGraphAIOperations = ({
     navigate(`/study?node_id=${selectedNode.id}&graph_id=${id}&view=bank`);
   };
 
-  const handleBackgroundTask = async (type: 'expand_graph' | 'batch_generate_questions', params?: Record<string, unknown>) => {
+  const handleBackgroundTask = async (
+    type: 'expand_graph' | 'batch_generate_questions' | 'batch_generate_material',
+    params?: Record<string, unknown>,
+  ) => {
     if (selectedNodeIds.size === 0 && !selectedNode) return;
     if (!id) return;
 
@@ -357,6 +360,18 @@ export const useGraphAIOperations = ({
             provider,
             model
           });
+
+          message.success(t('toast.graphAI.submitSuccess'), { duration: 3000 });
+          return true;
+        }
+
+        if (type === 'batch_generate_material') {
+          message.info(t('toast.graphAI.submitting'), { duration: 2000 });
+
+          await api.ai.batchGenerateLearningMaterial(
+            nodesToProcess.map((n) => n.id),
+            { graph_id: id },
+          );
 
           message.success(t('toast.graphAI.submitSuccess'), { duration: 3000 });
           return true;

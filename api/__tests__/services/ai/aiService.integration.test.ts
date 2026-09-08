@@ -391,7 +391,7 @@ describe("AI Service 集成测试", () => {
       ];
       (
         mockProvider.client.chat.completions.create as ReturnType<typeof vi.fn>
-      ).mockReturnValue(createMockStream(chunks));
+      ).mockResolvedValue(createMockStream(chunks));
 
       const res = createMockResponse();
 
@@ -419,7 +419,7 @@ describe("AI Service 集成测试", () => {
       const mockProvider = createMockProvider();
       (
         mockProvider.client.chat.completions.create as ReturnType<typeof vi.fn>
-      ).mockReturnValue(createMockStream([{ choices: [{ delta: { content: "x" } }] }]));
+      ).mockResolvedValue(createMockStream([{ choices: [{ delta: { content: "x" } }] }]));
 
       const res = createMockResponse();
 
@@ -450,7 +450,7 @@ describe("AI Service 集成测试", () => {
       ];
       (
         mockProvider.client.chat.completions.create as ReturnType<typeof vi.fn>
-      ).mockReturnValue(createMockStream(chunks));
+      ).mockResolvedValue(createMockStream(chunks));
 
       const res = createMockResponse();
 
@@ -482,7 +482,7 @@ describe("AI Service 集成测试", () => {
       ];
       (
         mockProvider.client.chat.completions.create as ReturnType<typeof vi.fn>
-      ).mockReturnValue(createMockStream(chunks));
+      ).mockResolvedValue(createMockStream(chunks));
 
       const res = createMockResponse();
 
@@ -512,7 +512,7 @@ describe("AI Service 集成测试", () => {
       };
       (
         mockProvider.client.chat.completions.create as ReturnType<typeof vi.fn>
-      ).mockReturnValue(failingStream);
+      ).mockResolvedValue(failingStream);
 
       const res = createMockResponse();
 
@@ -531,7 +531,7 @@ describe("AI Service 集成测试", () => {
       const mockProvider = createMockProvider();
       (
         mockProvider.client.chat.completions.create as ReturnType<typeof vi.fn>
-      ).mockReturnValue(createMockStream<ChatCompletionChunk>([]));
+      ).mockResolvedValue(createMockStream<ChatCompletionChunk>([]));
 
       const res = createMockResponse();
 

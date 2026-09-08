@@ -110,7 +110,7 @@ interface ChatCompletionStreamingParams {
 
 export interface ChatCompletions {
   create(params: ChatCompletionNonStreamingParams): Promise<ChatCompletionResponse>;
-  create(params: ChatCompletionStreamingParams): AsyncIterable<ChatCompletionChunk>;
+  create(params: ChatCompletionStreamingParams): Promise<AsyncIterable<ChatCompletionChunk>>;
 }
 
 export interface AIProviderClient {

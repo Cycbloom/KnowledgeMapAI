@@ -23,6 +23,7 @@ import {
   FileText,
   FolderOpen,
   Palette,
+  BookOpen,
 } from "lucide-react";
 import { Node, Edge, type NodeStatus } from "../../../types";
 import { useDebouncedSearch } from "../../../hooks/common/useDebouncedSearch";
@@ -68,7 +69,12 @@ interface GraphOutlineProps {
   selectedNodeIds?: Set<string>;
   onSelectionChange?: (ids: Set<string>) => void;
   onBatchAction?: (
-    action: "expand_graph" | "delete" | "batch_generate_questions" | "create_region",
+    action:
+      | "expand_graph"
+      | "delete"
+      | "batch_generate_questions"
+      | "batch_generate_material"
+      | "create_region",
     data?: Record<string, unknown>,
   ) => void;
   onAddNode?: () => void;
@@ -1418,6 +1424,15 @@ export const GraphOutline = React.memo(function GraphOutline({
                 aria-label={t("graphEditor.outline.batchGenerateQuestions")}
               >
                 <Sparkles aria-hidden="true" size={16} />
+              </button>
+              <button
+                onClick={() => onBatchAction?.("batch_generate_material")}
+                disabled={selectedNodeIds.size === 0}
+                className="p-1.5 text-sky-600 hover:bg-sky-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                title={t("graphEditor.outline.batchGenerateMaterial")}
+                aria-label={t("graphEditor.outline.batchGenerateMaterial")}
+              >
+                <BookOpen aria-hidden="true" size={16} />
               </button>
               <button
                 onClick={() => onCreateQuizSet(Array.from(selectedNodeIds))}

@@ -309,8 +309,8 @@ describe("ChatService", () => {
         { choices: [{ delta: { content: "World" } }] },
         { choices: [{ delta: {} }] },
       ];
-      // streamChatCompletion 不 await create()，故用 mockReturnValue 同步返回 stream
-      mockProvider.client.chat.completions.create.mockReturnValue(
+      // streamChatCompletion 会 await create()（SDK 返回 Promise<Stream>），故用 mockResolvedValue
+      mockProvider.client.chat.completions.create.mockResolvedValue(
         createMockStream(chunks),
       );
 
@@ -333,8 +333,8 @@ describe("ChatService", () => {
 
     it("流式调用使用 stream:true 与 stream_options 参数", async () => {
       const mockProvider = createMockProvider();
-      // streamChatCompletion 不 await create()，故用 mockReturnValue 同步返回 stream
-      mockProvider.client.chat.completions.create.mockReturnValue(
+      // streamChatCompletion 会 await create()（SDK 返回 Promise<Stream>），故用 mockResolvedValue
+      mockProvider.client.chat.completions.create.mockResolvedValue(
         createMockStream([{ choices: [{ delta: { content: "x" } }] }]),
       );
 
@@ -367,8 +367,8 @@ describe("ChatService", () => {
         { choices: [{ delta: { content: "only-this" } }] },
         { choices: [{ delta: null }] },
       ];
-      // streamChatCompletion 不 await create()，故用 mockReturnValue 同步返回 stream
-      mockProvider.client.chat.completions.create.mockReturnValue(
+      // streamChatCompletion 会 await create()（SDK 返回 Promise<Stream>），故用 mockResolvedValue
+      mockProvider.client.chat.completions.create.mockResolvedValue(
         createMockStream(chunks),
       );
 
@@ -404,8 +404,8 @@ describe("ChatService", () => {
           },
         },
       ];
-      // streamChatCompletion 不 await create()，故用 mockReturnValue 同步返回 stream
-      mockProvider.client.chat.completions.create.mockReturnValue(
+      // streamChatCompletion 会 await create()（SDK 返回 Promise<Stream>），故用 mockResolvedValue
+      mockProvider.client.chat.completions.create.mockResolvedValue(
         createMockStream(chunks),
       );
 
@@ -437,8 +437,8 @@ describe("ChatService", () => {
     it("无 usage chunk 时 token 统计为 0", async () => {
       const mockProvider = createMockProvider();
       const chunks = [{ choices: [{ delta: { content: "no usage" } }] }];
-      // streamChatCompletion 不 await create()，故用 mockReturnValue 同步返回 stream
-      mockProvider.client.chat.completions.create.mockReturnValue(
+      // streamChatCompletion 会 await create()（SDK 返回 Promise<Stream>），故用 mockResolvedValue
+      mockProvider.client.chat.completions.create.mockResolvedValue(
         createMockStream(chunks),
       );
 
@@ -475,8 +475,8 @@ describe("ChatService", () => {
           };
         },
       };
-      // streamChatCompletion 不 await create()，故用 mockReturnValue 同步返回 stream
-      mockProvider.client.chat.completions.create.mockReturnValue(
+      // streamChatCompletion 会 await create()（SDK 返回 Promise<Stream>），故用 mockResolvedValue
+      mockProvider.client.chat.completions.create.mockResolvedValue(
         failingStream,
       );
 

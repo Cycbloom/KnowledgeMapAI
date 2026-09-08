@@ -75,6 +75,17 @@ export interface IAiApi {
     force?: boolean;
   }): Promise<{ taskId: string; reused: boolean }>;
 
+  /** 批量异步生成学习资料：按节点拆分后台任务，返回 taskIds 供前端轮询聚合 */
+  batchGenerateLearningMaterial(
+    node_ids: string[],
+    options?: {
+      language?: string;
+      graph_id?: string;
+      schema_id?: string;
+      force?: boolean;
+    },
+  ): Promise<{ success: boolean; taskIds: string[]; message: string }>;
+
   /** AI 辅助设计/优化学习材料章节结构 */
   assistLearningSchema(data: {
     mode: "generate" | "optimize";

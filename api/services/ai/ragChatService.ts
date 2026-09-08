@@ -319,6 +319,34 @@ export class RAGChatService {
             stream_options: { include_usage: true },
           });
 
+          // 防御：上游返回非 SSE（普通 JSON/错误体）时给出可诊断的明确报错，
+          // 而不是抛出晦涩的 "is not async iterable"。
+          if (
+            !stream ||
+            typeof (stream as { [Symbol.asyncIterator]?: unknown })[
+              Symbol.asyncIterator
+            ] !== "function"
+          ) {
+            logger.error(
+              "RAG stream chat: provider did not return a streaming (SSE) response",
+              {
+                provider: aiProvider.providerType,
+                model: model || aiProvider.model,
+                responseType: typeof stream,
+                responseKeys:
+                  stream && typeof stream === "object"
+                    ? Object.keys(stream as object)
+                    : undefined,
+                responseSample: stream
+                  ? JSON.stringify(stream).slice(0, 300)
+                  : undefined,
+              },
+            );
+            throw new AppError(ErrorCodes.AI_INVALID_RESPONSE, {
+              message: `RAG 流式对话：AI 服务未返回流式响应（provider=${aiProvider.providerType}, model=${model || aiProvider.model}），请检查模型是否支持流式输出或 baseURL 是否正确`,
+            });
+          }
+
           let promptTokens = 0;
           let completionTokens = 0;
           let cachedTokens = 0;

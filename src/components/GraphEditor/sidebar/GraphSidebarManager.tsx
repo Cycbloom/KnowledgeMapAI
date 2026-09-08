@@ -32,7 +32,10 @@ interface NodeOperations {
 }
 
 interface AIOperations {
-  handleBackgroundTask: (type: "expand_graph" | "batch_generate_questions", data?: Record<string, unknown>) => void | Promise<void>;
+  handleBackgroundTask: (
+    type: "expand_graph" | "batch_generate_questions" | "batch_generate_material",
+    data?: Record<string, unknown>,
+  ) => void | Promise<void>;
   handleStartLevelTest: () => void;
   handleStartLearningMode: () => void;
   handleManageCards: () => void;
@@ -225,6 +228,8 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
               else if (action === "delete") nodeOps.handleBatchDelete();
               else if (action === "batch_generate_questions")
                 {aiOps.handleBackgroundTask("batch_generate_questions", data);}
+              else if (action === "batch_generate_material")
+                {aiOps.handleBackgroundTask("batch_generate_material");}
               else if (action === "create_region") setIsCreateRegionOpen(true);
             }}
             onConnectNodes={onConnectNodes}

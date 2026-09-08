@@ -752,7 +752,11 @@
     "submitFailed": "Task submission failed",
     "expandError": "Expansion failed",
     "generateSuccess": "Submitted generation task for {{count}} nodes",
-    "generateFailed": "Batch generation failed"
+    "generateFailed": "Batch generation failed",
+    "materialSuccess": "Submitted learning material task for {{count}} nodes",
+    "materialFailed": "Failed to generate learning materials",
+    "materialOffline": "Cannot generate learning materials in offline mode",
+    "materialConfirm": "Generate learning materials for the {{count}} selected nodes? This will consume AI credits."
   },
   "speech": {
     "notSupported": "Your browser doesn't support speech recognition, please try Chrome browser.",

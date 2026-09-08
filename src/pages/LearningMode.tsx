@@ -128,6 +128,8 @@ export const LearningMode = () => {
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
   // 后台拓展（大纲多选「拓展」）已提交的任务，完成后刷新图谱节点数据
   const [expandTaskIds, setExpandTaskIds] = useState<string[]>([]);
+  // 后台批量生成学习资料任务，完成后刷新图谱数据（大纲/阅读区）
+  const [materialBatchTaskIds, setMaterialBatchTaskIds] = useState<string[]>([]);
   const [outlineMode, setOutlineMode] = useState<OutlineMode>("graph");
   const [selectedLearningPathId, setSelectedLearningPathId] = useState<string | null>(null);
   const [isFocusModeOpen, setIsFocusModeOpen] = useState(false);
@@ -399,6 +401,20 @@ export const LearningMode = () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.graphLearningPath(graphId),
       });
+    },
+  });
+
+  // 批量学习资料任务全部完成后刷新图谱/当前节点详情，使阅读区即时显示新生成的资料
+  useTaskSettledInvalidator({
+    taskIds: materialBatchTaskIds,
+    onAllSettled: () => {
+      setMaterialBatchTaskIds([]);
+      if (graphId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.graphData(graphId) });
+      }
+      if (nodeId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.nodeDetail(nodeId) });
+      }
     },
   });
 
@@ -757,6 +773,31 @@ export const LearningMode = () => {
         else if (error instanceof Error) errorMessage = error.message;
         msgHelper.error(errorMessage);
       } finally { setIsGeneratingCards(false); }
+    } else if (action === "batch_generate_material") {
+      if (!isOnline) { msgHelper.error(t("learning.batch.materialOffline")); return; }
+      const confirmed = await asyncConfirm({
+        title: t("graphEditor.outline.batchGenerateMaterial"),
+        message: t("learning.batch.materialConfirm", { count: ids.length }),
+      });
+      if (!confirmed) return;
+      try {
+        const result = await api.ai.batchGenerateLearningMaterial(ids, {
+          language: materialLangCode,
+          graph_id: graphId || undefined,
+        });
+        if (result.success) {
+          if (Array.isArray(result.taskIds) && result.taskIds.length > 0) {
+            setMaterialBatchTaskIds((prev) => [...prev, ...result.taskIds]);
+          }
+          msgHelper.success(t("learning.batch.materialSuccess", { count: ids.length }), { duration: 5000, action: { label: t("learning.cards.viewTasks"), onClick: () => navigate("/tasks") } });
+          setSelectedNodeIds(new Set());
+        } else {
+          msgHelper.error(t("learning.batch.materialFailed"));
+        }
+      } catch (error) {
+        console.error("[LearningMode] 批量生成学习资料失败:", error);
+        msgHelper.error(t("learning.batch.materialFailed"));
+      }
     } else if (action === "create_region") {
       msgHelper.info(`${t("graphEditor.region.createRegion")  } - ${  t("common.comingSoon")}`);
     }

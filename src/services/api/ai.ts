@@ -126,6 +126,30 @@ export const aiApi: IAiApi = {
       body: JSON.stringify(data),
     }),
 
+  /** 批量异步生成学习资料：按节点拆分后台任务，返回 taskIds 供前端轮询聚合 */
+  batchGenerateLearningMaterial: (
+    node_ids: string[],
+    options?: {
+      language?: string;
+      graph_id?: string;
+      schema_id?: string;
+      force?: boolean;
+    },
+  ) =>
+    request<{ success: boolean; taskIds: string[]; message: string }>(
+      "/ai/learning-material/batch",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          node_ids,
+          language: options?.language || getAILanguage(),
+          graph_id: options?.graph_id,
+          schema_id: options?.schema_id,
+          force: options?.force,
+        }),
+      },
+    ),
+
   assistLearningSchema: (data: {
     mode: "generate" | "optimize";
     topic: string;

@@ -10,6 +10,7 @@ import {
 import { ErrorCodes } from "../../../../shared/types/errorCodes";
 import { AppError } from "../../../middleware/errorHandler";
 import { asyncTaskService } from "../../../services/asyncTaskService";
+import { graphNodeService } from "../../../services/graph";
 import {
   aiService,
   getMockResponse,
@@ -183,6 +184,56 @@ router.post(
     );
 
     res.json({ taskId: task.id, reused: false });
+  },
+);
+
+// 批量异步生成学习资料：按节点拆分为 N 个 generate_learning_material 后台任务，
+// 复用单节点处理器（其内部含"已生成则跳过"的幂等逻辑），返回 taskIds 供前端轮询。
+const generateLearningMaterialBatchSchema = z.object({
+  node_ids: z.array(z.string().uuid()).min(1).max(100),
+  language: z.string().min(2).max(10).optional(),
+  graph_id: z.string().uuid().optional(),
+  schema_id: z.string().uuid().optional(),
+  force: z.boolean().optional(),
+});
+
+router.post(
+  "/learning-material/batch",
+  requireAuth,
+  validate(generateLearningMaterialBatchSchema),
+  async (req: AuthedRequest, res: Response) => {
+    const { node_ids, language, graph_id, schema_id, force } = req.body;
+
+    const taskIds: string[] = [];
+    const graphNodes = await graphNodeService.getGraphNodesByKnowledgePoints(
+      req.supabase,
+      node_ids,
+    );
+
+    if (graphNodes && graphNodes.length > 0) {
+      for (const gn of graphNodes) {
+        const task = await asyncTaskService.createTask(
+          req.user.id,
+          "generate_learning_material",
+          {
+            knowledge_point_id: gn.knowledge_point_id,
+            language: (language as string) || "zh-CN",
+            graph_id: gn.graph_id || graph_id,
+            schema_id,
+            force: force ?? false,
+          },
+          // title 必须等于 processor 类型 key：恢复（retry/resume/重启）时反查处理器
+          "generate_learning_material",
+        );
+        taskIds.push(task.id);
+      }
+    }
+
+    res.json({
+      success: true,
+      taskIds,
+      message: `${taskIds.length} tasks started`,
+    });
   },
 );
 

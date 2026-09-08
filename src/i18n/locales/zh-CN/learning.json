@@ -754,7 +754,11 @@
     "submitFailed": "任务提交失败",
     "expandError": "扩展失败",
     "generateSuccess": "已提交 {{count}} 个节点的生成任务",
-    "generateFailed": "批量生成失败"
+    "generateFailed": "批量生成失败",
+    "materialSuccess": "已提交 {{count}} 个节点的学习资料生成任务",
+    "materialFailed": "批量生成学习资料失败",
+    "materialOffline": "离线模式下无法生成学习资料",
+    "materialConfirm": "为选中的 {{count}} 个节点批量生成学习资料？将消耗 AI 额度。"
   },
   "speech": {
     "notSupported": "您的浏览器不支持语音识别功能，请尝试使用 Chrome 浏览器。",

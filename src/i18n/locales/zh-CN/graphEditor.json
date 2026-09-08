@@ -506,6 +506,7 @@
     "selectAll": "全选/取消全选",
     "selected": "{{count}} 已选",
     "batchGenerateQuestions": "批量生成题目",
+    "batchGenerateMaterial": "批量生成学习资料",
     "backgroundExpand": "后台拓展",
     "batchDelete": "批量删除",
     "createQuizSet": "新建测验/组卷",

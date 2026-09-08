@@ -17,6 +17,8 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { learningPathsApi, type CrossGraphPathVariant } from "../../services/api/learningPaths";
 import { api } from "../../services/api";
 import { message } from "../../utils/messageHelper";
@@ -94,7 +96,7 @@ export const GoalDrivenPathDialog: React.FC<GoalDrivenPathDialogProps> = ({
     useState(false);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   // Step4：保存
-  const [dailyMinutes, setDailyMinutes] = useState(180);
+  const [dailyMinutes, setDailyMinutes] = useState(240);
   const [isSaving, setIsSaving] = useState(false);
 
   const listRef = useRef<HTMLDivElement>(null);
@@ -664,15 +666,23 @@ export const GoalDrivenPathDialog: React.FC<GoalDrivenPathDialogProps> = ({
                     className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words ${
+                      className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm break-words ${
                         msg.role === "user"
                           ? "bg-primary-500 text-white rounded-br-sm"
                           : "bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded-bl-sm"
                       }`}
                     >
-                      {msg.content}
-                      {msg.isStreaming && (
-                        <span className="inline-block w-2 h-4 ml-0.5 bg-current opacity-60 animate-pulse align-middle" />
+                      {msg.role === "assistant" ? (
+                        <div className="prose prose-sm max-w-none dark:prose-invert">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {msg.content}
+                          </ReactMarkdown>
+                          {msg.isStreaming && (
+                            <span className="inline-block w-2 h-4 ml-0.5 bg-current opacity-60 animate-pulse align-middle" />
+                          )}
+                        </div>
+                      ) : (
+                        <span className="whitespace-pre-wrap">{msg.content}</span>
                       )}
                     </div>
                   </div>

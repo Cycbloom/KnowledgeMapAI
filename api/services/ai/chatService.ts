@@ -268,12 +268,44 @@ export class ChatService {
         // 流式响应不可重试——若首 chunk 后失败，retry 会重新发起请求并再次发送重复内容
         // 通过手动迭代 AsyncIterable + Promise.race 实现逐 chunk 超时保护
         const CHUNK_TIMEOUT_MS = 30000; // 单个 chunk 间隔超时
-        const stream = provider.client.chat.completions.create({
+        // 必须 await：openai SDK 的 create() 返回 Promise<Stream>（APIPromise），
+        // 不 await 拿到的是 Promise 而非 AsyncIterable，迭代会报
+        // "stream[Symbol.asyncIterator] is not a function"。
+        const rawStream: unknown = await provider.client.chat.completions.create({
             messages,
             model,
             stream: true,
             stream_options: { include_usage: true },
           });
+
+        // 防御：上游返回非 SSE（普通 JSON/错误体）时给出可诊断的明确报错，
+        // 而不是抛出晦涩的 "is not a function"。
+        if (
+          !rawStream ||
+          typeof (rawStream as { [Symbol.asyncIterator]?: unknown })[
+            Symbol.asyncIterator
+          ] !== "function"
+        ) {
+          logger.error(
+            `${options.operation} provider did not return a streaming (SSE) response`,
+            {
+              provider: provider.providerType,
+              model,
+              responseType: typeof rawStream,
+              responseKeys:
+                rawStream && typeof rawStream === "object"
+                  ? Object.keys(rawStream as object)
+                  : undefined,
+              responseSample: rawStream
+                ? JSON.stringify(rawStream).slice(0, 300)
+                : undefined,
+            },
+          );
+          throw new AppError(ErrorCodes.AI_INVALID_RESPONSE, {
+            message: `${options.operation}: AI 服务未返回流式响应（provider=${provider.providerType}, model=${model}），请检查模型是否支持流式输出或 baseURL 是否正确`,
+          });
+        }
+        const stream = rawStream as AsyncIterable<ChatCompletionChunk>;
 
         let inputTokens = 0;
         let outputTokens = 0;

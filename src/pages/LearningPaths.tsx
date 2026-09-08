@@ -26,6 +26,7 @@ import {
   CalendarClock,
   CalendarRange,
   BookOpen,
+  Layers,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTheme } from "../hooks";
@@ -111,6 +112,7 @@ export const LearningPaths = () => {
 
   const { query: searchQuery, setQuery: setSearchQuery, debouncedQuery: debouncedSearchQuery } = useDebouncedSearch();
   const [selectedStatus, setSelectedStatus] = useState<PathStatus>("all");
+  const [selectedType, setSelectedType] = useState<"all" | "cross_graph" | "single_graph">("all");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [newPathTitle, setNewPathTitle] = useState("");
@@ -265,6 +267,52 @@ export const LearningPaths = () => {
     return formatDateUtil(dateStr);
   };
 
+  // 按层级分组：跨图谱路径（图谱级/大循环）与图谱内路径（知识点级）分开展示
+  const { singleGraphPaths, crossGraphPaths } = useMemo(() => {
+    const single: LearningPathItem[] = [];
+    const cross: LearningPathItem[] = [];
+    for (const p of filteredPaths) {
+      if ((p.path_type ?? "single_graph") === "cross_graph") cross.push(p);
+      else single.push(p);
+    }
+    return { singleGraphPaths: single, crossGraphPaths: cross };
+  }, [filteredPaths]);
+
+  const pathSections = [
+    {
+      key: "cross_graph",
+      icon: <Layers size={18} className="text-purple-500" />,
+      title: t("learningPaths.section.crossGraphTitle"),
+      paths: crossGraphPaths,
+      emptyLabel: t("learningPaths.section.empty", {
+        type: t("learningPaths.pathType.crossGraph"),
+      }),
+    },
+    {
+      key: "single_graph",
+      icon: <Route size={18} className="text-primary-500" />,
+      title: t("learningPaths.section.singleGraphTitle"),
+      paths: singleGraphPaths,
+      emptyLabel: t("learningPaths.section.empty", {
+        type: t("learningPaths.pathType.singleGraph"),
+      }),
+    },
+  ];
+
+  const typeTabs = [
+    { value: "all", labelKey: "learningPaths.section.tabAll" },
+    { value: "cross_graph", labelKey: "learningPaths.section.tabCross" },
+    { value: "single_graph", labelKey: "learningPaths.section.tabSingle" },
+  ] as const;
+
+  // 按层级 Tab 过滤展示的区块（全部=两区块；单一层级=仅对应区块）
+  const visibleSections =
+    selectedType === "cross_graph"
+      ? [pathSections[0]]
+      : selectedType === "single_graph"
+        ? [pathSections[1]]
+        : pathSections;
+
   const getProgressColor = (percentage: number) => {
     if (percentage >= 80) return "bg-green-500";
     if (percentage >= 50) return "bg-primary-500";
@@ -315,26 +363,46 @@ export const LearningPaths = () => {
             <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder={t("learningPaths.search.placeholder")} />
           </div>
 
-          <div className="flex gap-2">
-            {(Object.keys(statusConfig) as PathStatus[]).map((status) => (
+          {/* 层级切换 Tab：全部 / 跨图谱 / 图谱内 */}
+          <div className="flex gap-1 p-1 rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700">
+            {typeTabs.map((tab) => (
               <button
-                key={status}
-                onClick={() => setSelectedStatus(status)}
-                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-medium transition-all ${
-                  selectedStatus === status
+                key={tab.value}
+                onClick={() => setSelectedType(tab.value)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  selectedType === tab.value
                     ? "bg-primary-600 text-white"
                     : isDark
-                      ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                      : "bg-white text-gray-700 hover:bg-gray-100"
+                      ? "text-slate-300 hover:bg-slate-700"
+                      : "text-gray-600 hover:bg-gray-100"
                 }`}
               >
-                {statusConfig[status].icon}
-                <span>{t(statusConfig[status].labelKey)}</span>
-                {!isLoading && statusCounts[status] !== undefined && (
-                  <span className="ml-1 text-xs opacity-70">({statusCounts[status]})</span>
-                )}
+                {t(tab.labelKey)}
               </button>
             ))}
+          </div>
+
+          {/* 状态下拉 */}
+          <div className="relative">
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value as PathStatus)}
+              aria-label={t("learningPaths.status.all")}
+              className={`appearance-none pl-4 pr-9 py-2.5 rounded-xl font-medium transition-all cursor-pointer border ${
+                isDark
+                  ? "bg-slate-800 text-slate-300 border-slate-700"
+                  : "bg-white text-gray-700 border-gray-200"
+              }`}
+            >
+              {(Object.keys(statusConfig) as PathStatus[]).map((status) => (
+                <option key={status} value={status}>
+                  {t(statusConfig[status].labelKey)}
+                  {!isLoading && statusCounts[status] !== undefined
+                    ? ` (${statusCounts[status]})`
+                    : ""}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -368,8 +436,23 @@ export const LearningPaths = () => {
             />
           )
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredPaths.map((path) => (
+          <div className="space-y-10">
+            {visibleSections.map((section) => (
+              <section key={section.key}>
+                <div className="flex items-center gap-2 mb-4">
+                  {section.icon}
+                  <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+                    {section.title}
+                  </h2>
+                  <span className="text-xs text-gray-500">({section.paths.length})</span>
+                </div>
+                {section.paths.length === 0 ? (
+                  <div className="rounded-2xl border-2 border-dashed border-gray-300 dark:border-slate-600 p-8 text-center text-sm text-gray-500">
+                    {section.emptyLabel}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {section.paths.map((path) => (
               <div
                 key={path.id}
                 className={`rounded-2xl border-2 p-5 transition-all hover:shadow-lg cursor-pointer ${
@@ -625,6 +708,10 @@ export const LearningPaths = () => {
                   </button>
                 )}
               </div>
+                    ))}
+                  </div>
+                )}
+              </section>
             ))}
           </div>
         )}

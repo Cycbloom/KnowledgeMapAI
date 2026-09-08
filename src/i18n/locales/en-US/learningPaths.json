@@ -12,6 +12,14 @@
     "singleGraph": "Knowledge Level",
     "crossGraph": "Graph Level"
   },
+  "section": {
+    "crossGraphTitle": "Cross-Graph Learning Paths",
+    "singleGraphTitle": "In-Graph Learning Paths",
+    "empty": "No {{type}} learning paths yet",
+    "tabAll": "All",
+    "tabCross": "Cross-Graph",
+    "tabSingle": "In-Graph"
+  },
   "actions": {
     "newPath": "New Path",
     "createPath": "Create Learning Path",

@@ -12,6 +12,14 @@
     "singleGraph": "知识点级",
     "crossGraph": "图谱级"
   },
+  "section": {
+    "crossGraphTitle": "跨图谱学习路径",
+    "singleGraphTitle": "图谱内学习路径",
+    "empty": "暂无{{type}}学习路径",
+    "tabAll": "全部",
+    "tabCross": "跨图谱",
+    "tabSingle": "图谱内"
+  },
   "actions": {
     "newPath": "新建路径",
     "createPath": "创建学习路径",

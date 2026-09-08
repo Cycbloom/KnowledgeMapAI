@@ -114,11 +114,15 @@ export const Dashboard = () => {
     ? "bg-slate-800 border-slate-700"
     : "bg-white border-gray-200";
 
-  // —— 学习路径切换器：多条 active 路径 + 选择记忆 ——
+  // —— 学习路径切换器：首页只展示跨图谱（大循环/图谱级）路径，图谱内路径请到学习路径页查看 ——
   const { data: activePaths } = useLearningPaths("active");
   const activeList = useMemo(
     () =>
-      Array.isArray(activePaths) ? (activePaths as LearningPathResponse[]) : [],
+      Array.isArray(activePaths)
+        ? (activePaths as LearningPathResponse[]).filter(
+            (p) => (p?.path_type ?? "single_graph") === "cross_graph",
+          )
+        : [],
     [activePaths],
   );
   const [selectedId, setSelectedIdState] = useState<string | null>(() => {
@@ -126,14 +130,10 @@ export const Dashboard = () => {
     return stored && stored.length > 0 ? stored : null;
   });
 
-  // 有效选中：记忆的仍在列表则用之，否则回退跨图谱→第一条 active
+  // 有效选中：记忆的仍在列表则用之，否则回退到第一条跨图谱路径
   const effectivePathId = useMemo(() => {
     if (activeList.some((p) => p?.id === selectedId)) return selectedId;
-    return (
-      activeList.find((p) => p?.path_type === "cross_graph")?.id ??
-      activeList[0]?.id ??
-      null
-    );
+    return activeList[0]?.id ?? null;
   }, [activeList, selectedId]);
 
   // storedId 失效时回退默认并清理记忆

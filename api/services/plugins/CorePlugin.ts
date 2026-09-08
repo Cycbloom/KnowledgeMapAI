@@ -13,6 +13,7 @@ import pluginsRoutes from "../../routes/plugins";
 import databaseRoutes from "../../routes/system/database";
 import supabaseRoutes from "../../routes/system/supabase";
 import syncRoutes from "../../routes/system/sync";
+import offlineSyncRoutes from "../../routes/system/offlineSync";
 import ownerCredentialRoutes from "../../routes/system/ownerCredentials";
 import tagsRoutes from "../../routes/tags";
 
@@ -33,6 +34,7 @@ export const corePlugin: Plugin = {
     kernel.registerRoutes("/api/v1/database", databaseRoutes);
     kernel.registerRoutes("/api/v1/supabase", supabaseRoutes);
     kernel.registerRoutes("/api/v1/sync", syncRoutes);
+    kernel.registerRoutes("/api/v1/offline-sync", offlineSyncRoutes);
     kernel.registerRoutes("/api/v1/owner-credentials", ownerCredentialRoutes);
     kernel.registerRoutes("/api/v1/tags", tagsRoutes);
   },

@@ -6,6 +6,7 @@ import { SplashScreen } from "@capacitor/splash-screen";
 import { useLocation } from "react-router-dom";
 import { useNavigateBack } from "../common/useNavigateBack";
 import { mobileSyncService } from "../../services/sync/mobileSyncService";
+import { isOfflineActive } from "../../services/offline/offlineMode";
 
 // 前置常量：公共路由 Set，避免每次返回事件重建数组与线性查找，includes O(n) → has O(1)
 const PUBLIC_ROUTES = new Set(["/login", "/register"]);
@@ -33,6 +34,11 @@ export function useMobileInit() {
         await StatusBar.hide();
       } catch {
         console.warn("Failed to hide splash screen or status bar");
+      }
+
+      // 离线数据模式：不启动设备发现/移动端同步（无网络服务可用）
+      if (isOfflineActive()) {
+        return;
       }
 
       try {

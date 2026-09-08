@@ -94,6 +94,9 @@ data/*.db-wal
 # One-off debug diffs (local troubleshooting artifacts — never commit)
 __diffs__/
 
+# 离线数据包（由 npm run db:export:offline 生成，含 owner 邮箱等个人数据 — 不提交）
+public/offline/bundle.json
+
 # Vercel
 .vercel/
 

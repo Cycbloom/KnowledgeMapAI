@@ -25,6 +25,7 @@ import { authConfig, isSupabaseConfigured } from "./config/authConfig";
 import { isElectron } from "./config/electronConfig";
 import { toUser } from "@shared/types/database";
 import { routeRegistrations, type RouteRegistration } from "./config/routeConfig";
+import { isOfflineActive } from "./services/offline/offlineMode";
 import "./i18n";
 
 // P7: 主入口常驻壳层瘦身（第二轮）——仅在 Web 端渲染、且触发时才显示的壳层组件改为
@@ -182,6 +183,12 @@ function App() {
   }, [location.pathname, isPublicRoute]);
 
   useEffect(() => {
+    // 离线数据模式：伪身份已在 initOfflineMode 写入，直接放行，不访问网络会话
+    if (isOfflineActive()) {
+      setIsRestoringSession(false);
+      return;
+    }
+
     if (!authConfig.isSupabase()) return;
     if (!isSupabaseConfigured()) return;
 

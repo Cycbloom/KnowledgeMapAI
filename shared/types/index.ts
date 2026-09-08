@@ -16,3 +16,4 @@ export * from "./appError";
 export * from "./settings";
 export * from "./note";
 export * from "./learningMaterial";
+export * from "./offline";

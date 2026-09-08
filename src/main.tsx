@@ -23,6 +23,7 @@ import { offlineMutationQueue, OfflineError, migrateLegacyQueue, type ReplayProg
 import { queryPersister } from './utils/queryPersister'
 import { message } from './utils/messageHelper'
 import { frontendEventBus } from './services/timer/FrontendEventBus'
+import { initOfflineMode } from './services/offline/offlineMode'
 import './store/storeIntegrations'
 import './index.css'
 
@@ -162,6 +163,8 @@ if (rootElement) {
   const Router = isElectron ? HashRouter : BrowserRouter;
   void (async () => {
     await i18nReady;
+    // 离线数据模式：渲染前完成检测、数据包导入与 API 覆盖（移动端内置 bundle 时激活）
+    await initOfflineMode();
     createRoot(rootElement).render(
       <StrictMode>
         <QueryClientProvider client={queryClient}>

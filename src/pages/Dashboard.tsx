@@ -26,6 +26,8 @@ import { TodayReview } from "../components/capture/TodayReview";
 import { EmptyState } from "../components/common";
 import { TodayBriefCard } from "../components/Dashboard/TodayBriefCard";
 import { MobileTodayHome } from "../components/Dashboard/MobileTodayHome";
+import { OfflineTodayHome } from "../components/Dashboard/OfflineTodayHome";
+import { isOfflineActive } from "../services/offline/offlineMode";
 import { BlindSpotList } from "../components/Study/BlindSpotList";
 import { LearningLoopTracker } from "../components/Dashboard/LearningLoopTracker";
 import { GoalsTracker } from "../components/Dashboard/GoalsTracker";
@@ -250,6 +252,10 @@ export const Dashboard = () => {
 
   // 移动端首屏：以「今日该学什么」为主线的单列精简视图
   if (isMobile) {
+    // 离线数据模式：走纯本地数据的今日页（不依赖调度器/网络接口）
+    if (isOfflineActive()) {
+      return <OfflineTodayHome />;
+    }
     return <MobileTodayHome />;
   }
 

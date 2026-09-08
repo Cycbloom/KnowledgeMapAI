@@ -88,6 +88,22 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     setExpansionTaskIds((prev) => [...prev, ...taskIds]);
   }, []);
 
+  /** 学习路径生成/切换后子任务被重排，递增 reloadKey 触发概览与子任务列表重载 */
+  const handleSubtasksExternalChanged = useCallback(() => {
+    setSubtaskReloadKey((prev) => prev + 1);
+  }, []);
+
+  /** 切换任务当前编排的学习路径（如 AI 路径生成后自动应用），并刷新子任务 */
+  const handleActivePathChange = useCallback(
+    (pathId: string | null) => {
+      setTask((prev) =>
+        prev ? { ...prev, active_learning_path_id: pathId ?? null } : prev,
+      );
+      handleSubtasksExternalChanged();
+    },
+    [handleSubtasksExternalChanged],
+  );
+
   // —— 空图「生成节点」：AI 智能拓展面板（仅深度），放在底部操作栏左端 ——
   const graphId = task?.graph_id;
   const { data: graphData } = useGraphData(graphId ?? "");
@@ -735,6 +751,9 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
                   onGoSubtasks={() => setActiveTab("subtasks")}
                   subtaskReloadKey={subtaskReloadKey}
                   onExpansionTasksCreated={handleExpansionTasksCreated}
+                  activeLearningPathId={task.active_learning_path_id}
+                  onSubtasksChanged={handleSubtasksExternalChanged}
+                  onActivePathChange={handleActivePathChange}
                 />
               </div>
             )}

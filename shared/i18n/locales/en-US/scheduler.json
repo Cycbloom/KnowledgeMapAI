@@ -9,7 +9,14 @@
     "tagReview": "Review",
     "tagBoth": "Scheduled · Review",
     "kpEmpty": "Nothing to study today yet. Create a learning task from a graph.",
-    "startFocus": "Start Focus"
+    "startFocus": "Start Focus",
+    "sync": "Sync offline records",
+    "syncPending": "{{count}} pending",
+    "syncing": "Syncing…",
+    "syncDone": "Synced {{count}}",
+    "syncAllSynced": "All records synced",
+    "syncNeedLogin": "Sign in online first to sync offline records",
+    "syncFailed": "Sync failed, please retry later"
   },
   "home": {
     "title": "Home",
@@ -641,6 +648,28 @@
       "schedulerOtherGraph": "Scheduling prioritizes \"{{title}}\"",
       "schedulerIdle": "No learning big task to advance",
       "schedulerGoNext": "Next: {{action}}"
+    },
+    "learningPath": {
+      "title": "Learning Path",
+      "manageLabel": "Manage paths",
+      "activeBadge": "In use",
+      "nodeCount": "{{completed}}/{{total}} nodes",
+      "scheduledWindow": "Scheduled {{start}} – {{end}}",
+      "notScheduled": "Not scheduled",
+      "emptyTitle": "No learning path yet",
+      "emptyDescription": "Generating a default path auto-schedules it; knowledge point scheduling appears as purple blocks on the calendar",
+      "generateDefault": "Generate default path",
+      "generating": "Generating…",
+      "generateSuccess": "Default learning path generated and scheduled",
+      "generateFailed": "Failed to generate learning path, please retry",
+      "aiPlan": "AI Plan",
+      "aiGenerating": "AI is planning the learning path…",
+      "aiGenerateSuccess": "AI learning path generated and saved",
+      "aiGenerateFailed": "Failed to generate AI learning path, please retry",
+      "aiPathTitle": "AI Learning Path",
+      "aiPathDescription": "AI-generated learning path, ~{{hours}} hours",
+      "moreCount": "{{count}} more",
+      "collapse": "Collapse"
     },
     "progressDetail": {
       "notePlaceholder": "Add note...",

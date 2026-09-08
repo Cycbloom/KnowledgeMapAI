@@ -9,7 +9,14 @@
     "tagReview": "复习",
     "tagBoth": "排期 · 复习",
     "kpEmpty": "今天还没有要学习的知识点，去图谱创建一个学习任务吧",
-    "startFocus": "开始专注"
+    "startFocus": "开始专注",
+    "sync": "同步离线记录",
+    "syncPending": "待同步 {{count}} 条",
+    "syncing": "同步中…",
+    "syncDone": "已同步 {{count}} 条",
+    "syncAllSynced": "所有记录已同步",
+    "syncNeedLogin": "请先联网登录，再同步离线记录",
+    "syncFailed": "同步失败，请稍后重试"
   },
   "home": {
     "title": "首页",
@@ -641,6 +648,28 @@
       "schedulerOtherGraph": "当前调度优先推进「{{title}}」",
       "schedulerIdle": "暂无待推进的学习大任务",
       "schedulerGoNext": "下一步：{{action}}"
+    },
+    "learningPath": {
+      "title": "学习路径",
+      "manageLabel": "路径列表",
+      "activeBadge": "当前编排",
+      "nodeCount": "{{completed}}/{{total}} 节点",
+      "scheduledWindow": "排期 {{start}} ~ {{end}}",
+      "notScheduled": "未排期",
+      "emptyTitle": "暂无学习路径",
+      "emptyDescription": "生成默认学习路径后会自动排程，知识点排期将以紫色块显示在日历上",
+      "generateDefault": "生成默认学习路径",
+      "generating": "生成中…",
+      "generateSuccess": "已生成默认学习路径并排程",
+      "generateFailed": "生成学习路径失败，请重试",
+      "aiPlan": "AI 规划",
+      "aiGenerating": "AI 正在规划学习路径…",
+      "aiGenerateSuccess": "AI 学习路径已生成并保存",
+      "aiGenerateFailed": "AI 生成学习路径失败，请重试",
+      "aiPathTitle": "AI 学习路径",
+      "aiPathDescription": "AI 生成的学习路径，预计 {{hours}} 小时",
+      "moreCount": "另有 {{count}} 条",
+      "collapse": "收起"
     },
     "progressDetail": {
       "notePlaceholder": "添加备注...",

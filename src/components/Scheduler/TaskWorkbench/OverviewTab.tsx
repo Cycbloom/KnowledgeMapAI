@@ -38,6 +38,7 @@ import {
   studyCenterUrl,
   createQuizForGraph,
 } from "@/utils/studyUrls";
+import { LearningPathSection } from "./LearningPathSection";
 
 const GenerateCardsModal = lazy(() =>
   import("../../Learning/GenerateCardsModal").then((module) => ({
@@ -54,6 +55,12 @@ interface OverviewTabProps {
   subtaskReloadKey?: number;
   /** 批量深度拓展创建的后台任务 id 上报给宿主，供其监听完成后再刷新 */
   onExpansionTasksCreated?: (taskIds: string[]) => void;
+  /** 任务当前编排的学习路径 ID（用于在学习路径区块高亮「当前编排」） */
+  activeLearningPathId?: string | null;
+  /** 学习路径变更（生成默认路径重排了子任务）后由宿主触发子任务列表刷新 */
+  onSubtasksChanged?: () => void;
+  /** 切换任务当前编排的学习路径（AI 路径生成后自动应用） */
+  onActivePathChange?: (pathId: string | null) => void;
 }
 
 const STAGES: LearningState[] = ["learning", "review", "practice", "quiz"];
@@ -69,6 +76,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   onGoSubtasks,
   subtaskReloadKey,
   onExpansionTasksCreated,
+  activeLearningPathId,
+  onSubtasksChanged,
+  onActivePathChange,
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -465,6 +475,14 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           </button>
         )}
       </section>
+
+      {/* 学习路径：该图谱的学习路径列表 + 生成默认路径（排期入口） */}
+      <LearningPathSection
+        graphId={graphId}
+        activeLearningPathId={activeLearningPathId}
+        onSubtasksChanged={onSubtasksChanged}
+        onActivePathChange={onActivePathChange}
+      />
 
       {/* 当前子任务 + 多入口卡片 */}
       {subtasks.length === 0 ? (

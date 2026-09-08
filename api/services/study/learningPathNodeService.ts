@@ -45,7 +45,7 @@ export class LearningPathNodeService {
         order_index: input.order_index,
         title: input.title,
         description: input.description || null,
-        estimated_time: input.estimated_time || 30,
+        estimated_time: input.estimated_time || 40,
         is_milestone: input.is_milestone || false,
         prerequisites: input.prerequisites || [],
         status: "pending",

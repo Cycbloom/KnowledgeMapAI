@@ -258,7 +258,8 @@ export class LearningPathGenerationService {
             title: stage.nodeTitle,
             description: stage.reason,
             estimated_time: stage.estimatedTime,
-            is_milestone: stage.priority === "high",
+            // 不区分里程碑：所有知识点均按普通节点参与容量装箱
+            is_milestone: false,
             prerequisites: stage.prerequisites.filter((id) =>
               uuidPattern.test(id),
             ),

@@ -8,13 +8,13 @@
  * 设计要点（见 spec）：
  * - 知识点全局唯一排期：同一知识点（跨路径、跨日期）只保留一行 scheduled，
  *   后排的路径直接复用先占位的日期并把自身并入 source_path_ids。
- * - 容量感知装箱：路径节奏 = min(daily_minutes_target, 全局预算) × (1 - 复习缓冲)；
- *   硬约束 = 当日全局已排负载 + 新增 ≤ task_settings.daily_capacity_minutes，
- *   超出顺延到下一天（节点不拆分；空日上超长节点允许溢出，否则无法安置）。
- * - 里程碑(is_milestone)节点独立占一天，便于高亮。
+ * - 容量感知装箱：硬约束 = 当日全局已排负载 + 新增 ≤ task_settings.daily_capacity_minutes，
+ *   每天尽量装满容量（默认 240 分钟，每知识点 40 分钟 ≈ 6 个/天），超出顺延到下一天
+ *   （节点不拆分；空日上超长节点允许溢出，否则无法安置）。
+ * - 不区分里程碑：所有知识点（含 is_milestone）一律按容量装箱，无独占天。
  * - 只排日期，不排时钟。
  * - learning_paths 作为「学习窗口」记录 scheduled_start_date / scheduled_end_date。
- * - P5：小路径与大路径周窗口强联动（起始日对齐窗口周、节奏按窗口预算限速）；
+ * - P5：小路径与大路径周窗口强联动（起始日对齐窗口周）；
  *   replanFromToday 支持滞后手动重排；backfillGraphPathSchedule 在图谱知识点
  *   变化（拓展/手动加节点）后自动补节点并补排。
  */
@@ -108,22 +108,23 @@ class PathSchedulerService {
     // 拓扑排序：前置依赖 + order_index
     const ordered = topologicalSortNodes(pendingNodes);
 
-    // P1 全局容量：预算 + 复习缓冲 + 路径配额（节奏）
-    const { dailyCapacityMinutes, reviewBufferRatio } =
-      await capacityService.getCapacitySettings(supabase, userId);
-    const dailyTarget = path.daily_minutes_target || 180;
-    const pathQuota = Math.min(dailyTarget, dailyCapacityMinutes);
-    let paceCap = Math.max(
-      1,
-      Math.round(pathQuota * (1 - reviewBufferRatio)),
+    // P1 全局容量：日预算即「每日可排上限」，路径按容量装满（复习缓冲仅用于展示）
+    const { dailyCapacityMinutes } = await capacityService.getCapacitySettings(
+      supabase,
+      userId,
     );
+    // 每天尽量装满全局容量（240 分钟 / 40 分钟每节点 ≈ 6 个知识点）；
+    // 路径 daily_minutes_target 仅作为生成时的默认目标，不再压缩当天排课
+    const paceCap = Math.max(1, dailyCapacityMinutes);
     let startDate = options?.start_date
       ? new Date(`${options.start_date}T00:00:00`)
       : new Date();
     startDate.setHours(0, 0, 0, 0);
 
-    // P5 周窗口强联动：小路径排课对齐所属图谱在大路径中的活跃周窗口——
-    // 起始日落到窗口周内，节奏按窗口预算摊到每天限速；超出窗口周末自然溢出（不硬截断）
+    // P5 周窗口强联动：小路径排课起始日对齐所属图谱在大路径中的活跃周窗口——
+    // 窗口只约束「从哪一周开始学」，不按 plannedMinutes/天数限速每日节奏
+    // （否则小图谱被摊派到每天 15 分钟，出现一天只排一个知识点的问题）；
+    // 每日排满由上述 paceCap（=全局日容量）控制，超出窗口周末自然溢出（不硬截断）
     const window = await this.resolveWindowConstraint(
       supabase,
       userId,
@@ -134,11 +135,6 @@ class PathSchedulerService {
       if (!Number.isNaN(windowStart.getTime()) && windowStart > startDate) {
         startDate = windowStart;
       }
-      const windowDayCap = Math.max(
-        1,
-        Math.ceil(window.plannedMinutes / window.windowDays),
-      );
-      paceCap = Math.min(paceCap, windowDayCap);
     }
 
     // 全局日负载（startDate 起，含其它路径与本路径此前排期），装箱过程中同步累计
@@ -184,22 +180,11 @@ class PathSchedulerService {
         continue;
       }
 
-      const time = node.estimated_time || 30;
-      if (node.is_milestone) {
-        // 里程碑独占一天：若当天已有普通节点则顺延到次日
-        if (dayUsed > 0) {
-          cursor = addDays(cursor, 1);
-          dayUsed = 0;
-        }
-        const dateStr = toDateString(cursor);
-        assigned.push({ node, dateStr });
-        dayLoad.set(dateStr, (dayLoad.get(dateStr) ?? 0) + time);
-        cursor = addDays(cursor, 1);
-        dayUsed = 0;
-        continue;
-      }
-      // 普通节点：路径节奏 + 全局日预算双重检查，超出则顺延；
-      // 空日（本路径未排）上节点不拆分——全局放不下且节点本身≥全局预算时允许溢出
+      const time = node.estimated_time || 40;
+      // 里程碑不再独占一天：所有知识点（含 is_milestone）一律按全局容量装箱，
+      // 保证「240 分钟 / 40 分钟每节点 ≈ 6 个知识点」当天排满
+      // 全局日预算双重检查，超出则顺延；空日上节点不拆分——
+      // 全局放不下且节点本身≥全局预算时允许溢出
       for (;;) {
         const dateStr = toDateString(cursor);
         const load = dayLoad.get(dateStr) ?? 0;
@@ -540,7 +525,7 @@ class PathSchedulerService {
         knowledge_point_id: kpId,
         order_index: maxOrder + 1 + index,
         title: kpTitleById.get(kpId) || kpId,
-        estimated_time: 30,
+        estimated_time: 40,
         is_milestone: false,
         prerequisites: [],
         status: "pending",
@@ -691,9 +676,8 @@ class PathSchedulerService {
   /**
    * P5 周窗口强联动：查该图谱在跨图大路径中的活跃周窗口。
    * 取 status 为 planned/in_progress、未结束（week_end ≥ 今天）的最早窗口，
-   * 且窗口所属大路径仍为 active；无命中返回 null（按今天起排、节奏不限）。
-   * planned_minutes 是该 stage 的总预估分钟数（窗口可跨多周），
-   * 调用方按 planned_minutes / 窗口天数 摊到每天限速。
+   * 且窗口所属大路径仍为 active；无命中返回 null（按今天起排）。
+   * 返回窗口仅用于对齐小路径排课起始日（从窗口周开始学），不再限速每日节奏。
    */
   private async resolveWindowConstraint(
     supabase: SupabaseClient,

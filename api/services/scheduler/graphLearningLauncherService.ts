@@ -6,6 +6,7 @@ import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { smartTaskLinker } from "./smartTaskLinker";
 import { learningPathService } from "../study/learningPathService";
 import { pathSchedulerService } from "./planning/pathSchedulerService";
+import { capacityService } from "./planning/capacityService";
 import { DEFAULT_LEARNING_PATH_TITLE } from "../../../shared/constants/taskTitles";
 
 export interface NextScheduledSubtask {
@@ -44,7 +45,11 @@ class GraphLearningLauncherService {
     graphId: string,
     options?: { daily_minutes?: number },
   ): Promise<StartLearningForGraphResult> {
-    const dailyMinutes = options?.daily_minutes ?? 180;
+    // 未显式指定时按全局日容量（默认 240 分钟）作为路径每日目标，
+    // 保证「一天可学多个知识点」（240 / 40 ≈ 6 个）
+    const settings = await capacityService.getCapacitySettings(supabase, userId);
+    const dailyMinutes =
+      options?.daily_minutes ?? settings.dailyCapacityMinutes;
 
     // 1. 确保图谱大任务（含每知识点子任务）
     const graphTask = await smartTaskLinker.getOrCreateTaskForGraph(
@@ -54,9 +59,23 @@ class GraphLearningLauncherService {
     );
     const graphTaskId = graphTask.mainTaskId;
 
-    // 2. 复用或自动生成学习路径
+    // 2. 重新生成学习路径：同图谱旧的 active 路径自动归档（含清理其排期），
+    //    保证同图谱只保留一条 active，且每次生成都得到最新排期
     const existingPath = await this.findActivePathForGraph(supabase, userId, graphId);
-    const path = existingPath ?? (await this.generatePathForGraph(supabase, userId, graphId, dailyMinutes));
+    if (existingPath) {
+      await learningPathService.deleteLearningPath(
+        supabase,
+        existingPath.id,
+        userId,
+        false,
+      );
+    }
+    const path = await this.generatePathForGraph(
+      supabase,
+      userId,
+      graphId,
+      dailyMinutes,
+    );
 
     // 3. 将现有子任务按路径重排（幂等）
     const reordered = await this.applyPathOrderToSubtasks(
@@ -89,7 +108,8 @@ class GraphLearningLauncherService {
       totalTasks: totalSubtaskIds.length,
       graphTotalNodes: graphTask.totalNodes,
       nextSubtask,
-      pathReused: !!existingPath,
+      // 总是重新生成（旧 active 已归档），不复用既有路径
+      pathReused: false,
       reordered,
     };
   }

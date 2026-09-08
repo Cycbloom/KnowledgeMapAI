@@ -26,6 +26,29 @@ export class LearningPathCrudService {
     userId: string,
     input: CreateLearningPathInput,
   ): Promise<LearningPath> {
+    // 单图路径：同图谱只保留一条 active，创建新路径前自动归档旧的（含清理其排期）
+    if (
+      (input.path_type ?? "single_graph") === "single_graph" &&
+      input.source_graph_id
+    ) {
+      const { data: oldPaths, error: oldError } = await supabase
+        .from("learning_paths")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("source_graph_id", input.source_graph_id)
+        .eq("status", "active");
+      if (!oldError) {
+        for (const old of oldPaths ?? []) {
+          await this.deleteLearningPath(
+            supabase,
+            old.id as string,
+            userId,
+            false,
+          );
+        }
+      }
+    }
+
     // Transactional path
     if (transactionExecutor.isAvailable()) {
       try {
@@ -45,7 +68,7 @@ export class LearningPathCrudService {
               input.path_type || "single_graph",
               input.total_estimated_time || 0,
               input.ai_generated || false,
-              input.daily_minutes_target || 180,
+              input.daily_minutes_target || 240,
             ],
           );
 
@@ -53,7 +76,7 @@ export class LearningPathCrudService {
 
           if (input.nodes && input.nodes.length > 0) {
             const totalEstimatedTime = input.nodes.reduce(
-              (sum, n) => sum + (n.estimated_time || 30),
+              (sum, n) => sum + (n.estimated_time || 40),
               0,
             );
 
@@ -68,7 +91,7 @@ export class LearningPathCrudService {
                   node.order_index,
                   node.title,
                   node.description || null,
-                  node.estimated_time || 30,
+                  node.estimated_time || 40,
                   node.is_milestone || false,
                   node.prerequisites || [],
                 ],
@@ -109,7 +132,7 @@ export class LearningPathCrudService {
         path_type: input.path_type || "single_graph",
         total_estimated_time: input.total_estimated_time || 0,
         ai_generated: input.ai_generated || false,
-        daily_minutes_target: input.daily_minutes_target || 180,
+        daily_minutes_target: input.daily_minutes_target || 240,
         status: "active",
       })
       .select()
@@ -128,7 +151,7 @@ export class LearningPathCrudService {
         order_index: node.order_index,
         title: node.title,
         description: node.description || null,
-        estimated_time: node.estimated_time || 30,
+        estimated_time: node.estimated_time || 40,
         is_milestone: node.is_milestone || false,
         prerequisites: node.prerequisites || [],
         status: "pending" as const,
@@ -145,7 +168,7 @@ export class LearningPathCrudService {
       }
 
       const totalEstimatedTime = input.nodes.reduce(
-        (sum, n) => sum + (n.estimated_time || 30),
+        (sum, n) => sum + (n.estimated_time || 40),
         0,
       );
       await supabase
@@ -365,6 +388,34 @@ export class LearningPathCrudService {
 
     if (checkError || !path) {
       throw new AppError(i18next.t("learningPath.api.errors.notFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
+    }
+
+    // 撤销该路径在 learning_path_schedule 的排期归属：独占行删除、共享行移除本路径。
+    // 否则残留的 scheduled 行会持续占用「知识点全局唯一排期」，新路径无法重新排满容量。
+    const { data: scheduleRows, error: fetchError } = await supabase
+      .from("learning_path_schedule")
+      .select("id, source_path_ids")
+      .eq("user_id", userId)
+      .eq("status", "scheduled")
+      .contains("source_path_ids", [pathId]);
+    if (!fetchError) {
+      for (const row of scheduleRows ?? []) {
+        const sources = ((row.source_path_ids as string[] | null) ?? []).filter(
+          (id) => id !== pathId,
+        );
+        if (sources.length === 0) {
+          await supabase
+            .from("learning_path_schedule")
+            .delete()
+            .eq("id", row.id)
+            .eq("user_id", userId);
+        } else {
+          await supabase
+            .from("learning_path_schedule")
+            .update({ source_path_ids: sources })
+            .eq("id", row.id);
+        }
+      }
     }
 
     if (hardDelete) {

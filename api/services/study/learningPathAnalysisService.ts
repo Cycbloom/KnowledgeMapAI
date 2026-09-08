@@ -214,7 +214,7 @@ export class LearningPathAnalysisService {
         : avgLearningSpeed;
 
     const estimates = nodes.map((node) => {
-      const baseTime = node.estimated_time || 30;
+      const baseTime = node.estimated_time || 40;
 
       let difficultyMultiplier = 1.0;
       let confidence: "low" | "medium" | "high" = "medium";

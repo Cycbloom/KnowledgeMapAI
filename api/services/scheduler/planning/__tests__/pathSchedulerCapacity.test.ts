@@ -73,8 +73,8 @@ describe("PathSchedulerService 容量感知装箱（P1 统一计划体系）", (
     });
   });
 
-  it("当日已被其它路径占用且超出全局预算时，顺延到空闲日", async () => {
-    // 2026-01-01 已被其它路径排 45 分钟；预算 60 → 30 分钟节点放不下
+  it("当日已被其它路径占用且超出全局预算时，顺延到空闲日并装满容量", async () => {
+    // 2026-01-01 已被其它路径排 45 分钟；预算 60 → 30 分钟节点放不下，顺延次日
     vi.spyOn(capacityService, "getCapacitySettings").mockResolvedValue({
       dailyCapacityMinutes: 60,
       reviewBufferRatio: 0.2,
@@ -95,15 +95,16 @@ describe("PathSchedulerService 容量感知装箱（P1 统一计划体系）", (
       start_date: "2026-01-01",
     });
 
+    // 次日空负载：kp1+kp2 = 60 正好装满全局预算 60
     expect(upsertRows(chain)).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ knowledge_point_id: "kp1", scheduled_date: "2026-01-02" }),
-        expect.objectContaining({ knowledge_point_id: "kp2", scheduled_date: "2026-01-03" }),
+        expect.objectContaining({ knowledge_point_id: "kp2", scheduled_date: "2026-01-02" }),
       ]),
     );
   });
 
-  it("复习缓冲压缩路径每日节奏（配额 30 × 0.8 = 24 分钟）", async () => {
+  it("按全局日容量装箱：单日可容纳多个知识点（配额不再被复习缓冲压缩）", async () => {
     const { supabase, chain } = mockSupabase([]);
     (
       learningPathService.getLearningPath as ReturnType<typeof vi.fn>
@@ -119,10 +120,10 @@ describe("PathSchedulerService 容量感知装箱（P1 统一计划体系）", (
       start_date: "2026-01-01",
     });
 
-    // 15+15=30 > 24 → 每个节点独占一天（无缓冲时 n1/n2 会同日）
+    // 3×15 = 45 ≤ 240（全局容量）→ 三个知识点同日排下
     const rows = upsertRows(chain);
     const dates = new Set(rows.map((r) => r.scheduled_date));
-    expect(dates.size).toBe(3);
+    expect(dates.size).toBe(1);
   });
 
   it("知识点已被其它路径排期（不同日期）时复用原日期并归并来源，不重复排期", async () => {

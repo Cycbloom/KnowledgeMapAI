@@ -116,7 +116,7 @@ export const LearningPaths = () => {
   const [newPathTitle, setNewPathTitle] = useState("");
   const [newPathDescription, setNewPathDescription] = useState("");
   const [newPathGoal, setNewPathGoal] = useState("");
-  const [newPathDailyMinutes, setNewPathDailyMinutes] = useState(180);
+  const [newPathDailyMinutes, setNewPathDailyMinutes] = useState(240);
   const [newPathTargetDate, setNewPathTargetDate] = useState("");
 
   const createModalRef = useFocusTrap<HTMLDivElement>({ enabled: isCreating });
@@ -163,7 +163,7 @@ export const LearningPaths = () => {
       setNewPathTitle("");
       setNewPathDescription("");
       setNewPathGoal("");
-      setNewPathDailyMinutes(180);
+      setNewPathDailyMinutes(240);
       setNewPathTargetDate("");
       setIsCreating(false);
       message.success(t("learningPaths.messages.createSuccess"));

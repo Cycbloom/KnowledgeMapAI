@@ -453,7 +453,7 @@ class StageWindowPlannerService {
     let weekUsed = 0;
 
     for (const stage of stages) {
-      const time = stage.estimated_time || 30;
+      const time = stage.estimated_time || 40;
       const spanWeeks = Math.max(1, Math.ceil(time / weeklyCapacity));
       if (stage.is_milestone) {
         // 里程碑独占一周：若本周已有普通 stage 则顺延到下周

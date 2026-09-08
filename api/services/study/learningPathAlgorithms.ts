@@ -223,20 +223,21 @@ export function calculateEstimatedTime(
   parentCount: number = 0,
   childCount: number = 0,
 ): number {
-  let baseTime = 15;
+  // 单知识点总时长 = 学习（~15min）+ 测验/做题（~25min）；按难度级别微调
+  let baseTime = 40;
 
   switch (level) {
     case "beginner":
-      baseTime = 25;
+      baseTime = 45;
       break;
     case "intermediate":
-      baseTime = 20;
+      baseTime = 40;
       break;
     case "advanced":
-      baseTime = 30;
+      baseTime = 55;
       break;
     default:
-      baseTime = 15;
+      baseTime = 40;
   }
 
   const dependencyFactor = Math.max(0, parentCount - 1) * 2;
@@ -662,7 +663,7 @@ export async function generateAIPath(
         order: stages.length,
         priority: item.priority || "medium",
         reason: item.reason || "",
-        estimatedTime: item.estimatedTime || 15,
+        estimatedTime: item.estimatedTime || 40,
         prerequisites: mapPrerequisitesToUuids(item.prerequisites || []),
         isCompleted: progress?.masteryLevel
           ? progress.masteryLevel > 0.8

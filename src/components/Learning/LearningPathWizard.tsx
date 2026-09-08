@@ -79,7 +79,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
   const [customGoal, setCustomGoal] = useState('');
   const [knowledgeAnswers, setKnowledgeAnswers] = useState<Record<string, string>>({});
   const [learningStyle, setLearningStyle] = useState<'sequential' | 'exploratory' | 'focused'>('sequential');
-  const [dailyTime, setDailyTime] = useState(180);
+  const [dailyTime, setDailyTime] = useState(240);
   const [selectedPrerequisites, setSelectedPrerequisites] = useState<Set<string>>(new Set());
   const [createdGraphs, setCreatedGraphs] = useState<Array<{
     topic: string;

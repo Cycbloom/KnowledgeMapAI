@@ -69,7 +69,7 @@ describe("PathSchedulerService (Phase A 排课引擎)", () => {
     glp.mockReset();
   });
 
-  it("按每日目标切分，节点超出每日额度顺延到次日", async () => {
+  it("按全局日容量装箱，同日容纳多个知识点", async () => {
     const { supabase, chain } = mockSupabase([]);
     (
       learningPathService.getLearningPath as ReturnType<typeof vi.fn>
@@ -91,19 +91,19 @@ describe("PathSchedulerService (Phase A 排课引擎)", () => {
     expect(result.scheduled).toHaveLength(3);
     const rows = upsertRows(chain);
     expect(rows).toHaveLength(3);
-    // 每个节点独占一天（30+30>30 每日目标）
+    // 3×30 = 90 ≤ 全局日容量 240 → 三个知识点同日排下
     const dates = new Set(rows.map((r) => r.scheduled_date)).size;
-    expect(dates).toBe(3);
+    expect(dates).toBe(1);
     expect(rows).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ knowledge_point_id: "kp1", scheduled_date: "2026-01-01" }),
-        expect.objectContaining({ knowledge_point_id: "kp2", scheduled_date: "2026-01-02" }),
-        expect.objectContaining({ knowledge_point_id: "kp3", scheduled_date: "2026-01-03" }),
+        expect.objectContaining({ knowledge_point_id: "kp2", scheduled_date: "2026-01-01" }),
+        expect.objectContaining({ knowledge_point_id: "kp3", scheduled_date: "2026-01-01" }),
       ]),
     );
   });
 
-  it("里程碑节点独占一天，且顺延后的普通节点不与其同日", async () => {
+  it("里程碑节点不再独占一天，按容量与普通节点同日装箱", async () => {
     const { supabase, chain } = mockSupabase([]);
     (
       learningPathService.getLearningPath as ReturnType<typeof vi.fn>
@@ -121,10 +121,10 @@ describe("PathSchedulerService (Phase A 排课引擎)", () => {
 
     const rows = upsertRows(chain);
     const byKp = new Map(rows.map((r) => [r.knowledge_point_id, r.scheduled_date]));
-    // n1 当天已有 15 分钟；里程碑 n2 独占次日；n3 在里程碑之后再单独一天
+    // 里程碑 n2 与普通节点一样装箱：3×15 = 45 ≤ 全局容量 240 → 三个同日
     expect(byKp.get("kp1")).toBe("2026-01-01");
-    expect(byKp.get("kp2")).toBe("2026-01-02");
-    expect(byKp.get("kp3")).toBe("2026-01-03");
+    expect(byKp.get("kp2")).toBe("2026-01-01");
+    expect(byKp.get("kp3")).toBe("2026-01-01");
   });
 
   it("同知识点同日被其它路径占用时，自动合并并入来源路径，不重复排期", async () => {
@@ -184,7 +184,8 @@ describe("PathSchedulerService (Phase A 排课引擎)", () => {
     );
     expect(windowUpdates).toHaveLength(1);
     const w = windowUpdates[0][0] as { scheduled_start_date?: string; scheduled_end_date?: string };
+    // 2×30 = 60 ≤ 全局日容量 240 → 两节点同日，窗口同日
     expect(w.scheduled_start_date).toBe("2026-01-01");
-    expect(w.scheduled_end_date).toBe("2026-01-02");
+    expect(w.scheduled_end_date).toBe("2026-01-01");
   });
 });

@@ -356,7 +356,7 @@ export class LearningPathDailyPlan {
       );
     }
 
-    const dailyMinutesTarget = path.daily_minutes_target || 180;
+    const dailyMinutesTarget = path.daily_minutes_target || 240;
     const plans: LearningPlan[] = [];
     const nodeQueue = [...orderedNodes];
     const now = new Date().toISOString();
@@ -371,7 +371,7 @@ export class LearningPathDailyPlan {
 
       while (nodeQueue.length > 0) {
         const node = nodeQueue[0];
-        const nodeTime = node.estimated_time || 30;
+        const nodeTime = node.estimated_time || 40;
 
         if (plannedDuration + nodeTime <= dailyMinutesTarget) {
           plannedNodesForDay.push(node.id);

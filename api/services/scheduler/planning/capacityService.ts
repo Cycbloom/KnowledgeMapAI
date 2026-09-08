@@ -133,7 +133,7 @@ class CapacityService {
     for (const p of sorted) {
       const target = p.daily_minutes_target && p.daily_minutes_target > 0
         ? p.daily_minutes_target
-        : 180;
+        : 240;
       const quota = Math.max(
         Math.min(target, remaining),
         Math.min(target, MIN_PATH_QUOTA_MINUTES),

@@ -10,6 +10,7 @@ vi.mock("../../study/learningPathService", () => ({
     generateAndSavePath: vi.fn().mockResolvedValue({
       savedPath: { id: "path-1", title: "学习路径" },
     }),
+    deleteLearningPath: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
@@ -92,13 +93,14 @@ describe("GraphLearningLauncherService (S2)", () => {
     );
 
     expect(learningPathService.generateAndSavePath).toHaveBeenCalled();
+    expect(learningPathService.deleteLearningPath).not.toHaveBeenCalled();
     expect(result.graphTaskId).toBe("graph-task-1");
     expect(result.pathId).toBe("path-1");
     expect(result.pathReused).toBe(false);
     expect(result.totalTasks).toBe(2);
   });
 
-  it("存在 active 路径时复用，不重复生成", async () => {
+  it("存在 active 路径时归档旧路径并重新生成（同图谱只保留一条 active）", async () => {
     const supabase = buildMockSupabase({
       knowledge_graphs: graphRow,
       graph_nodes: graphNodes,
@@ -116,9 +118,16 @@ describe("GraphLearningLauncherService (S2)", () => {
       "graph-1",
     );
 
-    expect(learningPathService.generateAndSavePath).not.toHaveBeenCalled();
-    expect(result.pathId).toBe("path-exist");
-    expect(result.pathReused).toBe(true);
+    // 旧的 active 路径被归档（含清理排期），然后重新生成
+    expect(learningPathService.deleteLearningPath).toHaveBeenCalledWith(
+      supabase as never,
+      "path-exist",
+      "user-1",
+      false,
+    );
+    expect(learningPathService.generateAndSavePath).toHaveBeenCalled();
+    expect(result.pathId).toBe("path-1");
+    expect(result.pathReused).toBe(false);
     expect(result.totalTasks).toBe(2);
   });
 });

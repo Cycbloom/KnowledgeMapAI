@@ -149,9 +149,9 @@ describe("PathSchedulerService P5 扩展（窗口联动 / replan / backfill）",
   });
 
   describe("planPath 周窗口强联动", () => {
-    it("图谱有未来周窗口时，起始日对齐窗口周且节奏按窗口预算限速", async () => {
-      // 基础节奏 = min(180, 60) × 0.8 = 48；窗口日节奏 = ceil(140 / 7) = 20
-      // 3×15min 节点：无限联动时三个同日；联动后逐日顺延且起始日为窗口周一
+    it("图谱有未来周窗口时，起始日对齐窗口周，节奏按全局容量装满（不再按窗口摊派限速）", async () => {
+      // 基础节奏 = 全局容量 60；窗口只对齐起始日到 2026-09-07
+      // 3×15min 节点：45 ≤ 60 → 三个同日排下（此前被窗口限速逐日顺延）
       const { supabase, scheduleChain } = buildDispatch({
         windowRows: [
           {
@@ -179,10 +179,10 @@ describe("PathSchedulerService P5 扩展（窗口联动 / replan / backfill）",
         upsertRows(scheduleChain).map((r) => [r.knowledge_point_id, r.scheduled_date]),
       );
       expect(byKp.get("kp1")).toBe("2026-09-07");
-      expect(byKp.get("kp2")).toBe("2026-09-08");
-      expect(byKp.get("kp3")).toBe("2026-09-09");
+      expect(byKp.get("kp2")).toBe("2026-09-07");
+      expect(byKp.get("kp3")).toBe("2026-09-07");
       expect(result.startDate).toBe("2026-09-07");
-      expect(result.endDate).toBe("2026-09-09");
+      expect(result.endDate).toBe("2026-09-07");
     });
 
     it("窗口所属大路径非 active 时视为无窗口，按原样从起始日排课", async () => {
@@ -210,7 +210,7 @@ describe("PathSchedulerService P5 扩展（窗口联动 / replan / backfill）",
 
       const rows = upsertRows(scheduleChain);
       expect(rows).toHaveLength(2);
-      // 无窗口限速：基础节奏 48 → 两节点同日，且不被推到窗口周
+      // 无窗口限速：两节点按全局容量同日排下，且不被推到窗口周
       expect(new Set(rows.map((r) => r.scheduled_date))).toEqual(new Set(["2026-09-01"]));
     });
 
@@ -326,13 +326,13 @@ describe("PathSchedulerService P5 扩展（窗口联动 / replan / backfill）",
         title: "新增知识点",
         status: "pending",
       });
-      // 补排：两个知识点都进排期（kp1 落今天；kp2 30+30 超基础节奏 48 顺延到明天）
+      // 补排：两个知识点都进排期（kp1 落今天；kp2 30+30 ≤ 容量 60 同日）
       const rows = upsertRows(scheduleChain);
       expect(rows).toHaveLength(2);
       expect(rows).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ knowledge_point_id: "kp1", scheduled_date: todayStr() }),
-          expect.objectContaining({ knowledge_point_id: "kp2", scheduled_date: addDaysStr(todayStr(), 1) }),
+          expect.objectContaining({ knowledge_point_id: "kp2", scheduled_date: todayStr() }),
         ]),
       );
     });

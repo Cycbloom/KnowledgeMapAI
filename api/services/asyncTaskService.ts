@@ -66,6 +66,11 @@ export class AsyncTaskService {
   private taskControls = new Map<string, { pause: boolean; cancel: boolean }>();
 
   /**
+   * 周期性回收轮询定时器（initialize 时启动一次，unref 避免阻塞进程退出）。
+   */
+  private pollTimer: ReturnType<typeof setInterval> | null = null;
+
+  /**
    * 为指定任务构建协作控制句柄。
    *
    * 信号优先级：cancel > pause > ok。仅本进程正在处理的任务有对应条目；
@@ -114,6 +119,7 @@ export class AsyncTaskService {
    * 内部错误被捕获并记录，不影响主进程启动。
    */
   async initialize(): Promise<void> {
+    this.startPendingPolling();
     try {
       const supabase = defaultClient;
       const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
@@ -279,12 +285,13 @@ export class AsyncTaskService {
     this.activeCount += 1;
     if (this.activeCount > AsyncTaskService.MAX_CONCURRENT) {
       this.activeCount -= 1;
-      logger.info(`processTaskAsync: concurrency limit reached, skipping task ${taskId} (will retry on next poll)`);
+      logger.info(`processTaskAsync: concurrency limit reached, skipping task ${taskId} (will be drained later)`);
       return;
     }
 
+    let claimed = false;
     try {
-      const claimed = await this.claimTask(taskId);
+      claimed = await this.claimTask(taskId);
       if (!claimed) {
         logger.info(`processTaskAsync: task ${taskId} already claimed by another instance, skipping`);
         return;
@@ -300,6 +307,13 @@ export class AsyncTaskService {
     } finally {
       this.activeCount -= 1;
       this.taskControls.delete(taskId);
+      if (claimed) {
+        // 任务完成释放并发槽位后，拉起此前因并发上限被跳过、仍滞留 pending 的任务，
+        // 避免批量任务（如批量生成学习资料）第 4+ 个永远停留在"待处理"
+        this.drainPendingTasks().catch((err) => {
+          logger.error("asyncTaskService: drain after task completion failed:", err);
+        });
+      }
     }
   }
 
@@ -613,6 +627,60 @@ export class AsyncTaskService {
     });
 
     return { success: true };
+  }
+
+  /**
+   * 周期性回收兜底：每 60s 尝试拉起滞留的 pending 任务。
+   *
+   * 正常情况下任务完成后的 finally 已触发 drainPendingTasks 自排干；
+   * 该轮询仅作为保险，覆盖 drain 瞬时失败、任务由其它入口直接落库等场景。
+   * unref() 保证定时器不阻塞进程退出。
+   */
+  private startPendingPolling(): void {
+    if (this.pollTimer) return;
+    this.pollTimer = setInterval(() => {
+      this.drainPendingTasks().catch((err) => {
+        logger.error("asyncTaskService: periodic drain failed:", err);
+      });
+    }, 60 * 1000);
+    this.pollTimer.unref?.();
+  }
+
+  /**
+   * 回收滞留的 pending 任务：按创建时间最旧优先，最多拉起当前空闲槽位数量的任务。
+   *
+   * 触发时机：
+   * - 任一任务完成释放并发槽位后（processTaskAsync 的 finally）；
+   * - 周期轮询（startPendingPolling）。
+   * 目标任务被 processTaskAsync 抢占时，乐观锁 claimTask 保证不会重复处理。
+   */
+  private async drainPendingTasks(): Promise<void> {
+    const freeSlots = AsyncTaskService.MAX_CONCURRENT - this.activeCount;
+    if (freeSlots <= 0) return;
+
+    try {
+      const { data, error } = await defaultClient
+        .from("system_tasks")
+        .select("*")
+        .eq("status", "pending")
+        .order("created_at", { ascending: true })
+        .limit(freeSlots);
+
+      if (error) {
+        logger.error("asyncTaskService.drainPendingTasks: failed to fetch pending tasks:", error);
+        return;
+      }
+
+      for (const task of (data ?? []) as SystemTask[]) {
+        const originalType = this.getOriginalTaskType(task.task_type, task.title);
+        const payload = (task.input_data as Record<string, unknown>) ?? {};
+        this.processTaskAsync(task.id, task.user_id, originalType, payload).catch((err) => {
+          logger.error(`asyncTaskService.drainPendingTasks: failed to process task ${task.id}:`, err);
+        });
+      }
+    } catch (error) {
+      logger.error("asyncTaskService.drainPendingTasks: unexpected error:", error);
+    }
   }
 
   async processTask(

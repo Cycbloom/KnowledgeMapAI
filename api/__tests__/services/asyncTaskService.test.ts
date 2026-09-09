@@ -247,14 +247,15 @@ describe("AsyncTaskService - initialize (启动恢复 + 并发控制)", () => {
       });
 
       // 验证 fetch 查询包含 status='pending' 和 created_at 过滤
-      expect(captured.selects).toHaveLength(1);
+      // （首个 select 来自 initialize；任务完成后 drain 会再次查询 pending）
+      expect(captured.selects.length).toBeGreaterThanOrEqual(1);
       expect(captured.selects[0].eqFilters).toContainEqual([
         "status",
         "pending",
       ]);
 
       // 验证两个任务都被 claim（status='running' + claimed_at）
-      expect(captured.updates).toHaveLength(2);
+      expect(captured.updates.length).toBeGreaterThanOrEqual(2);
       const claim1 = captured.updates[0];
       const claim2 = captured.updates[1];
       expect(claim1.eqFilters).toContainEqual(["id", "task-1"]);
@@ -448,39 +449,29 @@ describe("AsyncTaskService - initialize (启动恢复 + 并发控制)", () => {
       await flushMicrotasks();
     });
 
-    it("并发任务完成后 activeCount 归零，后续 initialize 可继续处理", async () => {
-      // 第一批：4 个任务，第 4 个被跳过
-      const batch1 = [
+    it("并发跳过的第 4 个任务在首批完成后被 drain 自动拉起，无需等待下次轮询", async () => {
+      const tasks = [
         createStalledTask({ id: "task-1" }),
         createStalledTask({ id: "task-2" }),
         createStalledTask({ id: "task-3" }),
         createStalledTask({ id: "task-4" }),
       ];
-      const batch2Task = createStalledTask({ id: "task-4" });
-      mockState.fetchResult = { data: batch1, error: null };
-      // 提供 4 个 claim 结果：前 3 个给第一批，第 4 个给第二批
+      mockState.fetchResult = { data: tasks, error: null };
+      // 前 3 个 claim 给首批；第 4 个给 drain 拉起时 claim 使用
       mockState.updateResults = [
-        { data: [batch1[0]], error: null },
-        { data: [batch1[1]], error: null },
-        { data: [batch1[2]], error: null },
-        { data: [batch2Task], error: null },
+        { data: [tasks[0]], error: null },
+        { data: [tasks[1]], error: null },
+        { data: [tasks[2]], error: null },
+        { data: [tasks[0]], error: null },
       ];
 
-      // processTask 立即 resolve（模拟快速完成任务）
+      // processTask 立即 resolve（模拟快速完成任务），首批完成后释放并发槽位
       processTaskSpy.mockResolvedValue(undefined);
 
       await service.initialize();
 
-      // 第一批：只有 3 个被处理（第 4 个因并发上限被跳过）
-      await vi.waitFor(() => {
-        expect(processTaskSpy).toHaveBeenCalledTimes(3);
-      });
-
-      // 第二批：再次轮询，第 4 个任务现在可以处理
-      mockState.fetchResult = { data: [batch2Task], error: null };
-
-      await service.initialize();
-
+      // 无需再次调用 initialize：任务完成后的 drain 自动拉起被跳过的任务，
+      // 避免批量任务（如批量生成学习资料）第 4+ 个永远停留在"待处理"
       await vi.waitFor(() => {
         expect(processTaskSpy).toHaveBeenCalledTimes(4);
       });

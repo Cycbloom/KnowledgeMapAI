@@ -9,6 +9,8 @@ import { countPendingOps } from "../offlineSync";
 import {
   getAll,
   clearStore,
+  closeOfflineDb,
+  ensureOfflineDb,
   CONTENT_STORES,
   RECORD_STORES,
   META_STORE,
@@ -258,5 +260,55 @@ describe("offline 数据层", () => {
 
     const after = await countPendingOps();
     expect(after).toBe(2);
+  });
+
+  it("旧版 v1 库升级后自动补齐 graph_nodes/edges 存储（修复零节点）", async () => {
+    // 先重置连接并删除库，再以旧 schema（无 graph_nodes/edges）建一个 v1 库
+    await closeOfflineDb();
+    await new Promise<void>((resolve, reject) => {
+      const delReq = indexedDB.deleteDatabase("KnowledgeMapOffline");
+      delReq.onsuccess = () => resolve();
+      delReq.onerror = () => reject(delReq.error);
+      delReq.onblocked = () => resolve();
+    });
+    await new Promise<void>((resolve, reject) => {
+      const req = indexedDB.open("KnowledgeMapOffline", 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        const oldStores: Array<{ name: string; keyPath: string }> = [
+          { name: "graphs", keyPath: "id" },
+          { name: "knowledge_points", keyPath: "id" },
+          { name: "study_cards", keyPath: "id" },
+          { name: "quiz_sets", keyPath: "id" },
+          { name: "quiz_set_cards", keyPath: "id" },
+          { name: "meta", keyPath: "key" },
+          { name: "review_logs", keyPath: "id" },
+          { name: "quiz_sessions", keyPath: "id" },
+          { name: "op_log", keyPath: "id" },
+        ];
+        for (const store of oldStores) {
+          if (!db.objectStoreNames.contains(store.name)) {
+            db.createObjectStore(store.name, { keyPath: store.keyPath });
+          }
+        }
+      };
+      req.onsuccess = () => {
+        req.result.close();
+        resolve();
+      };
+      req.onerror = () => reject(req.error);
+    });
+
+    // 通过 offlineDb（v2）重新打开 → onupgradeneeded 补建新 store → 导入成功
+    await ensureOfflineDb();
+    await importOfflineBundle(makeBundle());
+    const graphNodes = await getAll("graph_nodes");
+    const edges = await getAll("edges");
+    expect(graphNodes.length).toBeGreaterThan(0);
+    expect(edges.length).toBeGreaterThan(0);
+
+    // 清理：关闭连接，避免影响后续用例
+    await closeOfflineDb();
+    await clearStore("meta");
   });
 });

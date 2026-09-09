@@ -129,6 +129,8 @@ function App() {
       // 上一状态即在网，非由离线恢复，忽略
       return;
     }
+    // 离线数据模式：不尝试联网，恢复联网提示与数据刷新均无意义
+    if (isOfflineActive()) return;
     message.success(t("toast.common.backOnline"));
     void queryClient.refetchQueries({ type: "active" });
   }, [queryClient, t]);

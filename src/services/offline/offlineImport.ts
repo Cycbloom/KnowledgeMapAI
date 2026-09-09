@@ -14,28 +14,29 @@ import type { StudyCard } from "@shared/types/common";
 
 const logger = createLogger("OfflineImport");
 
-const BUNDLE_URL = "offline/bundle.json";
+const BUNDLE_URLS = ["offline/bundle.json", "/offline/bundle.json"];
 
 /** 拉取内置离线数据包；不存在或解析失败返回 null（视为非离线版） */
 export async function fetchOfflineBundle(): Promise<OfflineBundle | null> {
-  try {
-    const response = await fetch(BUNDLE_URL, { cache: "no-store" });
-    if (!response.ok) {
-      return null;
+  for (const url of BUNDLE_URLS) {
+    try {
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) continue;
+      const bundle = (await response.json()) as OfflineBundle;
+      if (
+        !bundle ||
+        typeof bundle !== "object" ||
+        !Array.isArray(bundle.studyCards)
+      ) {
+        logger.warn("Offline bundle malformed, ignoring");
+        return null;
+      }
+      return bundle;
+    } catch {
+      // 尝试下一个候选路径
     }
-    const bundle = (await response.json()) as OfflineBundle;
-    if (
-      !bundle ||
-      typeof bundle !== "object" ||
-      !Array.isArray(bundle.studyCards)
-    ) {
-      logger.warn("Offline bundle malformed, ignoring");
-      return null;
-    }
-    return bundle;
-  } catch {
-    return null;
   }
+  return null;
 }
 
 /**
@@ -117,6 +118,7 @@ export async function importOfflineBundle(bundle: OfflineBundle): Promise<void> 
 /**
  * 确保离线内容就绪：首次启动或数据包版本升级时导入内置数据包。
  * 本地记录表（复习日志/答题会话/操作日志）永不随导入清除。
+ * 导入失败时不中断离线模式：日志记录后返回 bundle，内容以已导入部分为准，下次启动重试。
  */
 export async function ensureOfflineContent(): Promise<OfflineBundle | null> {
   const bundle = await fetchOfflineBundle();
@@ -127,7 +129,14 @@ export async function ensureOfflineContent(): Promise<OfflineBundle | null> {
     return bundle;
   }
 
-  await importOfflineBundle(bundle);
+  try {
+    await importOfflineBundle(bundle);
+  } catch (error) {
+    logger.error("Offline bundle import failed, will retry on next launch", {
+      message: error instanceof Error ? error.message : String(error),
+      version: bundle.version,
+    });
+  }
   return bundle;
 }
 

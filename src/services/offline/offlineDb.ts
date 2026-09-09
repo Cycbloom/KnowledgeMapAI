@@ -3,7 +3,8 @@ import { createLogger } from "@/utils/logger";
 const logger = createLogger("OfflineDb");
 
 export const OFFLINE_DB_NAME = "KnowledgeMapOffline";
-export const OFFLINE_DB_VERSION = 1;
+// v2: 新增 graph_nodes/edges 内容表（旧版 v1 库升级安装后由 onupgradeneeded 补建表）
+export const OFFLINE_DB_VERSION = 2;
 
 /** 内容表（随数据包导入，重建时整体覆盖） */
 export const CONTENT_STORES = [
@@ -134,6 +135,14 @@ function getStore(storeName: string, mode: IDBTransactionMode): IDBObjectStore {
 /** 打开数据库并确保连接可用（幂等） */
 export async function ensureOfflineDb(): Promise<IDBDatabase> {
   return openDB();
+}
+
+/** 关闭并重置数据库连接（测试用；下次调用 openDB 会按最新版本重新打开） */
+export async function closeOfflineDb(): Promise<void> {
+  if (dbInstance) {
+    dbInstance.close();
+    dbInstance = null;
+  }
 }
 
 export async function getAll<T = Record<string, unknown>>(

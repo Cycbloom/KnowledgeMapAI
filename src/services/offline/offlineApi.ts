@@ -606,6 +606,7 @@ const offlineHealthApi = {
 
 // 离线模式无 AI 服务：主观题判分立即返回「未判分」，避免网络重试阻塞答题提交
 const offlineAiApi = {
+  status: async () => ({ enabled: false }),
   gradeAnswer: async () => ({
     success: true,
     data: {

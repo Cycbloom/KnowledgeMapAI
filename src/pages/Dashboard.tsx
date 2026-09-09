@@ -324,11 +324,11 @@ export const Dashboard = () => {
                 </div>
               ) : decision && decision.type === "progress" && decision.progress ? (
                 <div className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div className="flex items-start gap-3 min-w-0">
+                  <div className="flex-1 min-w-0 flex items-start gap-3">
                     <div className="w-10 h-10 rounded-full bg-primary-500/15 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0">
                       <GraduationCap size={20} />
                     </div>
-                    <div className="min-w-0">
+                    <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">
                         {t("scheduler.home.continueGraph", { title: decision.progress.taskTitle })}
                       </p>

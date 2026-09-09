@@ -17,6 +17,8 @@ import {
   Sun,
   Moon,
   Menu,
+  Search,
+  X,
   LucideIcon,
   AlertTriangle,
   Upload,
@@ -30,6 +32,8 @@ import {
   SSEStatusIndicator,
   SyncStatusIndicator,
   DataFreshnessIndicator,
+  GlobalSearch,
+  type GlobalSearchHandle,
 } from "../common";
 import { Breadcrumb } from "./Breadcrumb";
 import { HeaderGreeting } from "./HeaderGreeting";
@@ -57,6 +61,7 @@ import { useNavigateBack } from "../../hooks/common/useNavigateBack";
 import { api } from "../../services/api";
 import { useGlobalShortcuts } from "../../hooks/common/useGlobalShortcuts";
 import { useNetworkStatus } from "../../hooks/common/useNetworkStatus";
+import { isOfflineActive } from "../../services/offline/offlineMode";
 import { useSkipToContent } from "../../hooks/common/useSkipToContent";
 import { isElectron } from "../../config/electronConfig";
 import { apiClient } from "../../services/api/createApiClient";
@@ -145,18 +150,30 @@ export const Layout = () => {
   const { isDark, toggleTheme } = useTheme();
   const { isMobile } = useIsMobile();
   const { goBack } = useNavigateBack();
-  useSwipeBack({ enabled: isMobile, onSwipeBack: goBack });
+  // quiz 激活时禁用左边缘滑动返回：闪卡拖拽会从卡片左边缘起手，两套手势同时监听会互相干扰
+  useSwipeBack({ enabled: isMobile && !isQuizModeActive, onSwipeBack: goBack });
   const { mainRef, handleSkip } = useSkipToContent();
   const [isCollapsed, setIsCollapsed] = useState<boolean>(readInitialCollapsed());
   const sidebarId = useId();
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchRef = useRef<GlobalSearchHandle>(null);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [schemaStatus, setSchemaStatus] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const importGraphMutation = useImportGraphMutation();
   const dragCounterRef = useRef(0);
+
+  // 全局搜索入口：桌面端聚焦 Header 内联搜索框，移动端打开全屏搜索浮层
+  const openGlobalSearch = useCallback(() => {
+    if (isMobile) {
+      setIsSearchOpen(true);
+      return;
+    }
+    searchRef.current?.focus();
+  }, [isMobile]);
 
   const isFullScreenPage =
     location.pathname.startsWith("/graph/") ||
@@ -206,15 +223,7 @@ export const Layout = () => {
         setIsCommandPaletteOpen((prev) => !prev);
       },
       openSearch: () => {
-        // 搜索能力已内嵌在全局命令面板中，行为与 openCommandPalette 一致
-        if (
-          location.pathname.startsWith("/graph/") ||
-          location.pathname === "/learning" ||
-          location.pathname.startsWith("/scheduler/task/")
-        ) {
-          return;
-        }
-        setIsCommandPaletteOpen((prev) => !prev);
+        openGlobalSearch();
       },
       navigateBack: () => {
         goBack();
@@ -248,6 +257,21 @@ export const Layout = () => {
     onSlowConnection: () => message.warning(t('toast.common.slowConnection')),
   });
 
+  useEffect(() => {
+    if (!isSearchOpen) return;
+    const raf = requestAnimationFrame(() => searchRef.current?.focus());
+    return () => cancelAnimationFrame(raf);
+  }, [isSearchOpen]);
+
+  useEffect(() => {
+    if (!isSearchOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsSearchOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isSearchOpen]);
+
   const { data: userData, isLoading: isUserLoading } = useUser(
     !!token && !user,
   );
@@ -255,7 +279,7 @@ export const Layout = () => {
   useTaskEvents();
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || isOfflineActive()) return;
     const checkSchema = async () => {
       try {
         const response = await apiClient.get("/database/status") as { status?: string; error?: string };
@@ -719,15 +743,34 @@ export const Layout = () => {
                 <Breadcrumb />
               </div>
 
-              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden 2xl:block">
-                <HeaderGreeting />
+              <div className="hidden md:flex flex-1 items-center justify-center gap-6 px-4 min-w-0">
+                <div className="hidden 2xl:block shrink-0">
+                  <HeaderGreeting />
+                </div>
+                <GlobalSearch ref={searchRef} />
               </div>
 
               <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
-                <DataFreshnessIndicator className="hidden lg:flex" />
-                <SyncStatusIndicator />
-                <SSEStatusIndicator />
-                <NotificationCenter />
+                {!isOfflineActive() && (
+                  <>
+                    <DataFreshnessIndicator className="hidden lg:flex" />
+                    <SyncStatusIndicator />
+                    <SSEStatusIndicator />
+                    <NotificationCenter />
+                  </>
+                )}
+                <button
+                  onClick={() => setIsSearchOpen(true)}
+                  className={`md:hidden p-2.5 rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors ${
+                    isDark
+                      ? "text-slate-400 hover:text-primary-400 hover:bg-slate-800"
+                      : "text-gray-500 hover:text-primary-600 hover:bg-primary-50"
+                  }`}
+                  title={t('common.aria.search')}
+                  aria-label={t('common.aria.search')}
+                >
+                  <Search size={18} aria-hidden="true" />
+                </button>
                 <button
                   onClick={toggleTheme}
                   className={`p-2.5 rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors ${
@@ -895,6 +938,32 @@ export const Layout = () => {
                 onClose={() => setIsQuickCaptureOpen(false)}
               />
             </Suspense>
+          )}
+          {isMobile && isSearchOpen && (
+            <div
+              className={`fixed inset-0 z-[60] flex flex-col ${
+                isDark ? "bg-slate-900/95" : "bg-white/95"
+              }`}
+              onClick={(e) => {
+                if (e.target === e.currentTarget) setIsSearchOpen(false);
+              }}
+            >
+              <div className={`flex items-center justify-between px-4 pt-4 pb-2 shrink-0 ${isDark ? "text-slate-200" : "text-gray-800"}`}>
+                <span className="text-sm font-medium">{t('common.aria.search')}</span>
+                <button
+                  onClick={() => setIsSearchOpen(false)}
+                  aria-label={t('common.aria.close')}
+                  className={`p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full transition-colors ${
+                    isDark ? "text-slate-400 hover:bg-slate-800" : "text-gray-500 hover:bg-gray-100"
+                  }`}
+                >
+                  <X size={20} aria-hidden="true" />
+                </button>
+              </div>
+              <div className="px-4 pb-6">
+                <GlobalSearch ref={searchRef} />
+              </div>
+            </div>
           )}
         </main>
         <footer className="sr-only" role="contentinfo">

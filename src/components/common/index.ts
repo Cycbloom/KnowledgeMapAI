@@ -60,6 +60,7 @@ export { SyncConflictPanel } from "./SyncConflictPanel";
 export { TagCloud, TagFilter, TagSuggestions, TagInput } from "./TagSystem";
 export { TermTooltip } from "./TermTooltip";
 export { GlobalSearch } from "./GlobalSearch";
+export type { GlobalSearchHandle } from "./GlobalSearch";
 export { SearchInput } from "./SearchInput";
 export type { SearchInputProps } from "./SearchInput";
 export { FilterTabs } from "./FilterTabs";

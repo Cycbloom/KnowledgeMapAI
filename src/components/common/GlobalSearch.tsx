@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo, useId } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, useId, forwardRef, useImperativeHandle } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -73,7 +73,11 @@ function saveSearchHistory(history: SearchHistoryItem[]) {
   }
 }
 
-export const GlobalSearch = () => {
+export interface GlobalSearchHandle {
+  focus: () => void;
+}
+
+export const GlobalSearch = forwardRef<GlobalSearchHandle, object>((_props, ref) => {
   const navigate = useNavigate();
   const { isDark } = useTheme();
   const { t } = useTranslation();
@@ -258,6 +262,13 @@ export const GlobalSearch = () => {
     },
     enabled: true,
   });
+
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      setIsOpen(true);
+      inputRef.current?.focus();
+    },
+  }));
 
   return (
     <div className="relative w-full max-w-md" ref={wrapperRef}>
@@ -567,4 +578,4 @@ export const GlobalSearch = () => {
       )}
     </div>
   );
-};
+});

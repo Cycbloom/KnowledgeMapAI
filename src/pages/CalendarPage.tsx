@@ -33,6 +33,19 @@ function toDateKey(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+/**
+ * 日期锚定事件（排课/复习投影）的 start/end 由后端以 UTC 零点生成，
+ * 在 UTC+8 等时区会被小时网格推到当日 8 点、结束时刻跨到次日。
+ * 统一归一化到本地当天零点，让"只排日期"的块落在当日顶部（全天语义）。
+ */
+function anchorToLocalDayStart(event: CalendarEvent): CalendarEvent {
+  if (!event.scheduledDate) return event;
+  const dayStart = new Date(`${event.scheduledDate}T00:00:00`);
+  if (Number.isNaN(dayStart.getTime())) return event;
+  const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000 - 1);
+  return { ...event, start: dayStart.toISOString(), end: dayEnd.toISOString() };
+}
+
 interface QuickTaskFormData {
   title: string; description: string; deadline: Date;
   estimated_duration: number; priority: number; tags: string[];
@@ -84,8 +97,9 @@ export const CalendarPage: React.FC = () => {
 
   // 合并路径排课（path_schedule）与复习到期预测（review_projection）图层
   // （周窗口 stage_window 不走逐日事件，由月/周视图的阶段条层渲染）
+  // 日期锚定图层统一归一化到本地零点，避免 UTC 零点在非 UTC 时区被推到 8 点
   const combinedEvents = calendarMode === "plan"
-    ? [...events, ...scheduleEvents, ...reviewProjections]
+    ? [...events, ...scheduleEvents, ...reviewProjections].map(anchorToLocalDayStart)
     : events;
 
   const { data: activityStats = [] } = useCalendarActivityStats(

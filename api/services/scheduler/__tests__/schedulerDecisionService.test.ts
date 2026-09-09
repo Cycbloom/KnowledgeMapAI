@@ -123,6 +123,50 @@ describe("SchedulerDecisionService (S3)", () => {
     expect(taskRecommendationService.getTaskRecommendations).not.toHaveBeenCalled();
   });
 
+  it("同一知识点的多张逾期卡只计 1 个知识点，不触发记忆打断", async () => {
+    const now = new Date("2026-01-01T12:00:00Z");
+    const overdue = new Date("2025-12-01T00:00:00Z").toISOString();
+
+    vi.mocked(spacedRepetitionBridge.getUnifiedReviewQueue).mockResolvedValue([
+      dueReviewItem({
+        id: "c1",
+        knowledgePointId: "kp-1",
+        nextReviewDate: overdue,
+        urgency: "overdue",
+        masteryLevel: 0.1,
+      }),
+      dueReviewItem({
+        id: "c2",
+        knowledgePointId: "kp-1",
+        nextReviewDate: overdue,
+        urgency: "overdue",
+        masteryLevel: 0.2,
+      }),
+      dueReviewItem({
+        id: "c3",
+        knowledgePointId: "kp-1",
+        nextReviewDate: overdue,
+        urgency: "overdue",
+        masteryLevel: 0.3,
+      }),
+    ] as never);
+    vi.mocked(taskRecommendationService.getTaskRecommendations).mockResolvedValue(
+      [] as never,
+    );
+
+    const supabase = buildMockSupabase({
+      graph_nodes: [],
+      knowledge_points: [{ id: "kp-1", title: "知识点一" }],
+    });
+
+    const decision = await schedulerDecisionService.getNextStep(supabase as never, "user-1", { now });
+
+    // 3 张逾期卡同属一个知识点 → 去重后计 1，低于阈值 3，不打断
+    expect(decision.type).toBe("empty");
+    expect(decision.interrupted).toBe(false);
+    expect(decision.overdueReviewCount).toBe(1);
+  });
+
   it("到期复习未达阈值时，返回队列推进决策", async () => {
     const now = new Date("2026-01-01T12:00:00Z");
     const today = new Date("2026-01-01T18:00:00Z").toISOString();

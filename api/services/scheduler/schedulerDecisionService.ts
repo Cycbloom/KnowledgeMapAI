@@ -136,15 +136,18 @@ class SchedulerDecisionService {
     // 1. 记忆打断判断（到期复习，含图谱上下文）
     const reviewItems = await this.getDueReviewsWithGraph(supabase, userId, now);
     const overdueReviews = reviewItems.filter((i) => i.urgency === "overdue");
+    const overdueKnowledgePointCount = new Set(
+      overdueReviews.map((i) => i.knowledgePointId).filter(Boolean),
+    ).size;
 
-    if (overdueReviews.length >= overdueThreshold) {
+    if (overdueKnowledgePointCount >= overdueThreshold) {
       const topReview = this.pickTopReview(overdueReviews);
       return {
         type: "review",
         interrupted: true,
         review: topReview,
-        reason: `有 ${overdueReviews.length} 个知识点逾期未复习，记忆已下降，建议先复习「${topReview.title ?? topReview.knowledgePointId}」`,
-        overdueReviewCount: overdueReviews.length,
+        reason: `有 ${overdueKnowledgePointCount} 个知识点逾期未复习，记忆已下降，建议先复习「${topReview.title ?? topReview.knowledgePointId}」`,
+        overdueReviewCount: overdueKnowledgePointCount,
       };
     }
 
@@ -155,7 +158,7 @@ class SchedulerDecisionService {
         type: "empty",
         interrupted: false,
         reason: "当前没有到期复习，也没有进行中的学习大任务",
-        overdueReviewCount: overdueReviews.length,
+        overdueReviewCount: overdueKnowledgePointCount,
       };
     }
 
@@ -164,7 +167,7 @@ class SchedulerDecisionService {
       interrupted: false,
       graphTask: topTask,
       reason: `大循环选中「${topTask.taskTitle}」`,
-      overdueReviewCount: overdueReviews.length,
+      overdueReviewCount: overdueKnowledgePointCount,
     };
   }
 

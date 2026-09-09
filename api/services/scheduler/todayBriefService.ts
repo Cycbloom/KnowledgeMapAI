@@ -164,7 +164,7 @@ class TodayBriefService {
   ): Promise<{ dueToday: number; overdue: number }> {
     const { data, error } = await supabase
       .from("study_cards")
-      .select("next_review")
+      .select("next_review, fsrs_state")
       .eq("user_id", userId)
       .lte("next_review", `${today}T23:59:59.999Z`);
     if (error) {
@@ -177,8 +177,13 @@ class TodayBriefService {
     const todayStart = `${today}T00:00:00.000Z`;
     let dueToday = 0;
     let overdue = 0;
-    for (const row of (data ?? []) as Array<{ next_review: string | null }>) {
+    for (const row of (data ?? []) as Array<{
+      next_review: string | null;
+      fsrs_state: string | null;
+    }>) {
       if (!row.next_review) continue;
+      // 从未进入复习循环的新卡（next_review=创建时刻）不计入到期/逾期
+      if ((row.fsrs_state ?? "New") === "New") continue;
       if (row.next_review < todayStart) overdue += 1;
       else dueToday += 1;
     }

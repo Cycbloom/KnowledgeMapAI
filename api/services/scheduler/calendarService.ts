@@ -275,9 +275,10 @@ class CalendarService {
 
     let query = supabase
       .from("study_cards")
-      .select("id, knowledge_point_id, next_review, knowledge_points(title)")
+      .select("id, knowledge_point_id, next_review, fsrs_state, knowledge_points(title)")
       .eq("user_id", userId)
-      .not("knowledge_point_id", "is", null);
+      .not("knowledge_point_id", "is", null)
+      .neq("fsrs_state", "New");
 
     if (startStr) {
       query = query.gte("next_review", `${startStr}T00:00:00.000Z`);

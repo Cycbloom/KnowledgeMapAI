@@ -122,7 +122,12 @@ class SpacedRepetitionBridge {
     const now = new Date();
 
     return (cards ?? [])
-      .filter((card) => card.next_review && new Date(card.next_review) <= new Date(now.getTime() + 24 * 60 * 60 * 1000))
+      .filter(
+        (card) =>
+          (card.fsrs_state ?? "New") !== "New" &&
+          card.next_review &&
+          new Date(card.next_review) <= new Date(now.getTime() + 24 * 60 * 60 * 1000),
+      )
       .map((card) => {
         const nextDate = new Date(card.next_review);
         const todayEnd = new Date(now);

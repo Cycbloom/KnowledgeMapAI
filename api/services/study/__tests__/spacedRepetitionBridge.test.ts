@@ -64,8 +64,8 @@ describe("SpacedRepetitionBridge", () => {
       const supabase = createMockSupabase();
       const inner = supabase as unknown as MockSupabaseClient;
       const cards = [
-        { id: "c1", knowledge_point_id: "kp1", next_review: isoOffset(-2), fsrs_retrievability: 0.5 },
-        { id: "c2", knowledge_point_id: "kp2", next_review: isoOffset(2), fsrs_retrievability: 0.3 },
+        { id: "c1", knowledge_point_id: "kp1", next_review: isoOffset(-2), fsrs_state: "Review", fsrs_retrievability: 0.5 },
+        { id: "c2", knowledge_point_id: "kp2", next_review: isoOffset(2), fsrs_state: "Review", fsrs_retrievability: 0.3 },
       ];
       inner.from
         .mockReturnValueOnce(makeChain(cards))
@@ -102,8 +102,8 @@ describe("SpacedRepetitionBridge", () => {
       const supabase = createMockSupabase();
       const inner = supabase as unknown as MockSupabaseClient;
       const cards = [
-        { id: "c1", knowledge_point_id: "kp1", next_review: isoOffset(-2), fsrs_retrievability: 0.5 },
-        { id: "c2", knowledge_point_id: "kp2", next_review: isoOffset(-1), fsrs_retrievability: 0.3 },
+        { id: "c1", knowledge_point_id: "kp1", next_review: isoOffset(-2), fsrs_state: "Review", fsrs_retrievability: 0.5 },
+        { id: "c2", knowledge_point_id: "kp2", next_review: isoOffset(-1), fsrs_state: "Review", fsrs_retrievability: 0.3 },
       ];
       inner.from
         .mockReturnValueOnce(makeChain(cards))
@@ -117,14 +117,30 @@ describe("SpacedRepetitionBridge", () => {
       const supabase = createMockSupabase();
       const inner = supabase as unknown as MockSupabaseClient;
       const cards = [
-        { id: "overdue-card", knowledge_point_id: "kp1", next_review: isoOffset(-3), fsrs_retrievability: 0.5 },
-        { id: "today-card", knowledge_point_id: "kp2", next_review: isoOffset(1), fsrs_retrievability: 0.5 },
+        { id: "overdue-card", knowledge_point_id: "kp1", next_review: isoOffset(-3), fsrs_state: "Review", fsrs_retrievability: 0.5 },
+        { id: "today-card", knowledge_point_id: "kp2", next_review: isoOffset(1), fsrs_state: "Review", fsrs_retrievability: 0.5 },
       ];
       inner.from
         .mockReturnValueOnce(makeChain(cards))
         .mockReturnValueOnce(makeChain({ settings: { study: { semantic_scheduling: false } } }));
       const result = await spacedRepetitionBridge.getUnifiedReviewQueue(supabase, "user1");
       expect(result[0].id).toBe("overdue-card");
+      expect(result[0].urgency).toBe("overdue");
+    });
+
+    it("应该排除从未进入复习循环的新卡（fsrs_state=New，next_review 为创建时刻）", async () => {
+      const supabase = createMockSupabase();
+      const inner = supabase as unknown as MockSupabaseClient;
+      const cards = [
+        { id: "new-card", knowledge_point_id: "kp1", next_review: isoOffset(-2), fsrs_state: "New", fsrs_retrievability: 0 },
+        { id: "review-card", knowledge_point_id: "kp2", next_review: isoOffset(-2), fsrs_state: "Review", fsrs_retrievability: 0.6 },
+      ];
+      inner.from
+        .mockReturnValueOnce(makeChain(cards))
+        .mockReturnValueOnce(makeChain({ settings: { study: { semantic_scheduling: false } } }));
+      const result = await spacedRepetitionBridge.getUnifiedReviewQueue(supabase, "user1");
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe("review-card");
       expect(result[0].urgency).toBe("overdue");
     });
   });

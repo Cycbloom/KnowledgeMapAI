@@ -114,7 +114,7 @@ class CardGenerationService {
       multi_choice:
         "For 'multi_choice' type: Create multiple-choice questions where ONE OR MORE options can be correct.",
       fill_in_the_blank:
-        "For 'fill_in_the_blank' type: Create a sentence with '___' as blanks. Return valid JSON.",
+        "For 'fill_in_the_blank' type: Create a sentence with '___' as blanks. The 'answer' MUST be a plain string; for multiple blanks, separate the answers with commas (one per blank, in order). Return valid JSON.",
       essay:
         "For 'essay' type: Create complex questions requiring a long-form structured answer.",
       cloze:

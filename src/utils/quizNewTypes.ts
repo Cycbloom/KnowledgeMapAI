@@ -43,6 +43,42 @@ export function countClozeBlanks(question: string): number {
   return matches ? matches.length : 0;
 }
 
+/** 填空题挖空数量：题干中 ___ 的个数，至少 1 个（兼容未用 ___ 标记的历史题干） */
+export function countFillBlankBlanks(question: string): number {
+  return Math.max(1, countClozeBlanks(question));
+}
+
+/** 填空题多空答案的分隔符：英文/中文逗号、顿号、分号、换行 */
+const FILL_BLANK_ANSWER_SEPARATOR = /[,，;；、\n]+/;
+
+/**
+ * 将填空题答案按空拆分为数组：
+ * - 单空：整串作为唯一答案，兼容历史数据；
+ * - 多空：按常见分隔符切分；与空数不对齐时返回空数组（判分为错）。
+ */
+export function splitFillBlankAnswers(
+  answerRaw: string | null | undefined,
+  blankCount: number,
+): string[] {
+  const raw = norm(answerRaw);
+  if (!raw) return [];
+  if (blankCount <= 1) return [raw];
+  const parts = raw.split(FILL_BLANK_ANSWER_SEPARATOR).map(norm).filter(Boolean);
+  return parts.length === blankCount ? parts : [];
+}
+
+/**
+ * 填空题判分：题干多个空时，答案按分隔符拆分后与用户逐空输入比对，逐空全等才算对。
+ */
+export function isFillBlankCorrect(
+  answerRaw: string | null | undefined,
+  userInputs: (string | null | undefined)[],
+): boolean {
+  const expected = splitFillBlankAnswers(answerRaw, userInputs.length);
+  if (expected.length !== userInputs.length) return false;
+  return expected.every((item, i) => norm(item) === norm(userInputs[i] ?? ""));
+}
+
 /**
  * select_from_options 判分：answer 为正确词字符串，与用户选中词全等。
  */

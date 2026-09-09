@@ -393,9 +393,10 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                 className={`w-full p-3 border rounded-lg text-base ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} ${errors.answer ? 'border-red-500' : ''} resize-none overflow-hidden min-h-[44px]`}
                 rows={1}
                 placeholder={formData.card_type === 'cloze' ? t('study.questionForm.answerJsonHint.cloze')
-                  : formData.card_type === 'matching' ? t('study.questionForm.answerJsonHint.matching')
-                    : formData.card_type === 'ordering' ? t('study.questionForm.answerJsonHint.ordering')
-                      : t('study.questionForm.answerPlaceholder')}
+                  : formData.card_type === 'fill_in_the_blank' ? t('study.questionForm.answerJsonHint.fillBlank')
+                    : formData.card_type === 'matching' ? t('study.questionForm.answerJsonHint.matching')
+                      : formData.card_type === 'ordering' ? t('study.questionForm.answerJsonHint.ordering')
+                        : t('study.questionForm.answerPlaceholder')}
               />
           )}
           {errors.answer && <p role="alert" id={answerErrorId} className="text-red-500 text-xs mt-1">{errors.answer}</p>}

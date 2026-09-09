@@ -559,7 +559,7 @@ For 'multi_choice' type: Create multiple-choice questions where ONE OR MORE opti
 {{/if}}
 
 {{#if includesFillBlank}}
-For 'fill_in_the_blank' type: Create a sentence with one or more '___' (3 underscores) as blanks. The 'answer' should be the missing text. Provide a detailed 'explanation'.
+For 'fill_in_the_blank' type: Create a sentence with one or more '___' (3 underscores) as blanks. The 'answer' should be the missing text. When the sentence has multiple blanks, separate the answers with commas (one answer per blank, in order). Provide a detailed 'explanation'.
 {{/if}}
 
 {{#if includesEssay}}
@@ -588,7 +588,7 @@ Distractors should be common misconceptions if possible.`,
 The 'answer' should be a model response with key points.
 Provide a detailed 'explanation' with scoring criteria and key concepts to cover.`,
   generate_cards_fill_blank: `For 'fill_in_the_blank' type: Create a sentence with one or more '___' (3 underscores) as blanks.
-The 'answer' should be the missing text. Provide a detailed 'explanation'.`,
+The 'answer' should be the missing text. When the sentence has multiple blanks, separate the answers with commas (one answer per blank, in order). Provide a detailed 'explanation'.`,
   generate_cards_multi_choice: `For 'multi_choice' type: Create multiple-choice questions where ONE OR MORE options can be correct.
 Provide 4 options, the 'answer' as a JSON array of correct strings, and a detailed 'explanation'.`,
   generate_cards_qa: `For 'qa' type: Create thought-provoking open-ended questions that test deep understanding.

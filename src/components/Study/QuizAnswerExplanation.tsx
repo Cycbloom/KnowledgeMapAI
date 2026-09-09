@@ -8,6 +8,10 @@ import {
   resolveSecondaryTextStyle,
 } from "../../utils/quizTypography";
 import { normalizeBooleanAnswer } from "../../utils/textUtils";
+import {
+  countFillBlankBlanks,
+  splitFillBlankAnswers,
+} from "../../utils/quizNewTypes";
 
 /**
  * QuizAnswerExplanation 组件 Props
@@ -117,10 +121,17 @@ export function QuizAnswerExplanation({
     };
   };
 
-  /** 将 JSON 字符串答案格式化为可读多行文本（cloze/matching/ordering） */
+  /** 将 JSON 字符串答案格式化为可读多行文本（cloze/matching/ordering）或将填空题答案按空分行 */
   const formatStructuredAnswer = (): string => {
-    if (!isCloze && !isMatching && !isOrdering) {
+    if (!isCloze && !isMatching && !isOrdering && !isFillBlank) {
       return currentCard.answer;
+    }
+    if (isFillBlank) {
+      const blanks = splitFillBlankAnswers(
+        currentCard.answer,
+        countFillBlankBlanks(currentCard.question),
+      );
+      return blanks.length > 0 ? blanks.join("\n") : currentCard.answer;
     }
     try {
       const parsed = JSON.parse(currentCard.answer) as unknown;

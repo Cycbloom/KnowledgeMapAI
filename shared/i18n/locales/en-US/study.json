@@ -572,6 +572,7 @@
     },
     "answerJsonHint": {
       "cloze": "JSON array in blank order, e.g. [{\"blank\":\"ans1\"},{\"blank\":\"ans2\"}]",
+      "fillBlank": "Separate multiple blanks with commas, one per ___ in order, e.g. ans1, ans2",
       "matching": "JSON array, e.g. [{\"left\":\"termA\",\"right\":\"defA\"}]",
       "ordering": "JSON array in correct order, e.g. [\"step1\",\"step2\",\"step3\"]"
     },

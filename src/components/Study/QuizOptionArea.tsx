@@ -9,7 +9,9 @@ import { resolveSecondaryTextStyle } from "../../utils/quizTypography";
 import { useVoiceDictation } from "../../hooks/common/useVoiceDictation";
 import {
   countClozeBlanks,
+  countFillBlankBlanks,
   isClozeCorrect,
+  isFillBlankCorrect,
   isMatchingCorrect,
   isOrderingCorrect,
   isSelectFromOptionsCorrect,
@@ -155,6 +157,30 @@ export function QuizOptionArea({
   const activeClozeValue = activeClozeIdx !== null ? clozeInputs[activeClozeIdx] ?? "" : "";
   const clozeDictation = useVoiceDictation(activeClozeValue, handleClozeVoiceValue);
 
+  /** 填空题：用户的逐空输入 */
+  const [fillBlankInputs, setFillBlankInputs] = useState<string[]>([]);
+  /** 填空题语音听写的目标空格索引（null 表示无） */
+  const [activeFillBlankIdx, setActiveFillBlankIdx] = useState<number | null>(null);
+  /** 听写发起时的卡片 id，切卡后到达的转写结果据此丢弃 */
+  const fillBlankVoiceCardIdRef = useRef<string | null>(null);
+  const activeFillBlankIdxRef = useRef<number | null>(null);
+
+  const handleFillBlankVoiceValue = useCallback(
+    (next: string) => {
+      const idx = activeFillBlankIdxRef.current;
+      if (idx === null || fillBlankVoiceCardIdRef.current !== currentCard.id) return;
+      setFillBlankInputs((prev) => {
+        const nextInputs = [...prev];
+        nextInputs[idx] = next;
+        return nextInputs;
+      });
+    },
+    [currentCard.id],
+  );
+  const activeFillBlankValue =
+    activeFillBlankIdx !== null ? fillBlankInputs[activeFillBlankIdx] ?? "" : "";
+  const fillBlankDictation = useVoiceDictation(activeFillBlankValue, handleFillBlankVoiceValue);
+
   const handleTextMicToggle = () => {
     if (!textDictation.isListening && !textDictation.isTranscribing && !textDictation.isConnecting) {
       textVoiceCardIdRef.current = currentCard.id;
@@ -184,6 +210,33 @@ export function QuizOptionArea({
     clozeDictation.setEngine(clozeDictation.engine === "realtime" ? "file" : "realtime");
   };
 
+  const handleFillBlankMicToggle = (idx: number) => {
+    const isSameTarget =
+      activeFillBlankIdxRef.current === idx &&
+      fillBlankVoiceCardIdRef.current === currentCard.id;
+    if (fillBlankDictation.isListening && isSameTarget) {
+      void fillBlankDictation.toggleListening();
+      return;
+    }
+    if (
+      fillBlankDictation.isListening ||
+      fillBlankDictation.isTranscribing ||
+      fillBlankDictation.isConnecting
+    ) {
+      return;
+    }
+    activeFillBlankIdxRef.current = idx;
+    fillBlankVoiceCardIdRef.current = currentCard.id;
+    setActiveFillBlankIdx(idx);
+    void fillBlankDictation.toggleListening();
+  };
+
+  const handleFillBlankEngineToggle = () => {
+    fillBlankDictation.setEngine(
+      fillBlankDictation.engine === "realtime" ? "file" : "realtime",
+    );
+  };
+
   // 切卡时停止正在进行的录音，避免结果串到下一题
   const textDictationRef = useRef(textDictation);
   useEffect(() => {
@@ -193,6 +246,10 @@ export function QuizOptionArea({
   useEffect(() => {
     clozeDictationRef.current = clozeDictation;
   }, [clozeDictation]);
+  const fillBlankDictationRef = useRef(fillBlankDictation);
+  useEffect(() => {
+    fillBlankDictationRef.current = fillBlankDictation;
+  }, [fillBlankDictation]);
 
   /** 匹配连线的候选右列项（从 answer JSON 去重提取） */
   const rightOptions = useMemo(() => {
@@ -232,17 +289,29 @@ export function QuizOptionArea({
   useEffect(() => {
     void textDictationRef.current.stopListening();
     void clozeDictationRef.current.stopListening();
+    void fillBlankDictationRef.current.stopListening();
     setClozeInputs(new Array(countClozeBlanks(currentCard.question)).fill(""));
+    setFillBlankInputs(new Array(countFillBlankBlanks(currentCard.question)).fill(""));
     setMatchingPairs({});
     setMatchingSelectedLeft(null);
     setOrder(currentOptions);
     setTextAnswer("");
     setActiveClozeIdx(null);
     activeClozeIdxRef.current = null;
+    setActiveFillBlankIdx(null);
+    activeFillBlankIdxRef.current = null;
   }, [currentCard, currentOptions]);
 
   const updateClozeInput = (idx: number, value: string) => {
     setClozeInputs((prev) => {
+      const next = [...prev];
+      next[idx] = value;
+      return next;
+    });
+  };
+
+  const updateFillBlankInput = (idx: number, value: string) => {
+    setFillBlankInputs((prev) => {
       const next = [...prev];
       next[idx] = value;
       return next;
@@ -317,7 +386,7 @@ export function QuizOptionArea({
     }
 
     if (isFillBlank) {
-      return isSelectFromOptionsCorrect(currentCard.answer, textAnswer) ? "correct" : "incorrect";
+      return isFillBlankCorrect(currentCard.answer, fillBlankInputs) ? "correct" : "incorrect";
     }
 
     if (isCloze) {
@@ -347,8 +416,8 @@ export function QuizOptionArea({
     order,
     selectedOption,
     selectedSet,
-    textAnswer,
     clozeInputs,
+    fillBlankInputs,
   ]);
 
   // 只在「翻面」瞬间计算一次并上报，避免后续依赖变化重复触发
@@ -683,31 +752,90 @@ export function QuizOptionArea({
         </div>
       )}
 
-      {isFillBlank && !showAnswer && (
-        <div className="mt-3 md:mt-4">
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={textAnswer}
-              onChange={(e) => setTextAnswer(e.target.value)}
-              className={`flex-1 px-3 py-2.5 rounded-xl border text-sm font-medium outline-none transition-colors ${isMobile ? "text-base" : "text-sm"} ${isDark ? "bg-slate-800 border-slate-700 text-slate-200 focus:border-primary-500" : "bg-white border-gray-200 text-gray-800 focus:border-primary-400"}`}
-              placeholder={t("study.quiz.fillContent")}
-              aria-label={t("study.quiz.fillContent")}
-            />
-            {textDictation.hasSupport && (
-              <VoiceDictationControl
+      {isFillBlank && (
+        <div className="flex flex-col gap-3 mt-3 md:mt-4">
+          {!showAnswer && fillBlankDictation.hasSupport && (
+            <div className="flex items-center justify-end gap-1.5">
+              <VoiceEngineToggle
                 isDark={isDark}
-                engine={textDictation.engine}
-                isListening={textDictation.isListening}
-                isTranscribing={textDictation.isTranscribing}
-                isConnecting={textDictation.isConnecting}
-                error={textDictation.error}
-                hasSupport={textDictation.hasSupport}
-                onToggle={handleTextMicToggle}
-                onToggleEngine={handleTextEngineToggle}
+                engine={fillBlankDictation.engine}
+                onToggle={handleFillBlankEngineToggle}
               />
+              <span
+                className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}
+              >
+                {fillBlankDictation.engine === "realtime"
+                  ? t("study.quiz.voiceRealtimeActive")
+                  : t("study.quiz.voiceFileMode")}
+              </span>
+            </div>
+          )}
+          {fillBlankInputs.map((value, idx) => (
+            <div key={idx} className="flex items-center gap-2">
+              <span
+                className={`flex-shrink-0 ${isMobile ? "w-8 h-8" : "w-7 h-7"} rounded-lg flex items-center justify-center font-bold ${isMobile ? "text-base" : "text-sm"} ${isDark ? "bg-slate-700 text-slate-400" : "bg-slate-100 text-slate-500"}`}
+              >
+                {idx + 1}
+              </span>
+              <input
+                type="text"
+                value={value}
+                disabled={showAnswer}
+                onChange={(e) => updateFillBlankInput(idx, e.target.value)}
+                className={`flex-1 px-3 py-2.5 rounded-xl border text-sm font-medium outline-none transition-colors ${isMobile ? "text-base" : "text-sm"} ${isDark ? "bg-slate-800 border-slate-700 text-slate-200 focus:border-primary-500" : "bg-white border-gray-200 text-gray-800 focus:border-primary-400"} disabled:opacity-60`}
+                placeholder={`${t("study.quiz.fillContent")} ${idx + 1}`}
+                aria-label={`${t("study.quiz.fillContent")} ${idx + 1}`}
+              />
+              {!showAnswer && fillBlankDictation.hasSupport && (
+                <VoiceDictationButton
+                  isDark={isDark}
+                  engine={fillBlankDictation.engine}
+                  isListening={fillBlankDictation.isListening && activeFillBlankIdx === idx}
+                  isTranscribing={fillBlankDictation.isTranscribing && activeFillBlankIdx === idx}
+                  isConnecting={fillBlankDictation.isConnecting && activeFillBlankIdx === idx}
+                  disabled={showAnswer || (fillBlankDictation.isListening && activeFillBlankIdx !== idx)}
+                  onToggle={() => handleFillBlankMicToggle(idx)}
+                />
+              )}
+            </div>
+          ))}
+          {!showAnswer &&
+            fillBlankDictation.hasSupport &&
+            (fillBlankDictation.isConnecting ||
+              fillBlankDictation.isListening ||
+              fillBlankDictation.error) && (
+              <div
+                className={`flex items-center gap-1.5 text-xs ${
+                  fillBlankDictation.error
+                    ? isDark
+                      ? "text-red-400"
+                      : "text-red-600"
+                    : isDark
+                      ? "text-slate-400"
+                      : "text-slate-500"
+                }`}
+                role={fillBlankDictation.error ? "alert" : undefined}
+                aria-live="polite"
+                aria-atomic="true"
+              >
+                {fillBlankDictation.error ? (
+                  <>
+                    <AlertCircle size={14} aria-hidden="true" />
+                    {fillBlankDictation.error}
+                  </>
+                ) : fillBlankDictation.isConnecting ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                    {t("study.quiz.voiceConnecting")}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                    {t("study.quiz.voiceListening")}
+                  </span>
+                )}
+              </div>
             )}
-          </div>
         </div>
       )}
 

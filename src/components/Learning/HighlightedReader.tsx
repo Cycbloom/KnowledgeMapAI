@@ -612,6 +612,9 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
   const mutationsRef = useRef<HighlightMutation[]>([]);
   /** 当前 highlightRanges 所分析的 content：重绘前校验，内容已变则丢弃，防止旧偏移落到新文本 */
   const analyzedContentRef = useRef<string | null>(null);
+  /** 当前光标下命中的高亮 span：mousemove 兜底以「元素引用」而非文案比较，
+   *  高亮 span 被守卫重建后是全新节点，引用变化即可感知，据此决定显隐/位移 */
+  const hoveredSpanRef = useRef<HTMLElement | null>(null);
   /** rAF 异步回调里读取最新主题：主题切换由守卫的原位重绘即时生效，无需触发重新分析 */
   const isDarkRef = useRef(isDark);
   useEffect(() => {
@@ -736,27 +739,54 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
     const container = contentRef.current;
     if (!container) return;
 
-    const handleMouseOver = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.dataset?.reason) {
-        setHoveredReason(target.dataset.reason);
-        setTooltipPosition({ x: e.clientX, y: e.clientY });
+    const setTooltipForSpan = (span: HTMLElement, x: number, y: number) => {
+      hoveredSpanRef.current = span;
+      if (span.dataset?.reason) {
+        setHoveredReason(span.dataset.reason);
+        setTooltipPosition({ x, y });
       }
     };
 
-    const handleMouseOut = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.dataset?.reason) {
-        setHoveredReason(null);
+    const clearTooltip = () => {
+      hoveredSpanRef.current = null;
+      setHoveredReason(null);
+    };
+
+    const findHighlightSpan = (e: MouseEvent): HTMLElement | null => {
+      const target = e.target as Element | null;
+      return target instanceof Element
+        ? target.closest<HTMLElement>("[data-highlight]")
+        : null;
+    };
+
+    const handleMouseOver = (e: MouseEvent) => {
+      const span = findHighlightSpan(e);
+      if (span) setTooltipForSpan(span, e.clientX, e.clientY);
+    };
+
+    // 高亮 span 由 HighlightDomGuard 在每次重渲染时摘除并重建（恢复原始节点再重绘），
+    // 浏览器对已脱离节点派发的 mouseout 不会冒泡到 container，仅靠 mouseover/mouseout
+    // 会在鼠标移出后残留提示。mousemove 每次移动重新命中光标下元素，据此兜底显隐。
+    const handleMouseMove = (e: MouseEvent) => {
+      const span = findHighlightSpan(e);
+      if (span !== hoveredSpanRef.current) {
+        if (span) setTooltipForSpan(span, e.clientX, e.clientY);
+        else clearTooltip();
       }
+    };
+
+    const handleMouseLeave = () => {
+      clearTooltip();
     };
 
     container.addEventListener("mouseover", handleMouseOver);
-    container.addEventListener("mouseout", handleMouseOut);
+    container.addEventListener("mousemove", handleMouseMove);
+    container.addEventListener("mouseleave", handleMouseLeave);
 
     return () => {
       container.removeEventListener("mouseover", handleMouseOver);
-      container.removeEventListener("mouseout", handleMouseOut);
+      container.removeEventListener("mousemove", handleMouseMove);
+      container.removeEventListener("mouseleave", handleMouseLeave);
     };
   }, [highlightEnabled, highlightRanges]);
 

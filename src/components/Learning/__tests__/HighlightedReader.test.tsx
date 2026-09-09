@@ -1,9 +1,45 @@
 // @vitest-environment jsdom
+import type React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { act, screen, cleanup } from '@testing-library/react';
+import { act, screen, cleanup, fireEvent } from '@testing-library/react';
 import { renderWithProviders } from '../../../../tests/helpers/renderWithProviders';
 import { HighlightedReader } from '../HighlightedReader';
 import { useFocusStore } from '../../../store/useFocusStore';
+
+// 悬浮提示的显隐不依赖动画生命周期：把 AnimatePresence/motion 替换为同步直通
+// 实现，hoveredReason 清空时 tooltip 立即卸载，便于断言「移出即消失」。
+vi.mock('framer-motion', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('framer-motion')>();
+  const PassthroughDiv = ({
+    children,
+    initial: _initial,
+    animate: _animate,
+    exit: _exit,
+    transition: _transition,
+    whileHover: _whileHover,
+    whileTap: _whileTap,
+    ...rest
+  }: {
+    children?: React.ReactNode;
+    initial?: unknown;
+    animate?: unknown;
+    exit?: unknown;
+    transition?: unknown;
+    whileHover?: unknown;
+    whileTap?: unknown;
+    [key: string]: unknown;
+  }) => <div {...rest}>{children}</div>;
+  return {
+    ...actual,
+    AnimatePresence: ({ children }: { children?: React.ReactNode }) => (
+      <>{children}</>
+    ),
+    motion: new Proxy(actual.motion, {
+      get: (target, prop) =>
+        prop === 'div' ? PassthroughDiv : target[prop as keyof typeof target],
+    }),
+  };
+});
 
 // 回归测试：高亮仍以 DOM 替换实现（分析与作用共用 collectTextNodes 同一文本流，
 // 位置不偏移），但新增「变更日志 + 生命周期守卫」：
@@ -121,5 +157,51 @@ describe('HighlightedReader', () => {
     expect(document.querySelectorAll('[data-highlight="true"]')).toHaveLength(0);
     // 原始文本保持完整（还原的是 React 原节点，非重建文本）
     expect(screen.getByText(/概念一/)).toBeVisible();
+  });
+
+  it('悬浮提示：移入高亮显示原因，移出后提示消失（含高亮 span 被守卫重建的场景）', () => {
+    const contentA = '【概念一】第一段正文。';
+    renderWithProviders(<HighlightedReader content={contentA} {...commonProps} />);
+
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+
+    const span = document.querySelector<HTMLElement>('[data-highlight="true"]');
+    expect(span).not.toBeNull();
+    const reason = span!.dataset.reason ?? '';
+    expect(reason).not.toBe('');
+
+    // 移入高亮 span → 显示悬浮提示
+    fireEvent.mouseOver(span!, { clientX: 10, clientY: 10 });
+    expect(screen.getByText(reason)).toBeInTheDocument();
+
+    // 鼠标移入触发的重渲染会让 HighlightDomGuard 摘除并重建高亮 span，
+    // 浏览器对已脱离节点派发的 mouseout 无法冒泡到 container。
+    // 移出到普通文本区域（对 container 触发 mousemove）后提示必须消失。
+    fireEvent.mouseMove(screen.getByText(/第一段/), { clientX: 50, clientY: 50 });
+    expect(screen.queryByText(reason)).not.toBeInTheDocument();
+  });
+
+  it('悬浮提示：鼠标移出整个阅读容器后提示消失', () => {
+    const contentA = '【概念一】第一段正文。';
+    renderWithProviders(<HighlightedReader content={contentA} {...commonProps} />);
+
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+
+    const span = document.querySelector<HTMLElement>('[data-highlight="true"]');
+    expect(span).not.toBeNull();
+    const reason = span!.dataset.reason ?? '';
+
+    fireEvent.mouseOver(span!, { clientX: 10, clientY: 10 });
+    expect(screen.getByText(reason)).toBeInTheDocument();
+
+    const container = document.querySelector('.prose');
+    expect(container).not.toBeNull();
+    fireEvent.mouseLeave(container!);
+
+    expect(screen.queryByText(reason)).not.toBeInTheDocument();
   });
 });

@@ -29,6 +29,8 @@ interface QuizSidebarProps {
   onSelectCard: (index: number) => void;
   isCollapsed: boolean;
   onToggleCollapsed: () => void;
+  /** 移动端：侧边栏默认完全隐藏，以左上角浮动按钮 + 覆盖层抽屉形式使用 */
+  isMobile?: boolean;
 }
 
 /**
@@ -48,6 +50,7 @@ export function QuizSidebar({
   onSelectCard,
   isCollapsed,
   onToggleCollapsed,
+  isMobile,
 }: QuizSidebarProps) {
   const { t } = useTranslation();
   // isDark currently unused: badges rendered as solid color strips/dots,
@@ -56,6 +59,8 @@ export function QuizSidebar({
   void useTheme();
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  // 移动端：侧边栏作为覆盖层抽屉；桌面端：内联固定栏（折叠 w-20 / 展开 w-72）
+  const isOverlay = !!isMobile;
 
   const total = quizCards.length;
   const progressPercent =
@@ -110,13 +115,38 @@ export function QuizSidebar({
   };
 
   return (
-    <aside
-      className={`flex-none h-full bg-white dark:bg-slate-900 text-slate-900 dark:text-white flex flex-col transition-all duration-300 border-r border-slate-200 dark:border-slate-700 ${
-        isCollapsed ? "w-20" : "w-72"
-      }`}
-      aria-label={t("study.sidebar.label")}
-      data-testid="quiz-sidebar"
-    >
+    <>
+      {isOverlay && !isCollapsed && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40"
+          onClick={onToggleCollapsed}
+          aria-hidden="true"
+        />
+      )}
+      {isOverlay && isCollapsed && (
+        <button
+          type="button"
+          onClick={onToggleCollapsed}
+          className="fixed top-2 left-2 z-40 p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg shadow-lg bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+          aria-label={t("study.sidebar.expand")}
+          title={t("study.sidebar.expand")}
+        >
+          <ListOrdered size={18} aria-hidden="true" />
+        </button>
+      )}
+      <aside
+        className={`bg-white dark:bg-slate-900 text-slate-900 dark:text-white flex flex-col transition-all duration-300 border-r border-slate-200 dark:border-slate-700 ${
+          isOverlay
+            ? isCollapsed
+              ? "fixed inset-y-0 left-0 z-40 w-72 shadow-2xl -translate-x-full"
+              : "fixed inset-y-0 left-0 z-40 w-72 shadow-2xl translate-x-0"
+            : isCollapsed
+              ? "flex-none h-full w-20"
+              : "flex-none h-full w-72"
+        }`}
+        aria-label={t("study.sidebar.label")}
+        data-testid="quiz-sidebar"
+      >
       {/* 顶部：标题 + 折叠开关 */}
       <div
         className={`flex-none flex items-center h-14 px-2 border-b border-slate-200 dark:border-slate-700 ${
@@ -375,6 +405,7 @@ export function QuizSidebar({
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
       />
-    </aside>
+      </aside>
+    </>
   );
 }

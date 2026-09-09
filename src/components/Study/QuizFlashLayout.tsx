@@ -17,7 +17,6 @@ import {
   resolveFlashWidthClass,
   resolvePrimaryTextStyle,
 } from "../../utils/quizTypography";
-import { useCardCountdown } from "../../hooks/study/useCardCountdown";
 import { QuizOptionArea, type ObjectiveVerdict } from "./QuizOptionArea";
 import { QuizCountdownTimer } from "./QuizCountdownTimer";
 import { QuizAnswerExplanation } from "./QuizAnswerExplanation";
@@ -43,7 +42,7 @@ export interface QuizFlashLayoutProps {
   onRate: (quality: number) => void;
   onOptionClick: (option: string) => void;
   onMultiOptionClick: (option: string) => void;
-  onDragEnd: (_: unknown, info: { velocity: { x: number }; offset: { x: number } }) => void;
+  onDragEnd: (_: unknown, info: { velocity: { x: number }; offset: { x: number } }) => boolean;
   onSetShowAnswer: (show: boolean) => void;
   onPrev?: () => void;
   onNext?: () => void;
@@ -104,14 +103,6 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
     // 仅在判定结果变化时上报，onSuggestedQualityChange 为稳定回调
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [suggestedQuality]);
-
-  // 每题限时倒计时：超时自动显示答案（视为未答）
-  const { remaining: remainingSeconds } = useCardCountdown({
-    totalSeconds: timerSeconds,
-    active: !showAnswer,
-    cardId: currentCard.id,
-    onTimeUp: () => onSetShowAnswer(true),
-  });
 
   const handlePrev = onPrev ?? (() => {});
   const handleNext = onNext ?? (() => {});
@@ -229,7 +220,7 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
     >
       <div className={`flex-1 min-h-0 w-full mx-auto ${flashWidthClass} flex items-center justify-center`}>
         <div
-          className={`relative perspective-1000 h-full w-full flex items-center justify-center`}
+          className={`relative h-full w-full flex items-center justify-center`}
         >
           {quizCards
             .slice(currentCardIndex + 1, currentCardIndex + 3)
@@ -328,7 +319,7 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
                           {stackCard.question}
                         </div>
 
-                        {isStackChoice && stackCardOptions.length > 0 && (
+                        {!isMobile && isStackChoice && stackCardOptions.length > 0 && (
                           <div className="flex flex-col gap-1.5">
                             {stackCardOptions
                               .slice(0, 4)
@@ -358,7 +349,7 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
                           </div>
                         )}
 
-                        {isStackMultiChoice && stackCardOptions.length > 0 && (
+                        {!isMobile && isStackMultiChoice && stackCardOptions.length > 0 && (
                           <div className="flex flex-col gap-1.5">
                             {stackCardOptions
                               .slice(0, 4)
@@ -388,7 +379,7 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
                           </div>
                         )}
 
-                        {isStackTrueFalse && (
+                        {!isMobile && isStackTrueFalse && (
                           <div className="flex gap-2">
                             <div
                               className={`flex-1 p-2 rounded-lg text-center text-sm font-medium ${
@@ -411,7 +402,7 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
                           </div>
                         )}
 
-                        {(isStackQA || isStackFillBlank) && (
+                        {!isMobile && (isStackQA || isStackFillBlank) && (
                           <div
                             className={`mt-2 p-3 rounded-lg text-sm ${
                               isDark
@@ -433,7 +424,7 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
                 </motion.div>
               );
             })}
-          <AnimatePresence mode="popLayout">
+          <AnimatePresence>
             <motion.div
               key={cardKey}
               drag="x"
@@ -459,8 +450,10 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
                 }
               }}
               onDragEnd={(_, info) => {
-                resetMotionValues();
-                onDragEnd(_, info);
+                // 仅未触发滑动时重置动效值（回弹回中心）；触发滑动时保留
+                // 当前旋转/遮罩，让飞出动画从松手位置无缝衔接，避免跳变。
+                const swiped = onDragEnd(_, info);
+                if (!swiped) resetMotionValues();
               }}
               initial={{ rotate: -20, y: 40, scale: 0.92, opacity: 0 }}
               animate={{ rotate: 0, y: 0, scale: 1, opacity: 1 }}
@@ -473,7 +466,7 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
                 transition: { duration: 0.55, ease: [0.4, 0, 0.2, 1] },
               }}
               transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-              className={`absolute inset-0 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl ${isMobile ? "p-4" : "p-6 md:p-10"} flex flex-col cursor-grab active:cursor-grabbing transition-colors border ${
+              className={`absolute inset-0 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl ${isMobile ? "p-4" : "p-6 md:p-10"} flex flex-col cursor-grab active:cursor-grabbing transition-colors border will-change-transform ${
                 isDark ? "border-slate-700" : "border-gray-100"
               }`}
               style={{
@@ -560,10 +553,12 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
                   {timerSeconds > 0 && !showAnswer && (
                     <div className="mt-3 md:mt-4">
                       <QuizCountdownTimer
-                        remaining={remainingSeconds}
                         totalSeconds={timerSeconds}
+                        active={!showAnswer}
+                        cardId={currentCard.id}
                         isDark={isDark}
                         isMobile={isMobile}
+                        onTimeUp={() => onSetShowAnswer(true)}
                       />
                     </div>
                   )}

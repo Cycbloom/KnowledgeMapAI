@@ -11,7 +11,6 @@ import {
   resolveFocusWidthClass,
   resolvePrimaryTextStyle,
 } from "../../utils/quizTypography";
-import { useCardCountdown } from "../../hooks/study/useCardCountdown";
 import { QuizOptionArea, type ObjectiveVerdict } from "./QuizOptionArea";
 import { QuizCountdownTimer } from "./QuizCountdownTimer";
 import { QuizAnswerExplanation } from "./QuizAnswerExplanation";
@@ -44,7 +43,7 @@ export interface QuizFocusLayoutProps {
   /** 客观建议评分变化时上报（供 Space/Enter 快捷键应用建议分） */
   onSuggestedQualityChange?: (quality: number | null) => void;
   _swipeDirection?: "left" | "right" | null;
-  _onDragEnd?: (_: unknown, info: { velocity: { x: number }; offset: { x: number } }) => void;
+  _onDragEnd?: (_: unknown, info: { velocity: { x: number }; offset: { x: number } }) => boolean;
   _cardKey?: number;
   _similarityWithPrev?: number | null;
 }
@@ -107,14 +106,6 @@ export const QuizFocusLayout = memo(function QuizFocusLayout(props: QuizFocusLay
     // 仅在判定结果变化时上报，onSuggestedQualityChange 为稳定回调
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [suggestedQuality]);
-
-  // 每题限时倒计时：超时自动显示答案（视为未答）
-  const { remaining: remainingSeconds } = useCardCountdown({
-    totalSeconds: timerSeconds,
-    active: !showAnswer,
-    cardId: currentCard.id,
-    onTimeUp: () => onSetShowAnswer(true),
-  });
 
   const isQA = !currentCard.card_type || currentCard.card_type === "qa";
   const isChoice = currentCard.card_type === "choice";
@@ -298,10 +289,12 @@ export const QuizFocusLayout = memo(function QuizFocusLayout(props: QuizFocusLay
               {timerSeconds > 0 && !showAnswer && (
                 <div className="mt-3 md:mt-4">
                   <QuizCountdownTimer
-                    remaining={remainingSeconds}
                     totalSeconds={timerSeconds}
+                    active={!showAnswer}
+                    cardId={currentCard.id}
                     isDark={isDark}
                     isMobile={isMobile}
+                    onTimeUp={() => onSetShowAnswer(true)}
                   />
                 </div>
               )}

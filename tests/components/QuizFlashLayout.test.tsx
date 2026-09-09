@@ -95,7 +95,7 @@ describe('QuizFlashLayout', () => {
 
     it('主卡区域包含 h-full w-full flex items-center justify-center 且不含视口绝对高度', () => {
       renderWithProviders(<QuizFlashLayout {...baseProps} />);
-      const perspectiveDiv = document.querySelector('.perspective-1000');
+      const perspectiveDiv = document.querySelector('.relative.h-full');
       expect(perspectiveDiv).not.toBeNull();
       const className = perspectiveDiv!.className;
       expect(className).not.toContain('h-[78vh]');

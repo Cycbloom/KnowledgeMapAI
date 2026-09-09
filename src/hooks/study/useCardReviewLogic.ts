@@ -258,7 +258,7 @@ export const useCardReviewLogic = ({
     (
       _: unknown,
       info: { velocity: { x: number }; offset: { x: number } },
-    ) => {
+    ): boolean => {
       const threshold = isMobile ? 60 : 100;
       const velocity = info.velocity.x;
       const offset = info.offset.x;
@@ -268,23 +268,24 @@ export const useCardReviewLogic = ({
       const shouldSwipeLeft =
         offset < -threshold || (offset < -30 && velocity < -300);
 
+      if (!shouldSwipeRight && !shouldSwipeLeft) return false;
+
       if (shouldSwipeRight) {
         setSwipeDirection("right");
         handleSwipeRate(3);
-        setTimeout(() => {
-          handleNextCard();
-          setCardKey((k) => k + 1);
-          setSwipeDirection(null);
-        }, isMobile ? 300 : 450);
-      } else if (shouldSwipeLeft) {
+      } else {
         setSwipeDirection("left");
         handleSwipeRate(1);
-        setTimeout(() => {
-          handleNextCard();
-          setCardKey((k) => k + 1);
-          setSwipeDirection(null);
-        }, isMobile ? 300 : 450);
       }
+
+      // 下一帧再切卡：先让出场动画拿到正确的滑动方向，避免旧实现中
+      // 300ms 空等期间卡片回弹再飞出的「先停后走」迟滞感。
+      requestAnimationFrame(() => {
+        handleNextCard();
+        setCardKey((k) => k + 1);
+        setSwipeDirection(null);
+      });
+      return true;
     },
     [isMobile, handleSwipeRate, handleNextCard],
   );

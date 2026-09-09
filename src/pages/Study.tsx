@@ -565,6 +565,7 @@ export const Study = () => {
           }}
           isCollapsed={quizSidebarCollapsed}
           onToggleCollapsed={() => setQuizSidebarCollapsed((c) => !c)}
+          isMobile={isMobile ?? false}
         />
         <div className="flex-1 min-w-0 h-full overflow-hidden">
           <QuizActiveShell

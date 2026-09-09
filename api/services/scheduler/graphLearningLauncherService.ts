@@ -59,17 +59,9 @@ class GraphLearningLauncherService {
     );
     const graphTaskId = graphTask.mainTaskId;
 
-    // 2. 重新生成学习路径：同图谱旧的 active 路径自动归档（含清理其排期），
-    //    保证同图谱只保留一条 active，且每次生成都得到最新排期
-    const existingPath = await this.findActivePathForGraph(supabase, userId, graphId);
-    if (existingPath) {
-      await learningPathService.deleteLearningPath(
-        supabase,
-        existingPath.id,
-        userId,
-        false,
-      );
-    }
+    // 2. 重新生成学习路径：同图谱旧的 active 路径由 createLearningPath 在新路径
+    //    保存成功后再自动归档（含清理其排期），保证同图谱只保留一条 active。
+    //    不能在此处先归档旧路径再生成——若新路径生成失败会丢失旧 active 路径。
     const path = await this.generatePathForGraph(
       supabase,
       userId,
@@ -95,7 +87,7 @@ class GraphLearningLauncherService {
       graphId,
       graphTaskId,
       pathId: path.id,
-      pathReused: !!existingPath,
+      pathReused: false,
       subtaskCount: totalSubtaskIds.length,
       reordered,
     });
@@ -128,31 +120,6 @@ class GraphLearningLauncherService {
         error: error instanceof Error ? error.message : String(error),
       });
     }
-  }
-
-  private async findActivePathForGraph(
-    supabase: SupabaseClient,
-    userId: string,
-    graphId: string,
-  ): Promise<{ id: string; title?: string } | null> {
-    const { data, error } = await supabase
-      .from("learning_paths")
-      .select("id, title")
-      .eq("user_id", userId)
-      .eq("source_graph_id", graphId)
-      .eq("status", "active")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (error) {
-      logger.warn("[GraphLearningLauncher] findActivePath error", {
-        graphId,
-        error: error.message,
-      });
-      return null;
-    }
-    return data ?? null;
   }
 
   private async generatePathForGraph(

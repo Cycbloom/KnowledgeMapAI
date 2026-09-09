@@ -26,7 +26,10 @@ export class LearningPathCrudService {
     userId: string,
     input: CreateLearningPathInput,
   ): Promise<LearningPath> {
-    // 单图路径：同图谱只保留一条 active，创建新路径前自动归档旧的（含清理其排期）
+    // 单图路径：同图谱只保留一条 active。先只「查询」待归档的旧 active 路径，
+    // 真正的归档延后到新路径创建成功之后（见 archiveStalePaths），
+    // 避免新路径创建失败（如 AI 生成中断）时旧路径已被不可逆归档而丢失 active 路径。
+    let stalePathIds: string[] = [];
     if (
       (input.path_type ?? "single_graph") === "single_graph" &&
       input.source_graph_id
@@ -37,15 +40,13 @@ export class LearningPathCrudService {
         .eq("user_id", userId)
         .eq("source_graph_id", input.source_graph_id)
         .eq("status", "active");
-      if (!oldError) {
-        for (const old of oldPaths ?? []) {
-          await this.deleteLearningPath(
-            supabase,
-            old.id as string,
-            userId,
-            false,
-          );
-        }
+      if (oldError) {
+        logger.warn("createLearningPath: query old active paths failed", {
+          graphId: input.source_graph_id,
+          error: oldError.message,
+        });
+      } else {
+        stalePathIds = (oldPaths ?? []).map((old: { id: string }) => old.id);
       }
     }
 
@@ -109,6 +110,7 @@ export class LearningPathCrudService {
 
         const result = await this.getLearningPath(supabase, pathId, userId);
         if (!result) throw new AppError(ErrorCodes.RESOURCE_PATH_NOT_FOUND, { message: "Learning path not found after creation" });
+        await this.archiveStalePaths(supabase, userId, stalePathIds);
         this.triggerAutoPlan(supabase, userId, pathId, input.path_type);
         return result;
       } catch (txError) {
@@ -181,8 +183,27 @@ export class LearningPathCrudService {
 
     const result = await this.getLearningPath(supabase, path.id, userId);
     if (!result) throw new AppError(ErrorCodes.RESOURCE_PATH_NOT_FOUND, { message: "Learning path not found after creation" });
+    await this.archiveStalePaths(supabase, userId, stalePathIds);
     this.triggerAutoPlan(supabase, userId, path.id, input.path_type);
     return result;
+  }
+
+  /** 新路径创建成功后，归档同图谱旧 active 路径（含清理其排期归属）。 */
+  private async archiveStalePaths(
+    supabase: SupabaseClient,
+    userId: string,
+    stalePathIds: string[],
+  ): Promise<void> {
+    for (const oldId of stalePathIds) {
+      try {
+        await this.deleteLearningPath(supabase, oldId, userId, false);
+      } catch (error) {
+        logger.warn("createLearningPath: archive stale path failed", {
+          pathId: oldId,
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
   }
 
   /**

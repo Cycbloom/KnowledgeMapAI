@@ -100,7 +100,7 @@ describe("GraphLearningLauncherService (S2)", () => {
     expect(result.totalTasks).toBe(2);
   });
 
-  it("存在 active 路径时归档旧路径并重新生成（同图谱只保留一条 active）", async () => {
+  it("存在 active 路径时重新生成，且不在此处先归档旧路径（归档由 createLearningPath 在保存成功后执行）", async () => {
     const supabase = buildMockSupabase({
       knowledge_graphs: graphRow,
       graph_nodes: graphNodes,
@@ -118,13 +118,9 @@ describe("GraphLearningLauncherService (S2)", () => {
       "graph-1",
     );
 
-    // 旧的 active 路径被归档（含清理排期），然后重新生成
-    expect(learningPathService.deleteLearningPath).toHaveBeenCalledWith(
-      supabase as never,
-      "path-exist",
-      "user-1",
-      false,
-    );
+    // 若 launcher 在新路径生成前删除旧路径，则生成失败会丢失旧 active 路径；
+    // 归档延迟到 createLearningPath 内保存成功后执行。
+    expect(learningPathService.deleteLearningPath).not.toHaveBeenCalled();
     expect(learningPathService.generateAndSavePath).toHaveBeenCalled();
     expect(result.pathId).toBe("path-1");
     expect(result.pathReused).toBe(false);

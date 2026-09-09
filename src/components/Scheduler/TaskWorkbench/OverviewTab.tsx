@@ -17,8 +17,12 @@ import {
   ChevronRight,
   Plus,
   Network,
+  FileText,
+  FileQuestion,
 } from "lucide-react";
 import { api } from "../../../services/api";
+import { settingsService } from "../../../services/settings/settingsService";
+import { PRE_GENERATION_DEFAULTS } from "../../Settings/settingsConstants";
 import { TaskSubtask } from "../../../types";
 import { LEARNING_STATE_CONFIGS, type LearningState } from "@shared/types";
 import { EmptyState } from "../../common/EmptyState";
@@ -159,6 +163,71 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     } catch (error: unknown) {
       message.error(t("scheduler.taskWorkbench.overview.deepExpandFail"));
       console.error("Failed to create expand_graph tasks:", error);
+    }
+    return undefined;
+  };
+
+  /** 批量生成学习资料：对图谱全部知识点提交后台任务（已存在的自动跳过，不重复消耗 AI） */
+  const handleBatchGenerateMaterial = async () => {
+    if (!graphId) return undefined;
+    const kpIds = graphNodes.map((n) => n.id).filter((id): id is string => Boolean(id));
+    if (kpIds.length === 0) {
+      message.info(t("scheduler.taskWorkbench.overview.batchNoNodes"));
+      return undefined;
+    }
+    if (!(await asyncConfirm({
+      title: t("scheduler.taskWorkbench.overview.batchGenerateMaterial"),
+      message: t("scheduler.taskWorkbench.overview.batchMaterialConfirm", {
+        count: kpIds.length,
+      }),
+    }))) {
+      return undefined;
+    }
+    try {
+      const result = await api.ai.batchGenerateLearningMaterial(kpIds, { graph_id: graphId });
+      if (result.success) {
+        message.success(t("scheduler.taskWorkbench.overview.batchMaterialStart", { count: kpIds.length }));
+      } else {
+        message.error(t("scheduler.taskWorkbench.overview.batchFail"));
+      }
+    } catch (error: unknown) {
+      message.error(t("scheduler.taskWorkbench.overview.batchFail"));
+      console.error("Failed to batch generate learning material:", error);
+    }
+    return undefined;
+  };
+
+  /** 批量生成题目：对图谱全部知识点提交题目生成后台任务（题量读取「AI 预生成」设置的每知识点题目数） */
+  const handleBatchGenerateCards = async () => {
+    if (!graphId) return undefined;
+    const kpIds = graphNodes.map((n) => n.id).filter((id): id is string => Boolean(id));
+    if (kpIds.length === 0) {
+      message.info(t("scheduler.taskWorkbench.overview.batchNoNodes"));
+      return undefined;
+    }
+    // 复用「AI 预生成」的每知识点题目数（默认 20），与设置页保持同一口径
+    const cardsPerKp =
+      settingsService.preGeneration.get()?.cards_per_knowledge_point ??
+      PRE_GENERATION_DEFAULTS.cards_per_knowledge_point;
+    if (!(await asyncConfirm({
+      title: t("scheduler.taskWorkbench.overview.batchGenerateCards"),
+      message: t("scheduler.taskWorkbench.overview.batchCardsConfirm", {
+        count: kpIds.length,
+        perKp: cardsPerKp,
+      }),
+    }))) {
+      return undefined;
+    }
+    try {
+      const result = await api.ai.batchGenerateCards(kpIds, { count: cardsPerKp });
+      if (result.success) {
+        message.success(t("scheduler.taskWorkbench.overview.batchCardsStart", { count: kpIds.length }));
+      } else {
+        message.error(t("scheduler.taskWorkbench.overview.batchFail"));
+      }
+    } catch (error: unknown) {
+      message.error(t("scheduler.taskWorkbench.overview.batchFail"));
+      console.error("Failed to batch generate cards:", error);
     }
     return undefined;
   };
@@ -359,6 +428,28 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               >
                 <Network size={13} />
                 {t("scheduler.taskWorkbench.overview.deepExpand")}
+              </button>
+            ) : null}
+            {graphId ? (
+              <button
+                type="button"
+                onClick={() => { void handleBatchGenerateMaterial(); }}
+                title={t("scheduler.taskWorkbench.overview.batchGenerateMaterial")}
+                className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg border border-primary-200 dark:border-primary-500/30 transition-colors"
+              >
+                <FileText size={13} />
+                {t("scheduler.taskWorkbench.overview.batchGenerateMaterial")}
+              </button>
+            ) : null}
+            {graphId ? (
+              <button
+                type="button"
+                onClick={() => { void handleBatchGenerateCards(); }}
+                title={t("scheduler.taskWorkbench.overview.batchGenerateCards")}
+                className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg border border-primary-200 dark:border-primary-500/30 transition-colors"
+              >
+                <FileQuestion size={13} />
+                {t("scheduler.taskWorkbench.overview.batchGenerateCards")}
               </button>
             ) : null}
             <button

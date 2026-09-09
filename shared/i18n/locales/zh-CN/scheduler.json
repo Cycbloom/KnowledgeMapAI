@@ -573,6 +573,7 @@
     "pauseTask": "暂停任务",
     "completeTask": "完成任务",
     "continueTask": "继续任务",
+    "enterLearningMode": "进入学习模式",
     "inProgressLabel": "进行中",
     "notesTab": {
       "notesPlaceholder": "在这里记录任务笔记...\n\n支持 Markdown 语法：\n- **粗体** *斜体*\n- # 标题\n- 列表项\n- [链接](url)"
@@ -635,6 +636,14 @@
       "deepExpandConfirmMsg": "将为 {{count}} 个顶层节点创建深度拓展任务，完成后生成各自子节点与内容",
       "deepExpandStart": "已创建 {{count}} 个深度拓展任务",
       "deepExpandFail": "深度拓展任务创建失败，请重试",
+      "batchGenerateMaterial": "批量生成学习资料",
+      "batchMaterialConfirm": "为图谱全部 {{count}} 个知识点批量生成学习资料？将消耗 AI 额度，已存在的会自动跳过。",
+      "batchMaterialStart": "已提交 {{count}} 个知识点的学习资料生成任务",
+      "batchGenerateCards": "批量生成题目",
+      "batchCardsConfirm": "为图谱全部 {{count}} 个知识点批量生成题目（每知识点 {{perKp}} 题）？将消耗 AI 额度。",
+      "batchCardsStart": "已提交 {{count}} 个知识点的题目生成任务",
+      "batchFail": "批量任务提交失败，请重试",
+      "batchNoNodes": "图谱暂无知识点，无法批量生成",
       "generateNodes": "生成节点",
       "generateNodesStart": "正在为图谱生成初始节点…",
       "generateNodesDone": "初始节点已生成",

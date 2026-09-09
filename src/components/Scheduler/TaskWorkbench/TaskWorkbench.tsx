@@ -18,9 +18,10 @@ import {
   Flame,
   CalendarClock,
   Plus,
+  GraduationCap,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../services/api";
 import { queryKeys } from "../../../hooks/queries/config";
@@ -66,6 +67,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
   const [showSaveAsTemplate, setShowSaveAsTemplate] = useState(false);
   const { t } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   // —— 深度拓展后台任务完成后，实时刷新任务详情列表（OverviewTab / SubtaskList） ——
@@ -849,6 +851,16 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
               >
                 <Plus className="w-4 h-4" />
                 {t('scheduler.taskWorkbench.overview.generateNodes')}
+              </button>
+            )}
+            {graphId && (
+              <button
+                type="button"
+                onClick={() => navigate(`/learning?graph_id=${encodeURIComponent(graphId)}`)}
+                className="flex items-center gap-2 px-5 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-medium hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+              >
+                <GraduationCap className="w-4 h-4" />
+                {t('scheduler.taskWorkbench.enterLearningMode')}
               </button>
             )}
             {task.status === "pending" && (

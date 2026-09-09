@@ -573,6 +573,7 @@
     "pauseTask": "Pause Task",
     "completeTask": "Complete Task",
     "continueTask": "Continue Task",
+    "enterLearningMode": "Enter Learning Mode",
     "inProgressLabel": "In Progress",
     "notesTab": {
       "notesPlaceholder": "Record task notes here...\n\nSupports Markdown syntax:\n- **bold** *italic*\n- # Heading\n- List item\n- [link](url)"
@@ -635,6 +636,14 @@
       "deepExpandConfirmMsg": "Create deep-expansion tasks for {{count}} top-level nodes to generate their child nodes & content",
       "deepExpandStart": "{{count}} deep-expansion tasks created",
       "deepExpandFail": "Failed to create deep-expansion tasks, please retry",
+      "batchGenerateMaterial": "Batch Generate Material",
+      "batchMaterialConfirm": "Generate learning material for all {{count}} knowledge points in this graph? This consumes AI quota; existing ones are skipped.",
+      "batchMaterialStart": "Submitted material generation tasks for {{count}} knowledge points",
+      "batchGenerateCards": "Batch Generate Questions",
+      "batchCardsConfirm": "Generate questions for all {{count}} knowledge points in this graph ({{perKp}} per point)? This consumes AI quota.",
+      "batchCardsStart": "Submitted question generation tasks for {{count}} knowledge points",
+      "batchFail": "Failed to submit batch tasks, please retry",
+      "batchNoNodes": "This graph has no knowledge points to batch-generate",
       "generateNodes": "Generate nodes",
       "generateNodesStart": "Generating initial nodes for graph…",
       "generateNodesDone": "Initial nodes generated",

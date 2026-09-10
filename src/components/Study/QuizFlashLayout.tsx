@@ -1,4 +1,4 @@
-import { useMemo, memo, useEffect, useState } from "react";
+import { useMemo, memo, useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
 import { StudyCard } from "@shared/types";
@@ -7,9 +7,12 @@ import {
   ThumbsDown,
   AlertTriangle,
   ChevronLeft,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { motion, AnimatePresence, useMotionValue } from "framer-motion";
 import { useUpdateCardProgressMutation } from "../../hooks/mutations";
+import { useTextToSpeech } from "../../hooks/common/useTextToSpeech";
 import { getCardTypeBadgeMeta, badgeToneClasses } from "../../utils/quizBadgeMeta";
 import { getDifficultyBadgeMeta } from "../../utils/quizDifficultyMeta";
 import { useQuizSettingsStore } from "../../store/useQuizSettingsStore";
@@ -86,6 +89,71 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
   const hideCategory = interleaveMode && !showAnswer;
   const primaryTextStyle = resolvePrimaryTextStyle(fontSize, lineHeight);
   const flashWidthClass = resolveFlashWidthClass(contentWidthMode);
+
+  // 「读给我听」免手持语音回顾设置
+  const autoRead = useQuizSettingsStore(
+    useShallow((s) => ({
+      autoReadEnabled: s.autoReadEnabled,
+      autoReadEngine: s.autoReadEngine,
+      autoReadVoice: s.autoReadVoice,
+      autoReadRate: s.autoReadRate,
+      autoReadPart: s.autoReadPart,
+    })),
+  );
+  const tts = useTextToSpeech(autoRead.autoReadEngine);
+
+  // 引擎/音色变化时同步 TTS hook 内部状态（sambert 依赖内部 selectedVoice）
+  useEffect(() => {
+    tts.switchEngine(autoRead.autoReadEngine);
+    if (autoRead.autoReadEngine === "sambert" && autoRead.autoReadVoice) {
+      tts.setVoice(autoRead.autoReadVoice);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoRead.autoReadEngine, autoRead.autoReadVoice]);
+
+  const speakCard = useCallback(
+    (text: string) => {
+      const clean = text?.trim();
+      if (!clean) return;
+      let voice: SpeechSynthesisVoice | null = null;
+      if (autoRead.autoReadEngine === "browser" && autoRead.autoReadVoice) {
+        voice =
+          (tts.voices as SpeechSynthesisVoice[]).find(
+            (v) => v.voiceURI === autoRead.autoReadVoice,
+          ) ?? null;
+      }
+      void tts.speak(clean, { rate: autoRead.autoReadRate, voice });
+    },
+    [tts, autoRead.autoReadEngine, autoRead.autoReadVoice, autoRead.autoReadRate],
+  );
+
+  const isReading = tts.isSpeaking || tts.isLoading;
+
+  // 自动朗读：切卡时读正面（题目）
+  useEffect(() => {
+    if (!autoRead.autoReadEnabled) return;
+    if (autoRead.autoReadPart === "question" || autoRead.autoReadPart === "both") {
+      speakCard(currentCard.question);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentCard.id]);
+
+  // 自动朗读：翻开答案时读背面（答案）
+  useEffect(() => {
+    if (!autoRead.autoReadEnabled) return;
+    if (showAnswer && (autoRead.autoReadPart === "answer" || autoRead.autoReadPart === "both")) {
+      speakCard(currentCard.answer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showAnswer]);
+
+  const handleReadToggle = () => {
+    if (isReading) {
+      tts.cancel();
+      return;
+    }
+    speakCard(showAnswer ? currentCard.answer : currentCard.question);
+  };
 
   // 客观判定结果（来自 QuizOptionArea），用于预选默认评分；切换卡片时重置
   const [autoVerdict, setAutoVerdict] = useState<Exclude<ObjectiveVerdict, null> | null>(null);
@@ -542,7 +610,27 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
                     {!hideCategory && (
                       <FocusTopicBadge focusTopic={currentCard.focus_topic ?? undefined} variant="pill" grow />
                     )}
-                    <CardDatesLine card={currentCard} isDark={isDark} isMobile={isMobile} className="shrink-0" />
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={handleReadToggle}
+                        aria-label={isReading ? t("study.quiz.stopReading") : t("study.quiz.readAloud")}
+                        title={isReading ? t("study.quiz.stopReading") : t("study.quiz.readAloud")}
+                        aria-pressed={isReading}
+                        className={`min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-lg transition-colors ${
+                          isReading
+                            ? isDark
+                              ? "bg-primary-600 text-white"
+                              : "bg-primary-500 text-white"
+                            : isDark
+                              ? "text-slate-400 hover:text-slate-200 hover:bg-slate-700"
+                              : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                        }`}
+                      >
+                        {isReading ? <VolumeX size={18} aria-hidden="true" /> : <Volume2 size={18} aria-hidden="true" />}
+                      </button>
+                      <CardDatesLine card={currentCard} isDark={isDark} isMobile={isMobile} />
+                    </div>
                   </div>
                   <div
                     className={`${isMobile ? "text-base" : "text-lg md:text-xl"} font-semibold leading-snug mt-3 md:mt-4 ${isDark ? "text-slate-100" : "text-gray-900"}`}

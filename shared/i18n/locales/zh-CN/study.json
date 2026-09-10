@@ -257,6 +257,26 @@
     "examShuffleQuestionsHint": "进入测验时随机打乱整卷题目顺序",
     "interleaveMode": "交错式练习",
     "interleaveModeHint": "跨知识点尽量打散排序，并在作答前隐藏考察点标签",
+    "autoRead": "读给我听",
+    "autoReadHint": "闪卡复习自动朗读（正面→思考→背面），实现免手持回顾",
+    "autoReadEngine": "朗读引擎",
+    "autoReadEngineHint": "浏览器引擎用系统语音；Sambert 用阿里云云端音色（更自然）",
+    "autoReadEngineBrowser": "浏览器语音",
+    "autoReadEngineSambert": "Sambert 云音色",
+    "autoReadVoice": "朗读音色",
+    "autoReadVoiceHint": "不选择时自动使用当前引擎默认音色",
+    "autoReadVoiceAuto": "自动（默认音色）",
+    "autoReadPart": "朗读部分",
+    "autoReadPartHint": "自动朗读时读卡片哪一侧；「两者」为正面题目、翻开后读背面答案",
+    "autoReadPartQuestion": "正面题目",
+    "autoReadPartAnswer": "背面答案",
+    "autoReadPartBoth": "两者",
+    "autoReadRate": "朗读语速",
+    "autoReadRateHint": "调整朗读快慢",
+    "autoReadRate075": "稍慢",
+    "autoReadRate1": "标准",
+    "autoReadRate125": "稍快",
+    "autoReadRate15": "较快",
     "resetSettings": "恢复默认设置"
   },
   "quiz": {
@@ -299,7 +319,9 @@
     "difficultyEasy": "简单",
     "difficultyMedium": "中等",
     "difficultyHard": "困难",
-    "focusTopic": "考察点"
+    "focusTopic": "考察点",
+    "readAloud": "朗读本题",
+    "stopReading": "停止朗读"
   },
   "a11y": {
     "quizQuestionRegion": "题目与选项区域",

@@ -1,6 +1,6 @@
 import type { AIProviderType } from "./ai";
 import type { GraphViewMode } from "./graph-core";
-import type { NotificationType } from "./common";
+import type { NotificationType, TTSEngine } from "./common";
 import type { ThemePreset } from "./styles";
 import type { UiFontFamilyId } from "@shared/constants/fonts";
 
@@ -109,7 +109,20 @@ export interface UserSettingsQuiz {
   examShuffleQuestions: boolean;
   /** 交错式练习：跨知识点尽量打散排序，并把题目具体考察点标签在作答前隐藏 */
   interleaveMode: boolean;
+  /** 「读给我听」自动朗读（免手持闪卡回顾）总开关 */
+  autoReadEnabled: boolean;
+  /** 朗读引擎：browser（系统语音）或 sambert（阿里云） */
+  autoReadEngine: TTSEngine;
+  /** 音色：sambert 用 voice id；browser 用 SpeechSynthesisVoice.voiceURI；空串表示自动选用默认音色 */
+  autoReadVoice: string;
+  /** 朗读语速（0.5 ~ 2.0） */
+  autoReadRate: number;
+  /** 朗读内容：question 仅正面题目 / answer 仅背面答案 / both 正面为题目背面为答案 */
+  autoReadPart: UserSettingsQuizReadPart;
 }
+
+/** 「读给我听」可朗读的卡片内容 */
+export type UserSettingsQuizReadPart = "question" | "answer" | "both";
 
 // ---------------------------------------------------------------------------
 // Study — mirrors src/components/Settings/settingsConstants.ts

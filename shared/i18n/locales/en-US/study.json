@@ -257,6 +257,26 @@
     "examShuffleQuestionsHint": "Randomize the whole paper when starting a quiz/exam",
     "interleaveMode": "Interleaved practice",
     "interleaveModeHint": "Spread across knowledge points and hide the focus-topic label before answering",
+    "autoRead": "Read to me",
+    "autoReadHint": "Auto read flashcard review aloud (question → think → answer) for hands-free revision",
+    "autoReadEngine": "Voice engine",
+    "autoReadEngineHint": "Browser uses system voices; Sambert uses Alibaba Cloud voices (more natural)",
+    "autoReadEngineBrowser": "Browser voice",
+    "autoReadEngineSambert": "Sambert cloud voice",
+    "autoReadVoice": "Voice",
+    "autoReadVoiceHint": "Leave unselected to auto-use the engine's default voice",
+    "autoReadVoiceAuto": "Auto (default voice)",
+    "autoReadPart": "Read part",
+    "autoReadPartHint": "Which side to read during auto reading; 'Both' reads the question up front and the answer once revealed",
+    "autoReadPartQuestion": "Question",
+    "autoReadPartAnswer": "Answer",
+    "autoReadPartBoth": "Both",
+    "autoReadRate": "Speech rate",
+    "autoReadRateHint": "Adjust reading speed",
+    "autoReadRate075": "Slow",
+    "autoReadRate1": "Normal",
+    "autoReadRate125": "Faster",
+    "autoReadRate15": "Fast",
     "resetSettings": "Reset to defaults"
   },
   "quiz": {
@@ -299,7 +319,9 @@
     "difficultyEasy": "Easy",
     "difficultyMedium": "Medium",
     "difficultyHard": "Hard",
-    "focusTopic": "Examined Topic"
+    "focusTopic": "Examined Topic",
+    "readAloud": "Read this card",
+    "stopReading": "Stop reading"
   },
   "a11y": {
     "quizQuestionRegion": "Question and options region",

@@ -21,6 +21,7 @@ import {
 import type { GenerateCardsCoverage } from '../ai/cardGenerationService';
 import { deriveFocusTopicFallback } from '@shared/utils/cards';
 import { resolveLocalizedText } from '@shared/utils/localization';
+import { resolveInitialNextReview } from '../study/cardInitialSchedule';
 
 interface BatchGenerateCardsPayload {
   node_ids: string[];
@@ -436,6 +437,8 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
             const cards = chunkResults.flat();
 
             if (cards.length > 0) {
+              // 结合排课/学习路径：把初始 next_review 设为该知识点最近未过期的排期日
+              const initialNextReview = await resolveInitialNextReview(supabase, userId, node.id);
               const cardsToInsert = cards.map((card: AIGeneratedCardWithFocus) => {
                 const rawFocus = typeof card.focus_topic === 'string' ? card.focus_topic.trim() : '';
                 const value = rawFocus.length > 0
@@ -453,7 +456,7 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
                     : card.explanation,
                   card_type: card.type ?? 'qa',
                   options: card.options ? JSON.stringify(card.options) : null,
-                  next_review: new Date().toISOString(),
+                  next_review: initialNextReview,
                   difficulty: cardDifficultyToNumber(card.difficulty),
                   fsrs_state: 'New' as const,
                   fsrs_stability: 0,

@@ -20,6 +20,7 @@ import {
 import type { GenerateCardsCoverage } from '../ai/cardGenerationService';
 import { deriveFocusTopicFallback } from '@shared/utils/cards';
 import { buildTasksToRun as buildTasksToRunShared } from './questionTaskDispatcher';
+import { resolveInitialNextReview } from '../study/cardInitialSchedule';
 
 interface GenerateQuestionsPayload {
   knowledge_point_id: string;
@@ -211,6 +212,8 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
           const cards = (aiResult.cards || []) as AIGeneratedCard[];
 
           if (cards.length > 0) {
+            // 结合排课/学习路径：把初始 next_review 设为该知识点最近未过期的排期日
+            const initialNextReview = await resolveInitialNextReview(supabase, userId, node_id);
             const cardsToInsert = cards.map((card: AIGeneratedCardWithFocus) => {
               const rawFocus = typeof card.focus_topic === 'string' ? card.focus_topic.trim() : '';
               const value = rawFocus.length > 0
@@ -228,7 +231,7 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
                   : card.explanation,
                 card_type: card.type ?? type,
                 options: card.options ? JSON.stringify(card.options) : null,
-                next_review: new Date().toISOString(),
+                next_review: initialNextReview,
                 // 方案B：入库前用 AI 自评难度做 sanity check，非法/缺失回退到任务难度
                 difficulty: cardDifficultyToNumber(
                   card.difficulty,

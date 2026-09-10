@@ -14,6 +14,7 @@ import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { notDeleted } from '../common/softDeleteHelper';
 import { deriveFocusTopicFallback } from '@shared/utils/cards';
+import { resolveLocalizedText } from '@shared/utils/localization';
 import { getKnowledgePoint } from '../../utils/nodeHelpers';
 
 interface QuizGenerationTaskConfig {
@@ -155,8 +156,10 @@ export class QuizGenerationProcessor implements TaskProcessor {
           id: kp?.id || gn.knowledge_point_id,
           graph_id: gn.graph_id,
           graph_node_id: gn.id,
-          title: kp?.title || '',
-          content: kp?.content || '',
+          // title/content 在 DB 中为语言 keyed JSONB，需按显示语言解析为字符串，
+          // 否则传给 AI 会得到对象（如 {"zh-CN": "..."}）导致 topic.slice 报错
+          title: resolveLocalizedText(kp?.title),
+          content: resolveLocalizedText(kp?.content),
           level: gn.level,
         };
       });
@@ -193,8 +196,8 @@ export class QuizGenerationProcessor implements TaskProcessor {
             const kp = getKnowledgePoint(pgn.knowledge_points ?? null);
             parentNodesMap.set(pgn.knowledge_point_id, {
               id: kp?.id || pgn.knowledge_point_id,
-              title: kp?.title || '',
-              content: kp?.content || '',
+              title: resolveLocalizedText(kp?.title),
+              content: resolveLocalizedText(kp?.content),
             });
           });
         }

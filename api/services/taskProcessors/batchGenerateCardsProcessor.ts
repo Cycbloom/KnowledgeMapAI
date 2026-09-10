@@ -20,6 +20,7 @@ import {
 } from '../graph/siblingNodesService';
 import type { GenerateCardsCoverage } from '../ai/cardGenerationService';
 import { deriveFocusTopicFallback } from '@shared/utils/cards';
+import { resolveLocalizedText } from '@shared/utils/localization';
 
 interface BatchGenerateCardsPayload {
   node_ids: string[];
@@ -227,8 +228,9 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
           id: kp?.id || gn.knowledge_point_id,
           graph_id: payload.graph_id || gn.graph_id,
           graph_node_id: gn.id,
-          title: kp?.title || '',
-          content: kp?.content || '',
+          // title/content 在 DB 中为语言 keyed JSONB，需解析为字符串后再传给 AI
+          title: resolveLocalizedText(kp?.title),
+          content: resolveLocalizedText(kp?.content),
           level: gn.level,
         };
       });

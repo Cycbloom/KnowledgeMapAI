@@ -9,6 +9,7 @@ import type { StudyCard } from "../../../shared/types/common";
 import { transactionExecutor } from "../../database/transactionExecutor";
 import { notDeleted } from '../common/softDeleteHelper';
 import { getKnowledgePoint } from '../../utils/nodeHelpers';
+import { resolveLocalizedText } from '../../../shared/utils/localization';
 import { cardDifficultyToNumber } from '../../../shared/types/quiz';
 import { deriveFocusTopicFallback } from '../../../shared/utils/cards';
 import i18next from "i18next";
@@ -171,8 +172,8 @@ export class QuizSetGenerationService {
       const count = 1;
 
       const aiResult = await aiService.generateCards(
-        kp?.title || "",
-        kp?.content || "",
+        resolveLocalizedText(kp?.title),
+        resolveLocalizedText(kp?.content),
         {
           count,
           types,
@@ -219,7 +220,7 @@ export class QuizSetGenerationService {
       const focusTopic =
         rawFocus.length > 0
           ? rawFocus.slice(0, 200)
-          : deriveFocusTopicFallback(newCardData.question, kp?.title);
+          : deriveFocusTopicFallback(newCardData.question, resolveLocalizedText(kp?.title));
 
       if (transactionExecutor.isAvailable()) {
         const newCard = await transactionExecutor.executeInTransaction(

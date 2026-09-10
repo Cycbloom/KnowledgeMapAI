@@ -207,6 +207,8 @@ export const LearningMode = () => {
     readingMode,
     contentWidthMode,
     paginationMode,
+    autoScrollEnabled,
+    autoScrollSpeed,
   } = useLearningSettingsStore(
     useShallow((s) => ({
       fontSize: s.fontSize,
@@ -215,6 +217,8 @@ export const LearningMode = () => {
       readingMode: s.readingMode,
       contentWidthMode: s.contentWidthMode,
       paginationMode: s.paginationMode,
+      autoScrollEnabled: s.autoScrollEnabled,
+      autoScrollSpeed: s.autoScrollSpeed,
     })),
   );
   // 节点内容语言：复用共享「节点显示语言」，与图编辑器双向联动（一处切换，两处即时同步）
@@ -889,6 +893,7 @@ export const LearningMode = () => {
                 fontSize={fontSize} fontFamily={fontFamily} lineHeight={lineHeight}
                 readingMode={readingMode} contentWidthMode={contentWidthMode}
                 paginationMode={paginationMode}
+                autoScrollEnabled={autoScrollEnabled} autoScrollSpeed={autoScrollSpeed}
                 getStudyModeIcon={getStudyModeIcon} getStrategyHint={getStrategyHint}
                 shouldShowArticle={shouldShowArticle} shouldShowQuiz={shouldShowQuiz}
                 onToggleHighlight={() => setHighlightEnabled(!highlightEnabled)}

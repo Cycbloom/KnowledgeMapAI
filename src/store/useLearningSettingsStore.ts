@@ -19,6 +19,8 @@ interface LearningSettingsState extends UserSettingsLearning {
   setContentWidthMode: (mode: UserSettingsContentWidthMode) => void;
   setAILanguage: (language: UserSettingsAILanguage) => void;
   setMaterialLanguage: (language: "auto" | "zh" | "en") => void;
+  setAutoScrollEnabled: (enabled: boolean) => void;
+  setAutoScrollSpeed: (speed: number) => void;
   resetSettings: () => void;
 }
 
@@ -31,6 +33,8 @@ const DEFAULT_SETTINGS: UserSettingsLearning = {
   contentWidthMode: 'comfortable',
   aiLanguage: 'auto',
   materialLanguage: 'auto',
+  autoScrollEnabled: false,
+  autoScrollSpeed: 60,
 };
 
 export const useLearningSettingsStore = createPersistedStore<LearningSettingsState>(
@@ -48,6 +52,11 @@ export const useLearningSettingsStore = createPersistedStore<LearningSettingsSta
     setContentWidthMode: (mode) => set({ contentWidthMode: mode }),
     setAILanguage: (language) => set({ aiLanguage: language }),
     setMaterialLanguage: (language) => set({ materialLanguage: language }),
+    setAutoScrollEnabled: (enabled) => set({ autoScrollEnabled: enabled }),
+    setAutoScrollSpeed: (speed) => {
+      const clamped = Math.max(20, Math.min(160, Math.round(speed)));
+      set({ autoScrollSpeed: clamped });
+    },
     resetSettings: () => set(DEFAULT_SETTINGS),
   }),
   {

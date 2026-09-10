@@ -84,6 +84,10 @@ export interface UserSettingsLearning {
   aiLanguage: UserSettingsAILanguage;
   /** 学习资料显示语言：auto=跟随 AI/界面语言设置（保持原有自动切换行为）；zh=中文版；en=英文版（双语学习，可手动切换） */
   materialLanguage: "auto" | "zh" | "en";
+  /** 自动滑页：阅读器按设定速度自动向下滚动 */
+  autoScrollEnabled: boolean;
+  /** 自动滑页速度（px/秒） */
+  autoScrollSpeed: number;
 }
 
 // ---------------------------------------------------------------------------

@@ -137,6 +137,8 @@ export const settingsService = {
         contentWidthMode: s.contentWidthMode,
         aiLanguage: s.aiLanguage,
         materialLanguage: s.materialLanguage,
+        autoScrollEnabled: s.autoScrollEnabled,
+        autoScrollSpeed: s.autoScrollSpeed,
       };
     },
     setFontSize: (size: number) =>
@@ -149,6 +151,10 @@ export const settingsService = {
       useLearningSettingsStore.getState().setContentWidthMode(mode),
     setAILanguage: (language: UserSettingsAILanguage) =>
       useLearningSettingsStore.getState().setAILanguage(language),
+    setAutoScrollEnabled: (enabled: boolean) =>
+      useLearningSettingsStore.getState().setAutoScrollEnabled(enabled),
+    setAutoScrollSpeed: (speed: number) =>
+      useLearningSettingsStore.getState().setAutoScrollSpeed(speed),
     reset: () => useLearningSettingsStore.getState().resetSettings(),
   },
 

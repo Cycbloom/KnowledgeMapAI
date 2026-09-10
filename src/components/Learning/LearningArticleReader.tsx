@@ -1,11 +1,12 @@
-import React, { useState } from "react";
-import { ArrowLeft, Sparkles, RefreshCw, Info, Route, GraduationCap, Settings } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { ArrowLeft, Sparkles, RefreshCw, Info, Route, GraduationCap, Settings, Play, Pause } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { HighlightedReader } from "./HighlightedReader";
 import { NodeLanguageSwitcher } from "../GraphEditor/NodeLanguageSwitcher";
 import { PaginatedReader } from "./PaginatedReader";
 import { Skeleton } from "../common";
+import { useAutoScroll } from "../../hooks/common/useAutoScroll";
 import type { Keyword } from "../../types";
 import type { LinkedTask } from "../../hooks/scheduler/useLinkedTask";
 import type { StudyMode } from "@shared/types/scheduler";
@@ -47,6 +48,8 @@ interface LearningArticleReaderProps {
   shouldShowArticle: () => boolean;
   shouldShowQuiz: () => boolean;
   paginationMode: UserSettingsPaginationMode;
+  autoScrollEnabled: boolean;
+  autoScrollSpeed: number;
   onToggleHighlight: () => void;
   onRegenerateMaterial: () => void;
   onStartChallenge: () => void;
@@ -78,6 +81,8 @@ export const LearningArticleReader = ({
   shouldShowArticle,
   shouldShowQuiz,
   paginationMode,
+  autoScrollEnabled,
+  autoScrollSpeed,
   onToggleHighlight,
   onRegenerateMaterial,
   onStartChallenge,
@@ -92,6 +97,21 @@ export const LearningArticleReader = ({
   const isPaginated = isMobile && paginationMode === "pagination" && !isGenerating;
   // 分页态下底部工具条：不预留高度，工具栏是 fixed 覆盖层，内容用满整个阅读区
   const bottomReserve = 0;
+
+  // 自动滑页：仅在滚动布局生效（分页态不渲染控制按钮）
+  const {
+    scrollRef: articleScrollRef,
+    active: autoScrollActive,
+    toggle: toggleAutoScroll,
+    stop: stopAutoScroll,
+  } = useAutoScroll<HTMLDivElement>({
+    enabled: autoScrollEnabled,
+    speed: autoScrollSpeed,
+  });
+
+  useEffect(() => {
+    stopAutoScroll();
+  }, [nodeId, articleContent, stopAutoScroll]);
 
   // 底部阅读工具条：滚动分支与分页分支共用（固定定位，点正文切换显隐）
   const toolbarNav =
@@ -267,6 +287,7 @@ export const LearningArticleReader = ({
       onClick={() => {
         if (isMobile) setToolbarCollapsed((v) => !v);
       }}
+      ref={articleScrollRef}
       className={`flex-1 overflow-y-auto custom-scrollbar ${isMobile ? (toolbarCollapsed ? "p-4 pb-8" : "p-4 pb-24") : "p-8 lg:p-12"} border-r dark:border-slate-800 relative bg-white dark:bg-slate-900`}
     >
       {isGenerating ? (
@@ -400,6 +421,32 @@ export const LearningArticleReader = ({
             })()}
           <div className={readingCardClasses}>{renderArticleBody()}</div>
         </div>
+      )}
+      {autoScrollEnabled && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleAutoScroll();
+          }}
+          aria-label={
+            autoScrollActive
+              ? t("learning.settings.autoScrollPause")
+              : t("learning.settings.autoScrollStart")
+          }
+          className={`absolute bottom-4 right-4 z-20 flex items-center gap-1.5 px-3 py-2 rounded-full shadow-lg transition-colors ${
+            autoScrollActive
+              ? "bg-primary-600 text-white hover:bg-primary-700"
+              : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-gray-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700"
+          }`}
+        >
+          {autoScrollActive ? <Pause size={16} /> : <Play size={16} />}
+          <span className="text-xs font-medium hidden sm:inline">
+            {autoScrollActive
+              ? t("learning.settings.autoScrollPause")
+              : t("learning.settings.autoScrollStart")}
+          </span>
+        </button>
       )}
     </div>
       {toolbarNav}

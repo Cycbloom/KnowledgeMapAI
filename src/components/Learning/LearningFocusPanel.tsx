@@ -36,10 +36,12 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useFocusStore } from "../../store/useFocusStore";
+import { useLearningSettingsStore } from "../../store/useLearningSettingsStore";
 import { useShallow } from "zustand/react/shallow";
 import { WhiteNoiseType, NoiseCategory } from "../../store/useNoiseStore";
 import { HighlightedReader } from "./HighlightedReader";
 import { useWhiteNoise } from "../../hooks/common/useWhiteNoise";
+import { useAutoScroll } from "../../hooks/common/useAutoScroll";
 import { useTimerStore } from "../../store/useTimerStore";
 import { useActivityTracker } from "../../hooks/scheduler/useActivityTracker";
 import { AudioVisualizer } from "../common/AudioVisualizer";
@@ -117,6 +119,27 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
       longBreakInterval: s.longBreakInterval,
     })),
   );
+
+  const { autoScrollEnabled, autoScrollSpeed } = useLearningSettingsStore(
+    useShallow((s) => ({
+      autoScrollEnabled: s.autoScrollEnabled,
+      autoScrollSpeed: s.autoScrollSpeed,
+    })),
+  );
+
+  const {
+    scrollRef: focusScrollRef,
+    active: autoScrollActive,
+    toggle: toggleAutoScroll,
+    stop: stopAutoScroll,
+  } = useAutoScroll<HTMLDivElement>({
+    enabled: autoScrollEnabled,
+    speed: autoScrollSpeed,
+  });
+
+  useEffect(() => {
+    stopAutoScroll();
+  }, [articleContent, stopAutoScroll]);
 
   const { recordActivity } = useActivityTracker();
   const sessionStartRef = useRef<string | null>(null);
@@ -437,7 +460,8 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
 
           <div className="absolute inset-0 flex overflow-hidden pt-14">
             <div
-              className={`flex-1 overflow-y-auto custom-scrollbar ${isMobile ? "p-4" : "p-8 lg:p-12"}`}
+              ref={focusScrollRef}
+              className={`relative flex-1 overflow-y-auto custom-scrollbar ${isMobile ? "p-4" : "p-8 lg:p-12"}`}
             >
               <HighlightedReader
                 content={articleContent}
@@ -446,6 +470,32 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                 keywords={keywords}
                 onKeywordClick={handleKeywordClick}
               />
+              {autoScrollEnabled && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleAutoScroll();
+                  }}
+                  aria-label={
+                    autoScrollActive
+                      ? t("learning.settings.autoScrollPause")
+                      : t("learning.settings.autoScrollStart")
+                  }
+                  className={`absolute bottom-4 right-4 z-20 flex items-center gap-1.5 px-3 py-2 rounded-full shadow-lg transition-colors ${
+                    autoScrollActive
+                      ? "bg-primary-600 text-white hover:bg-primary-700"
+                      : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-gray-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  {autoScrollActive ? <Pause size={16} /> : <Play size={16} />}
+                  <span className="text-xs font-medium hidden sm:inline">
+                    {autoScrollActive
+                      ? t("learning.settings.autoScrollPause")
+                      : t("learning.settings.autoScrollStart")}
+                  </span>
+                </button>
+              )}
             </div>
 
             <AnimatePresence>

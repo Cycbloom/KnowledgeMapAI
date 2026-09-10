@@ -18,6 +18,8 @@ import {
   Languages,
   MonitorSmartphone,
   ScrollText,
+  Play,
+  Gauge,
 } from "lucide-react";
 import { useLearningSettingsStore } from "../../store/useLearningSettingsStore";
 import {
@@ -44,12 +46,16 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
     readingMode,
     contentWidthMode,
     paginationMode,
+    autoScrollEnabled,
+    autoScrollSpeed,
     setFontSize,
     setFontFamily,
     setLineHeight,
     setReadingMode,
     setContentWidthMode,
     setPaginationMode,
+    setAutoScrollEnabled,
+    setAutoScrollSpeed,
     resetSettings,
   } = useLearningSettingsStore(
     useShallow((s) => ({
@@ -59,12 +65,16 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
       readingMode: s.readingMode,
       contentWidthMode: s.contentWidthMode,
       paginationMode: s.paginationMode,
+      autoScrollEnabled: s.autoScrollEnabled,
+      autoScrollSpeed: s.autoScrollSpeed,
       setFontSize: s.setFontSize,
       setFontFamily: s.setFontFamily,
       setLineHeight: s.setLineHeight,
       setReadingMode: s.setReadingMode,
       setContentWidthMode: s.setContentWidthMode,
       setPaginationMode: s.setPaginationMode,
+      setAutoScrollEnabled: s.setAutoScrollEnabled,
+      setAutoScrollSpeed: s.setAutoScrollSpeed,
       resetSettings: s.resetSettings,
     })),
   );
@@ -363,6 +373,79 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
           )}
           {settingsTab === "common" && (
           <>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+              <div className="flex items-start gap-2.5 min-w-0">
+                <Play
+                  size={16}
+                  className="mt-0.5 text-slate-400 dark:text-slate-500 flex-shrink-0"
+                />
+                <div className="min-w-0">
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    {t("learning.settings.autoScroll")}
+                  </span>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                    {t("learning.settings.autoScrollHint")}
+                  </p>
+                </div>
+              </div>
+              <div
+                role="switch"
+                aria-checked={autoScrollEnabled}
+                aria-label={t("learning.settings.autoScroll")}
+                tabIndex={0}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer flex-shrink-0 ${
+                  autoScrollEnabled ? "bg-primary-600" : "bg-gray-200 dark:bg-gray-700"
+                }`}
+                onClick={() => setAutoScrollEnabled(!autoScrollEnabled)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setAutoScrollEnabled(!autoScrollEnabled);
+                  }
+                }}
+              >
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                    autoScrollEnabled ? "translate-x-5" : "translate-x-0.5"
+                  }`}
+                />
+              </div>
+            </div>
+
+            {autoScrollEnabled && (
+              <div className="space-y-2 px-1">
+                <div className="flex items-center gap-2">
+                  <Gauge
+                    size={16}
+                    className="text-slate-500 dark:text-slate-400"
+                  />
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    {t("learning.settings.autoScrollSpeed")}
+                  </span>
+                  <span className="ml-auto text-sm font-mono text-primary-600 dark:text-primary-400">
+                    {autoScrollSpeed}px/s
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="20"
+                  max="160"
+                  step="5"
+                  value={autoScrollSpeed}
+                  onChange={(e) => setAutoScrollSpeed(parseInt(e.target.value))}
+                  aria-label={t("learning.settings.autoScrollSpeed")}
+                  aria-valuetext={`${autoScrollSpeed}px/s`}
+                  className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full appearance-none cursor-pointer accent-primary-500"
+                />
+                <div className="flex justify-between text-xs text-slate-400 dark:text-slate-500">
+                  <span>{t("learning.settings.autoScrollSlow")}</span>
+                  <span>{t("learning.settings.autoScrollFast")}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <BookOpen

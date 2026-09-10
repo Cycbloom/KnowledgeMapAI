@@ -24,6 +24,8 @@ import {
   GraduationCap,
   Route,
   CalendarClock,
+  ClipboardList,
+  PenLine,
 } from "lucide-react";
 import { useTheme, useFocusTrap, useEscapeKey } from "../../hooks";
 import { useCombobox } from "../../hooks/common/useCombobox";
@@ -35,10 +37,13 @@ import {
 } from "../../hooks/queries/useRecentGraphs";
 import { useRecentNodes } from "../../hooks/queries/useRecentNodes";
 import { useRecentNotes } from "../../hooks/queries/useRecentNotes";
+import { useStudyCards } from "../../hooks/queries/useStudyQueries";
 
 export interface GlobalCommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
+  /** 用于从命令面板直接唤起「快速捕捉」（状态由 Layout 持有）。 */
+  onOpenQuickCapture?: () => void;
 }
 
 type CommandCategory = "navigation" | "recent" | "action";
@@ -65,6 +70,7 @@ const ORDERED_RECENT_SUBGROUPS: RecentSubGroup[] = ["graph", "node", "note"];
 export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
   isOpen,
   onClose,
+  onOpenQuickCapture,
 }) => {
   const { isDark, toggleTheme } = useTheme();
   const { t } = useTranslation();
@@ -98,6 +104,10 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
   const { getRecentGraphs } = useRecentGraphs();
   const { recentNodes } = useRecentNodes();
   const { recentNotes } = useRecentNotes();
+
+  // 到期卡片数量：用于「开始复习」命令的角标提示，复用既有 due 卡片查询
+  const { data: dueCards } = useStudyCards({ due: true });
+  const dueCount = Array.isArray(dueCards) ? dueCards.length : 0;
 
   const handleClose = useCallback(() => {
     setQuery("");
@@ -211,14 +221,55 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
       keywords: t("common.globalCommandPalette.actionNewTaskKeywords"),
       action: () => navigate("/tasks"),
     });
-    // action - 开始/继续复习：跳转到学习页
+    // action - 开始/继续复习：跳转到学习页，带到期卡片数量角标
     items.push({
       id: "action-start-review",
-      label: t("common.globalCommandPalette.actionStartReview"),
       category: "action",
+      label:
+        dueCount > 0
+          ? t("common.globalCommandPalette.actionStartReviewCount", {
+              count: dueCount,
+            })
+          : t("common.globalCommandPalette.actionStartReview"),
       icon: <GraduationCap size={16} />,
       keywords: t("common.globalCommandPalette.actionStartReviewKeywords"),
       action: () => navigate("/study"),
+    });
+    // action - 进入学习模式：跳转到知识点阅读/学习页
+    items.push({
+      id: "action-enter-learning-mode",
+      category: "action",
+      label: t("common.globalCommandPalette.actionEnterLearningMode"),
+      icon: <BookOpen size={16} />,
+      keywords: t("common.globalCommandPalette.actionEnterLearningModeKeywords"),
+      action: () => navigate("/learning"),
+    });
+    // action - 快速捕捉：唤起 Quick Capture
+    items.push({
+      id: "action-quick-capture",
+      category: "action",
+      label: t("common.globalCommandPalette.actionQuickCapture"),
+      icon: <PenLine size={16} />,
+      keywords: t("common.globalCommandPalette.actionQuickCaptureKeywords"),
+      action: () => onOpenQuickCapture?.(),
+    });
+    // action - 新建测验：跳转到创建测验页
+    items.push({
+      id: "action-new-quiz",
+      category: "action",
+      label: t("common.globalCommandPalette.actionNewQuiz"),
+      icon: <ClipboardList size={16} />,
+      keywords: t("common.globalCommandPalette.actionNewQuizKeywords"),
+      action: () => navigate("/study?view=quizzes"),
+    });
+    // action - 新建学习路径：跳转到学习路径页创建
+    items.push({
+      id: "action-new-learning-path",
+      category: "action",
+      label: t("common.globalCommandPalette.actionNewLearningPath"),
+      icon: <Route size={16} />,
+      keywords: t("common.globalCommandPalette.actionNewLearningPathKeywords"),
+      action: () => navigate("/learning-paths"),
     });
     // action - 打开学习路径：跳转到学习路径页
     items.push({
@@ -249,6 +300,8 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
     isDark,
     toggleTheme,
     isOpen,
+    dueCount,
+    onOpenQuickCapture,
   ]);
 
   // 过滤：大小写不敏感匹配 label 和 keywords

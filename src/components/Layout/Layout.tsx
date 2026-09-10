@@ -180,6 +180,10 @@ export const Layout = () => {
     location.pathname === "/learning" ||
     location.pathname.startsWith("/scheduler/task/");
 
+  // 图编辑器页面有自己的专属命令面板（含图谱操作命令），全局命令面板不覆盖它；
+  // 其余页面（含 /learning、/scheduler/task 等全屏页）均可用 Ctrl+K 唤起全局面板。
+  const isGraphEditorPage = location.pathname.startsWith("/graph/");
+
   // 任务详情页有自身的「快速链接」拖拽区，需禁用全局「拖文件建图谱」，避免被全屏 Overlay 拦截
   const disableGraphDrop = location.pathname.startsWith("/scheduler/task/");
 
@@ -212,12 +216,9 @@ export const Layout = () => {
         toggleTheme();
       },
       openCommandPalette: () => {
-        // GraphEditor 全屏路径有自己的 CommandPalette，不触发全局
-        if (
-          location.pathname.startsWith("/graph/") ||
-          location.pathname === "/learning" ||
-          location.pathname.startsWith("/scheduler/task/")
-        ) {
+        // 图编辑器全屏路径有自己的 CommandPalette，不触发全局；
+        // 其余页面（含 /learning、/scheduler/task 全屏页）一律唤起全局面板。
+        if (isGraphEditorPage) {
           return;
         }
         setIsCommandPaletteOpen((prev) => !prev);
@@ -912,11 +913,12 @@ export const Layout = () => {
               <LazyShortcutHelpPanel isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
             </Suspense>
           )}
-          {!isFullScreenPage && isCommandPaletteOpen && (
+          {!isGraphEditorPage && isCommandPaletteOpen && (
             <Suspense fallback={null}>
               <LazyGlobalCommandPalette
                 isOpen={isCommandPaletteOpen}
                 onClose={() => setIsCommandPaletteOpen(false)}
+                onOpenQuickCapture={() => setIsQuickCaptureOpen(true)}
               />
             </Suspense>
           )}

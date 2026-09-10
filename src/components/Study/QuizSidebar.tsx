@@ -326,7 +326,7 @@ export function QuizSidebar({
           if (isCollapsed) {
             return (
               <button
-                key={card.id}
+                key={index}
                 type="button"
                 onClick={() => onSelectCard(index)}
                 className={`relative w-full flex items-center justify-center min-h-[36px] rounded-lg text-xs font-bold transition-colors overflow-hidden ${
@@ -350,7 +350,7 @@ export function QuizSidebar({
           }
           return (
             <button
-              key={card.id}
+              key={index}
               type="button"
               onClick={() => onSelectCard(index)}
               className={`w-full flex flex-col gap-1 px-2 py-1.5 rounded-lg text-left transition-colors min-h-[40px] ${

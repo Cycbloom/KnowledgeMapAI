@@ -113,6 +113,13 @@
     "tabMore": "更多",
     "promptSettings": "配置生成模板",
     "fontSize": "字体大小",
+    "autoScroll": "自动滑页",
+    "autoScrollHint": "阅读时按设定速度自动向下滚动，阅读器中可随时暂停",
+    "autoScrollSpeed": "滑页速度",
+    "autoScrollSlow": "慢",
+    "autoScrollFast": "快",
+    "autoScrollStart": "开始自动滑页",
+    "autoScrollPause": "暂停自动滑页",
     "fontFamily": "字体",
     "fontSans": "无衬线",
     "fontSerif": "衬线",
@@ -941,6 +948,10 @@
       "summary": "总结要点",
       "coreConcept": "核心概念"
     }
+  },
+  "selectionTranslate": {
+    "translating": "翻译中…",
+    "error": "翻译失败，请重试"
   },
   "focusPanel": {
   "focusLearningTitle": "专注学习: {{name}}",

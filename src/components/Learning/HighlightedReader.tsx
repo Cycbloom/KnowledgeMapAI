@@ -11,6 +11,8 @@ import { Sparkles, Loader2, Info } from "lucide-react";
 import { TermTooltip } from "../common";
 import { CodeBlock } from "../common/CodeBlock";
 import { preprocessMarkdown } from "../../utils/markdownPreprocessor";
+import { detectContentLanguage } from "../../utils/language";
+import { SelectionTranslatePopover } from "./SelectionTranslatePopover";
 import { useFocusStore } from "../../store/useFocusStore";
 import { useShallow } from "zustand/react/shallow";
 import { useReducedMotionOrPreference } from "@/hooks/common/useReducedMotionOrPreference";
@@ -577,6 +579,11 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
     })),
   );
   const { reduceMotion, transitionOverride } = useReducedMotionOrPreference();
+  // 文章内容语言：中文内容不启用选词翻译，其他语种选中单词时翻译为中文
+  const contentLanguage = useMemo(
+    () => detectContentLanguage(content),
+    [content],
+  );
   const patterns = useMemo(
     () => [
       { regex: /【[^】]+】/g, reason: t("learning.highlightedReader.reasons.keyTerm"), score: 10 },
@@ -1028,6 +1035,13 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
+
+      <SelectionTranslatePopover
+        containerRef={contentRef}
+        content={content}
+        contentLanguage={contentLanguage}
+        isDark={isDark}
+      />
     </div>
   );
 };

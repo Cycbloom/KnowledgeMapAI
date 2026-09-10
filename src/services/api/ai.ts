@@ -558,4 +558,14 @@ export const aiApi: IAiApi = {
       body: JSON.stringify(payload),
     });
   },
+
+  translateText: (data: {
+    text: string;
+    context?: string;
+    target_language?: string;
+  }) =>
+    request<{ translation: string; usedDefault: boolean }>("/ai/translate-text", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 };

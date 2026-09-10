@@ -52,6 +52,13 @@
     "tabMore": "More",
     "promptSettings": "Configure Generation Template",
     "fontSize": "Font Size",
+    "autoScroll": "Auto Scroll",
+    "autoScrollHint": "Automatically scroll down at the set speed while reading; pause anytime from the reader",
+    "autoScrollSpeed": "Scroll Speed",
+    "autoScrollSlow": "Slow",
+    "autoScrollFast": "Fast",
+    "autoScrollStart": "Start auto scroll",
+    "autoScrollPause": "Pause auto scroll",
     "fontFamily": "Font Family",
     "fontSans": "Sans Serif",
     "fontSerif": "Serif",
@@ -942,6 +949,10 @@
       "summary": "Summary",
       "coreConcept": "Core Concept"
     }
+  },
+  "selectionTranslate": {
+    "translating": "Translating...",
+    "error": "Translation failed, please retry"
   },
   "focusPanel": {
   "focusLearningTitle": "Focus Learning: {{name}}",

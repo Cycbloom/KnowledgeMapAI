@@ -351,4 +351,12 @@ export interface IAiApi {
     }>;
     usedDefault: boolean;
   }>;
+
+  /** 选词翻译：把阅读时选中的单词/短语翻译为目标语言（默认简体中文） */
+  translateText(data: {
+    text: string;
+    /** 选区所在段落的上下文文本，用于消解一词多义 */
+    context?: string;
+    target_language?: string;
+  }): Promise<{ translation: string; usedDefault: boolean }>;
 }

@@ -115,5 +115,10 @@ export { nodeStyleService, NodeStyleService } from "./nodeStyleService";
 export type { NodeStyleSuggestion, SuggestNodeStylesResult } from "./nodeStyleService";
 export { nodeTranslationService, NodeTranslationService } from "./nodeTranslationService";
 export type { NodeTranslation, TranslateNodesResult } from "./nodeTranslationService";
+export {
+  textTranslationService,
+  TextTranslationService,
+  type TranslateTextResult,
+} from "./textTranslationService";
 export { documentParsingService, DocumentParsingService } from "./documentParsingService";
 export type { IGraphQueryService } from "./types";

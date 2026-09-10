@@ -3,6 +3,7 @@ import { getAIProviderForTask } from "./factory";
 import { logger } from "../../utils/logger";
 import { buildNodeContext, NodeData } from "./utils";
 import { contextWindowManager } from "./contextWindowManager";
+import { resolveLocalizedText } from "../../../shared/utils/localization";
 import { notDeleted } from '../common/softDeleteHelper';
 import { ragSearchService } from "./ragSearchService";
 import { ragChatService } from "./ragChatService";
@@ -402,8 +403,8 @@ export class RAGService {
           ? currentGraphNode.knowledge_points[0]
           : currentGraphNode.knowledge_points;
         const nodeData: NodeData = {
-          title: kp?.title || "",
-          content: kp?.content || "",
+          title: resolveLocalizedText(kp?.title),
+          content: resolveLocalizedText(kp?.content),
         };
         currentNodeContext = buildNodeContext(nodeData, {
           maxContentLength: 1000,
@@ -657,8 +658,8 @@ export class RAGService {
         : gn.knowledge_points;
       return {
         id: kp?.id || gn.knowledge_point_id,
-        title: kp?.title || "",
-        content: kp?.content || "",
+        title: resolveLocalizedText(kp?.title) || gn.knowledge_point_id,
+        content: resolveLocalizedText(kp?.content),
         level: gn.level,
       } as NodeInfo;
     });

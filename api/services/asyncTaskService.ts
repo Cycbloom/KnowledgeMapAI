@@ -7,7 +7,6 @@ import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
 import { Task } from "../../shared/types/common";
 import type { SystemTaskType, SystemTask } from "../../shared/types/scheduler";
-import "./taskProcessors/batchGenerateCardsProcessor.js";
 import "./taskProcessors/recursiveGraphProcessor.js";
 import "./taskProcessors/infiniteExpansionProcessor.js";
 import "./taskProcessors/embeddingGenerationProcessor.js";

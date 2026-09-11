@@ -107,11 +107,11 @@ const handleAiGenerate = async (args: ParsedArgs, _context: CommandContext): Pro
         });
         break;
       case 'cards':
-        result = await aiApi.generateCards({
-          node_title: nodeTitle,
-          node_content: nodeContent,
-          count: 5,
-        });
+        // 卡片生成改走异步批量路径（/ai/batch-generate-cards → generate_questions 任务）
+        result = await aiApi.batchGenerateCards(
+          [nodeId],
+          { count: 5 },
+        );
         break;
       case 'expansion':
         result = await aiApi.expand({

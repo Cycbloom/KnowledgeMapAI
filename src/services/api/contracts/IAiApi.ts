@@ -134,19 +134,6 @@ export interface IAiApi {
     language?: string;
   }): Promise<{ suggestions: BranchSuggestion[] }>;
 
-  generateCards(data: {
-    node_title: string;
-    node_content?: string;
-    count?: number;
-    types?: string[];
-    provider?: string;
-    model?: string;
-    language?: string;
-    difficulty?: 'easy' | 'medium' | 'hard' | 'mixed';
-    coverage?: 'current_only' | 'with_children' | 'with_siblings' | 'graph';
-    custom_prompt?: string;
-  }): Promise<{ cards: Array<{ id?: string; question: string; answer: string; type: string; difficulty: string; explanation?: string; options?: string[] }> }>;
-
   batchGenerateCards(
     node_ids: string[],
     config: {

@@ -220,25 +220,6 @@ export const aiApi: IAiApi = {
     });
   },
 
-  generateCards: (data: {
-    node_title: string;
-    node_content?: string;
-    count?: number;
-    types?: string[];
-    provider?: string;
-    model?: string;
-    language?: string;
-  }) => {
-    const payload = injectAIConfig(
-      { ...data, language: data.language || getAILanguage() },
-      "text",
-    );
-    return request("/ai/generate-cards", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-  },
-
   batchGenerateCards: (
     node_ids: string[],
     config: {

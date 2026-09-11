@@ -4,12 +4,8 @@ import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { studyService } from "./studyService";
-import { graphNodeService } from "../graph/graphNodeService";
-import { aiService } from "../ai/aiService";
-import { getSupabaseAdmin } from "../../supabase";
 import type { StudyCard } from "../../../shared/types/common";
 import { notDeleted } from '../common/softDeleteHelper';
-import { buildGraphDisambiguationContext } from '../graph/graphDisambiguationContext';
 
 interface CreateCardWithGraphNodeData {
   knowledge_point_id: string;
@@ -28,33 +24,6 @@ interface CardBatchItem {
   card_type?: StudyCard["card_type"];
   type?: StudyCard["card_type"];
   options?: string[];
-}
-
-interface SyncGenerateCardsConfig {
-  types?: string[];
-  count?: number;
-  provider?: string;
-  model?: string;
-}
-
-interface SyncGenerateCardsResult {
-  nodeId: string;
-  success: boolean;
-  count: number;
-  error?: string;
-}
-
-function createDefaultFSRSState() {
-  return {
-    next_review: new Date().toISOString(),
-    difficulty: 1,
-    fsrs_state: "New" as const,
-    fsrs_stability: 0,
-    fsrs_difficulty: 0,
-    fsrs_elapsed_days: 0,
-    fsrs_scheduled_days: 0,
-    fsrs_retrievability: 0,
-  };
 }
 
 export class StudyRouteService {
@@ -225,129 +194,6 @@ export class StudyRouteService {
     }
 
     return data || { message: "No progress recorded yet" };
-  }
-
-  async syncGenerateCardsForNodes(
-    userId: string,
-    nodeIds: string[],
-    config: SyncGenerateCardsConfig = {},
-  ): Promise<{
-    results: SyncGenerateCardsResult[];
-    summary: { total: number; successCount: number; totalCards: number };
-  }> {
-    const results: SyncGenerateCardsResult[] = [];
-
-    const graphNodes = await graphNodeService.getGraphNodesByKnowledgePoints(
-      getSupabaseAdmin(),
-      nodeIds,
-    );
-
-    if (!graphNodes || graphNodes.length === 0) {
-      return {
-        results: [],
-        summary: { total: 0, successCount: 0, totalCards: 0 },
-      };
-    }
-
-    const types = config.types || ["qa", "choice"];
-    const count = config.count || 3;
-
-    for (const gn of graphNodes) {
-      try {
-        // 方案G：消歧上下文（图谱元数据 + 祖先链 + 直接子节点）：best-effort，失败不影响生成
-        const disambiguation = await buildGraphDisambiguationContext(
-          getSupabaseAdmin(),
-          gn.graph_id,
-          gn.knowledge_point_id,
-        );
-
-        const aiResult = await aiService.generateCards(
-          gn.title || "",
-          gn.content || "",
-          {
-            types,
-            count,
-            provider: config.provider as import("@shared/types").AIProviderType | undefined,
-            model: config.model,
-            userId,
-            graphId: gn.graph_id,
-            disambiguation,
-          },
-        );
-
-        const cards = (aiResult.cards || []) as Array<{
-          question: string;
-          answer: string;
-          explanation?: string;
-          type?: string;
-          options?: unknown;
-        }>;
-
-        if (cards.length > 0) {
-          const defaultFSRS = createDefaultFSRSState();
-          const cardsToInsert = cards.map((card) => ({
-            user_id: userId,
-            knowledge_point_id: gn.knowledge_point_id,
-            graph_id: gn.graph_id,
-            question: card.question,
-            answer: card.answer,
-            explanation: card.explanation || null,
-            card_type: card.type ?? "qa",
-            options: card.options ? JSON.stringify(card.options) : null,
-            ...defaultFSRS,
-          }));
-
-          const insertResult = await studyService.insertCards(
-            getSupabaseAdmin(),
-            cardsToInsert,
-          );
-
-          if (!insertResult.success) {
-            logger.error(
-              `Failed to insert cards for node ${gn.knowledge_point_id}:`,
-              insertResult.error,
-            );
-            results.push({
-              nodeId: gn.knowledge_point_id,
-              success: false,
-              count: 0,
-              error: insertResult.error,
-            });
-          } else {
-            results.push({
-              nodeId: gn.knowledge_point_id,
-              success: true,
-              count: cards.length,
-            });
-          }
-        } else {
-          results.push({
-            nodeId: gn.knowledge_point_id,
-            success: true,
-            count: 0,
-          });
-        }
-      } catch (err) {
-        logger.error(
-          `Failed to generate cards for node ${gn.knowledge_point_id}:`,
-          err,
-        );
-        results.push({
-          nodeId: gn.knowledge_point_id,
-          success: false,
-          count: 0,
-          error: (err as Error).message || "Unknown error",
-        });
-      }
-    }
-
-    const successCount = results.filter((r) => r.success).length;
-    const totalCards = results.reduce((sum, r) => sum + r.count, 0);
-
-    return {
-      results,
-      summary: { total: results.length, successCount, totalCards },
-    };
   }
 }
 

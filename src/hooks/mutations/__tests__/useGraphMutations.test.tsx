@@ -44,7 +44,6 @@ const mocks = vi.hoisted(() => {
     ai: {
       generateContent: vi.fn(),
       expand: vi.fn(),
-      generateCards: vi.fn(),
       documentToGraph: vi.fn(),
       imageToGraph: vi.fn(),
       recommendConnections: vi.fn(),

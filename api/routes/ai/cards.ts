@@ -1,9 +1,7 @@
 import { Router, type Response } from 'express';
-import { z } from 'zod';
 import { requireAuth, type AuthedRequest } from '../../middleware/auth';
 import { validate } from '../../middleware/validate';
 import { 
-  generateCardsSchema, 
   generateCardsBatchSchema,
   expandKnowledgeSchema,
   branchSuggestionsSchema,
@@ -14,65 +12,8 @@ import { AppError } from '../../middleware/errorHandler';
 import { aiService } from '../../services/ai';
 import { asyncTaskService } from '../../services/asyncTaskService';
 import { graphNodeService } from '../../services/graph';
-import { studyRouteService } from '../../services/study';
-import { buildGraphMetaContext } from '../../services/graph/graphDisambiguationContext';
 
 const router = Router();
-
-router.post('/generate-cards', requireAuth, validate(generateCardsSchema), async (req: AuthedRequest, res: Response) => {
-  const { node_title, node_content, count, types, provider, model, difficulty, custom_prompt, language, graph_id } = req.body;
-
-  // 方案G：消歧上下文（无 node_id，仅图谱级元数据）：best-effort，失败不影响生成
-  const disambiguation = await buildGraphMetaContext(req.supabase, graph_id);
-
-  const aiResult = await aiService.generateCards(node_title, node_content, { 
-    count, 
-    types, 
-    provider, 
-    model,
-    userId: req.user.id,
-    graphId: graph_id,
-    difficulty,
-    customPrompt: custom_prompt,
-    language: language ?? undefined,
-    disambiguation,
-  });
-  res.json({ cards: aiResult.cards || [] });
-});
-
-const syncGenerateCardsSchema = z.object({
-  node_ids: z.array(z.string().uuid()).min(1),
-  config: z.object({
-    types: z.array(z.string()).optional(),
-    count: z.number().min(1).max(50).optional(),
-    difficulty: z.enum(["easy", "medium", "hard", "mixed"]).optional(),
-    custom_prompt: z.string().max(10000).optional(),
-  }).optional(),
-  provider: z.string().optional(),
-  model: z.string().optional(),
-});
-
-router.post('/sync-generate-cards', requireAuth, validate(syncGenerateCardsSchema), async (req: AuthedRequest, res: Response) => {
-  const { node_ids, config, provider, model } = req.body;
-
-  const { results, summary } = await studyRouteService.syncGenerateCardsForNodes(
-    req.user.id,
-    node_ids,
-    { ...config, provider, model },
-  );
-
-  if (results.length === 0) {
-    res.json({ success: true, results: [], message: 'No nodes found' });
-    return;
-  }
-
-  res.json({
-    success: true,
-    results,
-    summary,
-    message: `Successfully generated ${summary.totalCards} cards for ${summary.successCount}/${summary.total} nodes`,
-  });
-});
 
 /**
  * 把 config（总题数 / cards_per_type / count_per_difficulty / count_matrix）按 node_count 均分，

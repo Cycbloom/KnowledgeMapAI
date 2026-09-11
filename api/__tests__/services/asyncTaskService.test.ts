@@ -177,7 +177,6 @@ vi.mock("../../services/taskProcessors/index", () => ({
 }));
 
 // Mock side-effect processor imports to avoid loading heavy dependencies
-vi.mock("../../services/taskProcessors/batchGenerateCardsProcessor.js", () => ({}));
 vi.mock("../../services/taskProcessors/recursiveGraphProcessor.js", () => ({}));
 vi.mock("../../services/taskProcessors/infiniteExpansionProcessor.js", () => ({}));
 vi.mock("../../services/taskProcessors/embeddingGenerationProcessor.js", () => ({}));

@@ -177,10 +177,6 @@ export const useAIGenerateMutation = createSimpleMutation(
 
 export const useAIExpandMutation = createSimpleMutation(api.ai.expand);
 
-export const useAIGenerateCardsMutation = createSimpleMutation(
-  api.ai.generateCards,
-);
-
 export const useRecommendConnectionsMutation = createSimpleMutation(
   api.ai.recommendConnections,
 );
@@ -529,7 +525,6 @@ export const useGraphMutations = () => {
   const deleteEdgeMutation = useDeleteEdgeMutation();
   const aiGenerateMutation = useAIGenerateMutation();
   const aiExpandMutation = useAIExpandMutation();
-  const aiGenerateCardsMutation = useAIGenerateCardsMutation();
   const createCardsBatchMutation = useCreateCardsBatchMutation();
   const recommendConnectionsMutation = useRecommendConnectionsMutation();
   const deleteGraphMutation = useDeleteGraphMutation();
@@ -545,7 +540,6 @@ export const useGraphMutations = () => {
     deleteEdgeMutation,
     aiGenerateMutation,
     aiExpandMutation,
-    aiGenerateCardsMutation,
     createCardsBatchMutation,
     recommendConnectionsMutation,
     deleteGraphMutation,

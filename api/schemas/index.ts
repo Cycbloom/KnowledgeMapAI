@@ -303,37 +303,6 @@ export const expandKnowledgeSchema = z.object({
   model: z.string().optional(),
 });
 
-export const generateCardsSchema = z.object({
-  node_title: z.string().min(1, "节点标题不能为空"),
-  node_content: z.string().optional(),
-  count: z.number().min(1).max(50).optional(),
-  types: z
-    .array(
-      z.enum([
-        "qa",
-        "choice",
-        "true_false",
-        "multi_choice",
-        "fill_in_the_blank",
-        "essay",
-        "cloze",
-        "select_from_options",
-        "matching",
-        "ordering",
-      ]),
-    )
-    .optional(),
-  provider: z.enum(["deepseek", "volcengine", "aliyun"]).optional(),
-  model: z.string().optional(),
-  difficulty: z.enum(["easy", "medium", "hard", "mixed"]).optional(),
-  coverage: z
-    .enum(["current_only", "with_children", "with_siblings", "graph"])
-    .optional(),
-  custom_prompt: z.string().max(10000).optional(),
-  language: z.string().optional(),
-  graph_id: z.string().optional(),
-});
-
 export const generateCardsBatchSchema = z.object({
   node_ids: z.array(z.string().uuid()).min(1),
   config: z

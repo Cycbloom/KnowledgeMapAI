@@ -240,19 +240,6 @@ describe('aiApi', () => {
     });
   });
 
-  describe('generateCards', () => {
-    it('应该以 POST 方式调用 /ai/generate-cards 并携带注入配置后的 body', () => {
-      const data = { node_title: '神经网络', count: 5, types: ['qa'] };
-
-      aiApi.generateCards(data);
-
-      expect(request).toHaveBeenCalledWith('/ai/generate-cards', {
-        method: 'POST',
-        body: JSON.stringify({ ...data, language: DEFAULT_LANG }),
-      });
-    });
-  });
-
   describe('batchGenerateCards', () => {
     it('应该以 POST 方式调用 /ai/batch-generate-cards 并携带 node_ids 与注入配置后的 config', () => {
       const node_ids = ['n1', 'n2'];

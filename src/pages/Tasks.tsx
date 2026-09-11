@@ -102,8 +102,7 @@ const resolveTaskRuntimeProgress = (
   if (mapped) return mapped;
 
   const fallbackLabel =
-    task.task_type === "generate_questions" ||
-    task.task_type === "batch_generate_cards"
+    task.task_type === "generate_questions"
       ? "正在初始化题目生成流程…"
       : task.task_type === "ai_generation"
         ? "正在准备 AI 生成…"

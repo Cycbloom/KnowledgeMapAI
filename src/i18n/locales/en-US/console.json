@@ -146,6 +146,8 @@
       "cacheHitRate": "Cache Hit Rate",
       "cacheSaved": "💰 Saved by Cache",
       "reasoningToken": "🧠 Reasoning Tokens (DeepSeek Reasoner)",
+      "webSearch": "🌐 Web Search",
+      "webSearchCount": "Searches",
       "errorMessage": "Error Message",
       "metadata": "Metadata",
       "metadataInfo": "Metadata Info"

@@ -1,6 +1,7 @@
 import type { Response } from "express";
 import { getAIProviderForTask, getAIProvider } from "./factory";
-import type { AIProviderType, AIProvider, ChatCompletionChunk } from "@shared/types";
+import { webSearch, hasWebSearchKey } from "./webSearchService";
+import type { AIProviderType, AIProvider, ChatCompletionChunk, ChatCompletionUsage } from "@shared/types";
 import type { AuthRequest } from "../../middleware/auth";
 import { promptService } from "./promptService";
 import { getSupabaseAdmin } from "../../supabase";
@@ -35,6 +36,47 @@ import {
   sendStreamError,
 } from "../../routes/ai/utils";
 
+// ── 联网搜索（Function Calling）相关常量 ──────────────────────────────
+const MAX_TOOL_ROUNDS = 6; // 单次对话最多工具调用轮次，防止死循环
+
+const webSearchTool = {
+  type: "function",
+  function: {
+    name: "web_search",
+    description:
+      "联网搜索互联网获取实时、最新或超出模型知识范围的信息。适合查询最新新闻、时效性数据、实时资讯、外部网站内容等。",
+    parameters: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: "搜索关键词，应简洁并涵盖关键实体与限定词",
+        },
+      },
+      required: ["query"],
+    },
+  },
+} as const;
+
+// 附加到 system prompt 末尾，让模型知道具备联网能力并主动调用
+const WEB_SEARCH_SYSTEM_HINT =
+  "\n\n【能力提示】你可以调用工具 web_search 联网搜索，获取实时、最新或超出你知识范围的信息。" +
+  "当用户提问涉及最新新闻、时效数据、实时资讯，或你无法确定答案时，请优先调用 web_search 后再作答。";
+
+// 工具调用的消息元素（assistant / tool role）
+interface ToolRoleMessage {
+  role: "assistant" | "tool";
+  content: string | null;
+  tool_call_id?: string;
+  tool_calls?: { id: string; type: "function"; function: { name: string; arguments: string } }[];
+}
+
+type ChatMessageLike =
+  | import("@shared/types").ChatCompletionMessage
+  | ToolRoleMessage
+  | { role: "user" | "system"; content: string };
+
+// 流式 chunk 中累积出的单个 tool_call（未被引用时删除以确保无未用声明）
 export class ChatService {
   private graphQueryService: IGraphQueryService | null = null;
 
@@ -53,6 +95,7 @@ export class ChatService {
       timeout?: number;
       sessionId?: string;
       operation?: string;
+      enableWebSearch?: boolean;
     } = {},
   ): Promise<string> {
     const provider = options.provider
@@ -65,6 +108,19 @@ export class ChatService {
         messages[messages.length - 1].content,
       );
       return typeof response === "string" ? response : JSON.stringify(response);
+    }
+
+    // 联网搜索：仅当显式开启且已配置搜索 Key 时，走工具调用循环
+    if (
+      options.enableWebSearch === true &&
+      (await hasWebSearchKey().catch(() => false))
+    ) {
+      const result = await this.chatWithTools(provider, messages, {
+        model: options.model || provider.model,
+        operation: options.operation || "chat",
+        timeout: options.timeout,
+      });
+      return result;
     }
 
     const requestKey = generateRequestKey("chat", {
@@ -230,6 +286,120 @@ export class ChatService {
     }
   }
 
+  // === 联网搜索工具调用（非流式） ===
+
+  /**
+   * 非流式工具调用循环：发送带 tools 的请求 → 若模型返回 tool_calls 则执行
+   * web_search 并以 tool role 回灌 → 再次请求，直至模型返回纯文本答案。
+   */
+  private async chatWithTools(
+    provider: AIProvider,
+    messages: Array<{ role: "user" | "assistant" | "system"; content: string }>,
+    options: { model: string; operation: string; timeout?: number },
+  ): Promise<string> {
+    const working: ChatMessageLike[] = [...messages];
+    const webSearchQueries: string[] = [];
+    // 用可变引用承载计数，循环内更新，withAIMonitoring 的 finally 读取到最终值
+    const toolMetadata: Record<string, unknown> = {
+      webSearchCount: 0,
+      webSearchQueries,
+    };
+
+    return withAIMonitoring(
+      {
+        operation: options.operation,
+        provider: provider.providerType,
+        model: options.model,
+        metadata: toolMetadata,
+      },
+      async () => {
+        let finalUsage: ChatCompletionUsage | undefined;
+
+        for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+          const completion = await withTimeoutAndRetry(
+            () =>
+              provider.client.chat.completions.create({
+                messages: working,
+                model: options.model,
+                tools: [webSearchTool],
+              }),
+            {
+              timeout: options.timeout || DEFAULT_TIMEOUT,
+              maxRetries: 3,
+              onRetry: (attempt, error) => {
+                logger.warn(
+                  `Chat(web) retry attempt ${attempt}: ${error.message}`,
+                );
+              },
+            },
+          );
+
+          finalUsage = completion.usage;
+          const message = completion.choices[0]?.message;
+          const toolCalls = message?.tool_calls;
+
+          if (toolCalls && toolCalls.length) {
+            working.push({
+              role: "assistant",
+              content: message.content ?? null,
+              tool_calls: toolCalls,
+            });
+            for (const toolCall of toolCalls) {
+              const result = await this.executeToolCall(
+                {
+                  id: toolCall.id,
+                  name: toolCall.function.name,
+                  arguments: toolCall.function.arguments,
+                },
+                webSearchQueries,
+              );
+              working.push({
+                role: "tool",
+                tool_call_id: toolCall.id,
+                content: result,
+              });
+            }
+            toolMetadata.webSearchCount = webSearchQueries.length;
+            continue;
+          }
+
+          return { result: message?.content ?? "", usage: finalUsage };
+        }
+
+        throw new AppError(ErrorCodes.AI_TIMEOUT, {
+          message: "联网对话在多次工具调用后仍未结束",
+        });
+      },
+    );
+  }
+
+  /** 执行单个工具调用。目前仅支持 web_search，其余工具返回错误提示给模型。
+   *  collector 用于收集实际执行的联网查询词，供 AI 监控记录展示。 */
+  private async executeToolCall(
+    toolCall: {
+      id: string;
+      name: string;
+      arguments: string;
+    },
+    collector?: string[],
+  ): Promise<string> {
+    if (toolCall.name !== "web_search") {
+      return `工具 ${toolCall.name} 不存在`;
+    }
+    let args: { query?: string } = {};
+    try {
+      args = JSON.parse(toolCall.arguments || "{}") as { query?: string };
+    } catch {
+      // 解析失败则用空查询，走默认搜索
+    }
+    collector?.push(args.query ?? "");
+    try {
+      return await webSearch(args.query ?? "");
+    } catch (error) {
+      return `联网搜索失败：${(error as Error).message}`;
+    }
+  }
+
   // === 流式聊天 ===
 
   private streamMockResponse(res: Response, content: string): void {
@@ -253,6 +423,7 @@ export class ChatService {
       operation: string;
       metadata: Record<string, unknown>;
       sessionId: string;
+      enableWebSearch?: boolean;
     },
   ): Promise<void> {
     await withAIMonitoring(
@@ -268,50 +439,72 @@ export class ChatService {
         // 流式响应不可重试——若首 chunk 后失败，retry 会重新发起请求并再次发送重复内容
         // 通过手动迭代 AsyncIterable + Promise.race 实现逐 chunk 超时保护
         const CHUNK_TIMEOUT_MS = 30000; // 单个 chunk 间隔超时
-        // 必须 await：openai SDK 的 create() 返回 Promise<Stream>（APIPromise），
-        // 不 await 拿到的是 Promise 而非 AsyncIterable，迭代会报
-        // "stream[Symbol.asyncIterator] is not a function"。
-        const rawStream: unknown = await provider.client.chat.completions.create({
-            messages,
-            model,
-            stream: true,
-            stream_options: { include_usage: true },
-          });
-
-        // 防御：上游返回非 SSE（普通 JSON/错误体）时给出可诊断的明确报错，
-        // 而不是抛出晦涩的 "is not a function"。
-        if (
-          !rawStream ||
-          typeof (rawStream as { [Symbol.asyncIterator]?: unknown })[
-            Symbol.asyncIterator
-          ] !== "function"
-        ) {
-          logger.error(
-            `${options.operation} provider did not return a streaming (SSE) response`,
-            {
-              provider: provider.providerType,
-              model,
-              responseType: typeof rawStream,
-              responseKeys:
-                rawStream && typeof rawStream === "object"
-                  ? Object.keys(rawStream as object)
-                  : undefined,
-              responseSample: rawStream
-                ? JSON.stringify(rawStream).slice(0, 300)
-                : undefined,
-            },
-          );
-          throw new AppError(ErrorCodes.AI_INVALID_RESPONSE, {
-            message: `${options.operation}: AI 服务未返回流式响应（provider=${provider.providerType}, model=${model}），请检查模型是否支持流式输出或 baseURL 是否正确`,
-          });
-        }
-        const stream = rawStream as AsyncIterable<ChatCompletionChunk>;
-
+        const hasTools = options.enableWebSearch === true;
+        // 可变的工具调用上下文：联网场景下会在各轮间追加 assistant/tool 消息
+        const working: ChatMessageLike[] = [...messages];
+        const webSearchQueries: string[] = [];
         let inputTokens = 0;
         let outputTokens = 0;
         let cachedInputTokens = 0;
 
-        try {
+        // ─── 消耗单轮流式响应的迭代器（含逐 chunk 超时保护）───
+        // 返回本轮累积的 tool_calls 分片 + 对外可见的文本内容。
+        // 工具轮次中的中间文本被丢弃，只有无工具调用的最终轮才对外输出。
+        const consumeStreamRound = async (): Promise<{
+          toolCalls: Array<{
+            index: number;
+            id?: string;
+            name?: string;
+            args?: string;
+          }>;
+          content: string;
+        }> => {
+          // 必须 await：openai SDK 的 create() 返回 Promise<Stream>（APIPromise），
+          // 不 await 拿到的是 Promise 而非 AsyncIterable，迭代会报
+          // "stream[Symbol.asyncIterator] is not a function"。
+          const rawStream: unknown = await provider.client.chat.completions.create({
+            messages: working,
+            model,
+            stream: true,
+            stream_options: { include_usage: true },
+            ...(hasTools ? { tools: [webSearchTool] } : {}),
+          });
+
+          // 防御：上游返回非 SSE（普通 JSON/错误体）时给出可诊断的明确报错，
+          // 而不是抛出晦涩的 "is not a function"。
+          if (
+            !rawStream ||
+            typeof (rawStream as { [Symbol.asyncIterator]?: unknown })[
+              Symbol.asyncIterator
+            ] !== "function"
+          ) {
+            logger.error(
+              `${options.operation} provider did not return a streaming (SSE) response`,
+              {
+                provider: provider.providerType,
+                model,
+                responseType: typeof rawStream,
+                responseKeys:
+                  rawStream && typeof rawStream === "object"
+                    ? Object.keys(rawStream as object)
+                    : undefined,
+                responseSample: rawStream
+                  ? JSON.stringify(rawStream).slice(0, 300)
+                  : undefined,
+              },
+            );
+            throw new AppError(ErrorCodes.AI_INVALID_RESPONSE, {
+              message: `${options.operation}: AI 服务未返回流式响应（provider=${provider.providerType}, model=${model}），请检查模型是否支持流式输出或 baseURL 是否正确`,
+            });
+          }
+          const stream = rawStream as AsyncIterable<ChatCompletionChunk>;
+
+          const toolCallPieceByIdx = new Map<
+            number,
+            { id?: string; name?: string; args?: string }
+          >();
+          let content = "";
+
           // 手动迭代 + 逐 chunk 超时保护
           const iterator = stream[Symbol.asyncIterator]();
           let firstChunk = true;
@@ -327,7 +520,9 @@ export class ChatService {
               ]);
             } catch (raceError: unknown) {
               if (raceError instanceof TimeoutError) {
-                logger.warn(`${options.operation} stream timed out after ${timeoutMs}ms`);
+                logger.warn(
+                  `${options.operation} stream timed out after ${timeoutMs}ms`,
+                );
                 res.end();
                 throw raceError;
               }
@@ -336,10 +531,23 @@ export class ChatService {
             firstChunk = false;
             if (result.done) break;
             const chunk = result.value;
+            const delta = chunk.choices[0]?.delta;
 
-            const content = chunk.choices[0]?.delta?.content || "";
-            if (content) {
-              sendStreamChunk(res, content);
+            if (delta?.content) {
+              content += delta.content;
+            }
+            // 流式 tool_calls 是分片下发的：按 index 归并 id/name/arguments
+            if (delta?.tool_calls) {
+              for (const piece of delta.tool_calls) {
+                if (piece.index == null) continue;
+                const entry = toolCallPieceByIdx.get(piece.index) ?? {};
+                if (piece.id) entry.id = piece.id;
+                if (piece.function?.name) entry.name = piece.function.name;
+                if (piece.function?.arguments) {
+                  entry.args = (entry.args ?? "") + piece.function.arguments;
+                }
+                toolCallPieceByIdx.set(piece.index, entry);
+              }
             }
             if (chunk.usage) {
               inputTokens = chunk.usage.prompt_tokens || 0;
@@ -348,6 +556,62 @@ export class ChatService {
                 chunk.usage.prompt_tokens_details?.cached_tokens || 0;
             }
           }
+
+          return {
+            toolCalls: [...toolCallPieceByIdx.entries()]
+              .sort((a, b) => a[0] - b[0])
+              .map(([index, entry]) => ({
+                index,
+                id: entry.id,
+                name: entry.name ?? "web_search",
+                args: entry.args ?? "{}",
+              })),
+            content,
+          };
+        };
+
+        try {
+          // 外层工具调用循环：联网场景下模型可能先返回 tool_calls，需执行搜索后回灌再续答
+          for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+            const { toolCalls, content } = await consumeStreamRound();
+
+            if (hasTools && toolCalls.length > 0) {
+              const assistantToolCalls = toolCalls.map((tc, idx) => ({
+                id: tc.id ?? `call_${round}_${idx}`,
+                type: "function" as const,
+                function: { name: tc.name ?? "web_search", arguments: tc.args ?? "{}" },
+              }));
+              working.push({
+                role: "assistant",
+                content: null,
+                tool_calls: assistantToolCalls,
+              });
+              // 工具调用可能并行多个，顺序执行 web_search 并回灌结果
+              for (const toolCall of assistantToolCalls) {
+                const result = await this.executeToolCall(
+                  {
+                    id: toolCall.id,
+                    name: toolCall.function.name,
+                    arguments: toolCall.function.arguments,
+                  },
+                  webSearchQueries,
+                );
+                working.push({
+                  role: "tool",
+                  tool_call_id: toolCall.id,
+                  content: result,
+                });
+              }
+              // 丢弃工具轮次的中间文本，进入下一轮
+              continue;
+            }
+
+            // 无工具调用：将本轮内容实时转发给前端
+            if (content) {
+              sendStreamChunk(res, content);
+            }
+            break;
+          }
         } catch (error: unknown) {
           // 已发送的 chunks 无法撤回：停止发送，向上抛错以触发 success: false 上报
           const err = error as Error;
@@ -355,6 +619,14 @@ export class ChatService {
             `${options.operation} stream chunk iteration failed: ${err.message}`,
           );
           throw error;
+        }
+
+        // 把联网搜索次数写入监控 metadata，前端性能页可展示
+        if (webSearchQueries.length > 0) {
+          (options.metadata as Record<string, unknown>).webSearchCount =
+            webSearchQueries.length;
+          (options.metadata as Record<string, unknown>).webSearchQueries =
+            webSearchQueries;
         }
 
         return {
@@ -382,6 +654,7 @@ export class ChatService {
       operation: string;
       metadata: Record<string, unknown>;
       sessionId: string;
+      enableWebSearch?: boolean;
     },
   ): Promise<void> {
     await this.streamChatCompletion(res, provider, messages, model, options);
@@ -446,11 +719,19 @@ export class ChatService {
         options.language,
       );
 
+      // 联网搜索开关：已配置搜索 Key 时注入 web_search 工具并在系统提示中声明
+      const enableWebSearch = await hasWebSearchKey().catch(() => false);
+
       const messages: Array<{
         role: "user" | "assistant" | "system";
         content: string;
       }> = [
-        { role: "system", content: systemPrompt },
+        {
+          role: "system",
+          content: enableWebSearch
+            ? `${systemPrompt}${WEB_SEARCH_SYSTEM_HINT}`
+            : systemPrompt,
+        },
         ...(options.history ?? []).map((msg) => ({
           role: msg.role as "user" | "assistant" | "system",
           content: msg.content,
@@ -470,6 +751,7 @@ export class ChatService {
         operation: "chat",
         metadata: enrichedMetadata,
         sessionId: options.sessionId,
+        enableWebSearch,
       });
       sendStreamDone(res);
     } catch (error: unknown) {
@@ -576,10 +858,20 @@ export class ChatService {
         },
       );
 
+      const enableWebSearch = await hasWebSearchKey().catch(() => false);
+
       const fullMessages: Array<{
         role: "user" | "assistant" | "system";
         content: string;
-      }> = [{ role: "system", content: systemPrompt }, ...messages];
+      }> = [
+        {
+          role: "system",
+          content: enableWebSearch
+            ? `${systemPrompt}${WEB_SEARCH_SYSTEM_HINT}`
+            : systemPrompt,
+        },
+        ...messages,
+      ];
 
       const model = options.model || provider.model;
 
@@ -587,6 +879,7 @@ export class ChatService {
         operation: "tutor_chat",
         metadata: enrichedMetadata,
         sessionId: options.sessionId,
+        enableWebSearch,
       });
       sendStreamDone(res);
     } catch (error: unknown) {

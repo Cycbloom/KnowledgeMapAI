@@ -13,6 +13,7 @@ import {
   ChevronDown,
   ChevronRight,
   Layers,
+  Globe,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -446,6 +447,7 @@ const LogDetailModal: React.FC<{
 
     const otherItems = entries
       .filter(([key]) => !priorityOrder.includes(key))
+      .filter(([key]) => key !== "webSearchCount" && key !== "webSearchQueries")
       .filter(
         ([, value]) => value !== undefined && value !== null && value !== "",
       )
@@ -805,6 +807,57 @@ const LogDetailModal: React.FC<{
               </div>
             </div>
           )}
+
+          {(() => {
+            const m = (log.metadata ?? {}) as Record<string, unknown>;
+            const count = typeof m.webSearchCount === "number" ? m.webSearchCount : 0;
+            const queries = Array.isArray(m.webSearchQueries)
+              ? (m.webSearchQueries as unknown[])
+              : [];
+            if (count <= 0) return null;
+            return (
+              <div
+                className={`p-3 rounded-lg ${
+                  isDark
+                    ? "bg-cyan-900/20 border border-cyan-700/30"
+                    : "bg-cyan-50 border border-cyan-200"
+                }`}
+              >
+                <div
+                  className={`text-xs font-semibold mb-2 flex items-center gap-1.5 ${
+                    isDark ? "text-cyan-300" : "text-cyan-700"
+                  }`}
+                >
+                  <Globe size={12} />
+                  {t("console.performance.detail.webSearch")}
+                </div>
+                <div className="flex justify-between items-center">
+                  <span
+                    className={`text-xs ${isDark ? "text-slate-300" : "text-gray-600"}`}
+                  >
+                    {t("console.performance.detail.webSearchCount")}
+                  </span>
+                  <span
+                    className={`text-sm font-medium ${isDark ? "text-cyan-300" : "text-cyan-600"}`}
+                  >
+                    {count}
+                  </span>
+                </div>
+                {queries.length > 0 && (
+                  <ul className="mt-2 space-y-1">
+                    {queries.map((query, i) => (
+                      <li
+                        key={i}
+                        className={`text-xs break-all ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                      >
+                        • {String(query)}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          })()}
 
           {(() => {
             const orderedMetadata = getOrderedMetadata();

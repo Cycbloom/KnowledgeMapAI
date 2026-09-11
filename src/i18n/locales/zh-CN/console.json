@@ -146,6 +146,8 @@
       "cacheHitRate": "缓存命中率",
       "cacheSaved": "💰 缓存节省",
       "reasoningToken": "🧠 推理 Token（DeepSeek Reasoner）",
+      "webSearch": "🌐 联网搜索",
+      "webSearchCount": "搜索次数",
       "errorMessage": "错误信息",
       "metadata": "元数据",
       "metadataInfo": "元数据信息"

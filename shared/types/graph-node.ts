@@ -5,6 +5,13 @@ import type { NodeLevel } from "./graph-core";
 import type { Edge } from "./graph-edge";
 import type { KnowledgePoint } from "./graph-knowledge-point";
 
+/**
+ * 节点特异性标注（AI 生成节点时写入 properties.specificity）：
+ * - specific：标题精确、无歧义（专名/术语），可参与本图与跨图谱的知识点复用判定；
+ * - generic：标题泛化（如「项目现状」「未来展望」），在不同上下文含义可能不同，复用判定应跳过此类节点。
+ */
+export type NodeSpecificity = "specific" | "generic";
+
 export interface GraphNode {
   id: string;
   graph_id: string;

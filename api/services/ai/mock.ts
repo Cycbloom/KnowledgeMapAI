@@ -9,9 +9,9 @@ export const getMockResponse = (type: string, input: string): string | object =>
     case 'expand':
       return {
         suggestions: [
-          { title: `${input} 的基础概念`, content: `${input}的基础概念和定义，包括其核心特征和基本原理。` },
-          { title: `${input} 的应用场景`, content: `${input}在实际中的应用场景和实践案例。` },
-          { title: `${input} 的相关技术`, content: `与${input}相关的技术和扩展知识。` }
+          { title: `${input} 的基础概念`, content: `${input}的基础概念和定义，包括其核心特征和基本原理。`, specificity: 'specific' },
+          { title: `${input} 的应用场景`, content: `${input}在实际中的应用场景和实践案例。`, specificity: 'specific' },
+          { title: `${input} 的相关技术`, content: `与${input}相关的技术和扩展知识。`, specificity: 'specific' }
         ]
       };
     

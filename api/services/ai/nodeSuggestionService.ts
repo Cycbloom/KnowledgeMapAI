@@ -1,6 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { getAIProvider, getAIProviderForTask } from "./factory";
-import type { AIProvider, AIProviderType } from "@shared/types";
+import type { AIProvider, AIProviderType, NodeSpecificity } from "@shared/types";
 import { promptService } from "./promptService";
 import { withAIMonitoring } from "./aiMonitor";
 import { getMockResponse } from "./mock";
@@ -19,12 +19,16 @@ export interface GeneratedChildNode {
   content?: string;
   summary?: string;
   level?: string;
+  /** 特异性标注：specific=精确专名，generic=泛化名称（不参与知识点复用判定） */
+  specificity?: NodeSpecificity;
 }
 
 export interface GeneratedSkeletonNode {
   title: string;
   content?: string;
   summary?: string;
+  /** 特异性标注：specific=精确专名，generic=泛化名称（不参与知识点复用判定） */
+  specificity?: NodeSpecificity;
 }
 
 export interface GenerateChildSuggestionsParams {
@@ -193,7 +197,12 @@ export async function generateChildSuggestions(
                     "、",
                   )}\n请生成新的、不同的子节点。`
                 : ""
-            }`,
+            }
+
+为每个子节点额外输出 "specificity" 字段，取值 "specific" 或 "generic"：
+- "specific"：标题是精确专名/术语，在所有上下文都指向同一含义（如「TCP 三次握手」「React 虚拟 DOM」）；
+- "generic"：标题是通用或结构性名称，在不同上下文含义可能不同（如「项目现状」「未来展望」「概述」「应用场景」「发展历程」）。
+判断规则：仅当标题本身无歧义时标 "specific"；不确定时保守标 "generic"。`,
           },
         ];
 
@@ -236,7 +245,7 @@ export async function generateChildSuggestions(
             messages.push({
               role: "user",
               content:
-                "上一条模型输出的 JSON 被截断或语法错误无法解析。请仅输出一份完整、合法的 JSON，结构必须为 {\"children\":[{\"title\":\"...\",\"content\":\"...\",\"summary\":\"...\"}]}，不要包含代码块标记或任何解释文字。",
+                "上一条模型输出的 JSON 被截断或语法错误无法解析。请仅输出一份完整、合法的 JSON，结构必须为 {\"children\":[{\"title\":\"...\",\"content\":\"...\",\"summary\":\"...\",\"specificity\":\"specific\"}]}，不要包含代码块标记或任何解释文字。",
             });
             result = await callWithRetry();
           }
@@ -374,7 +383,12 @@ export async function generateGraphSkeleton(
                     sourcesText
                       ? `\n\n参考来源：\n${sourcesText}`
                       : ""
-                  }`,
+                  }
+
+为 root 与每个 coreNodes 节点额外输出 "specificity" 字段，取值 "specific" 或 "generic"：
+- "specific"：标题是精确专名/术语，无歧义（如「TCP 三次握手」）；
+- "generic"：标题是通用或结构性名称，在不同上下文含义可能不同（如「项目现状」「未来展望」）。
+判断规则：仅当标题本身无歧义时标 "specific"；不确定时保守标 "generic"。`,
                 },
               ],
               model: effectiveModel,

@@ -1,6 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction, TaskControl, TaskAbortError } from './index';
 import { contentGenerationService } from '../ai/contentGenerationService';
+import { buildLearningMaterialContext } from '../graph/learningMaterialContext';
 import { resolveLocalizedText, BASE_CONTENT_LANG, type LocalizedText } from '@shared/utils/localization';
 import { logger } from '../../utils/logger';
 import type { Keyword } from '@shared/types/graph';
@@ -80,6 +81,15 @@ export class GenerateLearningMaterialProcessor implements TaskProcessor {
         progress: 10,
         current_node: topic || payload.knowledge_point_id,
       }, undefined, undefined, userId);
+      control.throwIfAborted();
+
+      // 消歧上下文（图谱元数据 + 祖先链 + 直接子节点）：best-effort，失败不影响生成
+      const graphCtx = await buildLearningMaterialContext(
+        supabase,
+        payload.graph_id,
+        payload.knowledge_point_id,
+        language,
+      );
 
       const result = await contentGenerationService.generateLearningMaterial(topic, context, {
         userId,
@@ -87,6 +97,11 @@ export class GenerateLearningMaterialProcessor implements TaskProcessor {
         level: payload.level,
         language,
         schema_id: payload.schema_id,
+        graphTitle: graphCtx.graphTitle,
+        graphDescription: graphCtx.graphDescription,
+        graphDomain: graphCtx.graphDomain,
+        parentChain: graphCtx.parentChain,
+        childrenOutline: graphCtx.childrenOutline,
       });
 
       control.throwIfAborted();

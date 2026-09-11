@@ -130,6 +130,13 @@ export class ContentGenerationService {
       graphId?: string;
       language?: string;
       schema_id?: string;
+      // 消歧上下文：图谱元数据 + 祖先链 + 直接子节点
+      // （由调用方如 generateLearningMaterialProcessor 通过 buildLearningMaterialContext 提供）
+      graphTitle?: string;
+      graphDescription?: string;
+      graphDomain?: string;
+      parentChain?: string;
+      childrenOutline?: string;
     } = {},
   ): Promise<GenerateLearningMaterialResult> {
     const provider = options.provider
@@ -189,6 +196,12 @@ export class ContentGenerationService {
               outputLanguage: isEnglishLanguage(options.language)
                 ? "English"
                 : "Chinese",
+              // 消歧上下文变量：供模板（含用户自定义模板）引用；TemplateEngine 缺失时渲染为空
+              graphTitle: options.graphTitle,
+              graphDescription: options.graphDescription,
+              graphDomain: options.graphDomain,
+              parentChain: options.parentChain,
+              childrenOutline: options.childrenOutline,
             };
 
             // ============================================================
@@ -261,6 +274,13 @@ export class ContentGenerationService {
               );
             }
 
+            // 代码级追加「消歧上下文」：不依赖模板内容（用户自定义 user/graph scope 模板同样生效），
+            // 解决同一知识点名称在不同图谱中含义不同的歧义问题。
+            const disambiguationBlock = this.buildGraphContextBlock(options);
+            if (disambiguationBlock) {
+              systemPrompt += `\n\n${disambiguationBlock}`;
+            }
+
             const completion = await withTimeoutAndRetry(
               () =>
                 provider.client.chat.completions.create({
@@ -322,6 +342,50 @@ export class ContentGenerationService {
         message: err.message || "AI generation failed",
       });
     }
+  }
+
+  /**
+   * 组装「消歧上下文」prompt 块：图谱元数据 + 祖先链 + 直接子节点。
+   * 任一字段存在时返回非空块；全部缺失返回空串（零输出、无回归）。
+   */
+  private buildGraphContextBlock(options: {
+    graphTitle?: string;
+    graphDescription?: string;
+    graphDomain?: string;
+    parentChain?: string;
+    childrenOutline?: string;
+  }): string {
+    const { graphTitle, graphDescription, graphDomain, parentChain, childrenOutline } = options;
+    if (
+      !graphTitle && !graphDescription && !graphDomain &&
+      !parentChain && !childrenOutline
+    ) {
+      return "";
+    }
+
+    const lines: string[] = ["## Knowledge Graph Context"];
+    const graphRef = [graphTitle ? `"${graphTitle}"` : undefined, graphDomain ? `domain: ${graphDomain}` : undefined]
+      .filter((s): s is string => Boolean(s))
+      .join(" ");
+    if (graphRef) {
+      lines.push(`This knowledge point belongs to the knowledge graph ${graphRef}.`);
+    }
+    if (graphDescription) {
+      lines.push(`Graph description: ${graphDescription}`);
+    }
+    if (parentChain) {
+      lines.push(`Position in this graph's hierarchy: ${parentChain}`);
+    }
+    if (childrenOutline) {
+      lines.push("This node covers the following sub-concepts in this graph:");
+      lines.push(childrenOutline);
+    }
+    lines.push(
+      "IMPORTANT: Interpret the topic strictly within this knowledge graph's context. " +
+        "If the term has multiple meanings across different fields, use the graph context above " +
+        "to determine the intended meaning, and state the assumed meaning in the Introduction.",
+    );
+    return lines.join("\n");
   }
 
   async generateTaskDetails(

@@ -27,7 +27,16 @@ export const PROMPT_SCENARIOS: PromptScenario[] = [
     name: "promptConfig.scenarios.learning_material.name",
     description: "promptConfig.scenarios.learning_material.description",
     icon: <GraduationCap size={20} />,
-    variables: ["topic", "context", "level"],
+    variables: [
+      "topic",
+      "context",
+      "level",
+      "graphTitle",
+      "graphDescription",
+      "graphDomain",
+      "parentChain",
+      "childrenOutline",
+    ],
     defaultTemplate: `You are a distinguished textbook author and educator. Write a comprehensive, structured learning module for the given topic.
 
 Target Audience: University students or professionals learning this concept.

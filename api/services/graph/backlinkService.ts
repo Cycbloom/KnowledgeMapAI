@@ -9,6 +9,7 @@ import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { edgeService } from './edgeService';
 import { softDelete } from '../../utils/softDelete';
 import { notDeleted } from '../common/softDeleteHelper';
+import { resolveLocalizedText } from '../../../shared/utils/localization';
 
 interface SearchKnowledgePointsOptions {
   graphId?: string;
@@ -220,7 +221,7 @@ export class BacklinkService {
       .from('knowledge_points')
       .select('id, title, summary, updated_at')
       .or(`owner_id.eq.${userId},visibility.eq.public`)
-      .ilike('title', `${query}%`)
+      .filter("title->>zh-CN", "ilike", `${query}%`)
       .order('updated_at', { ascending: false })
       .limit(50);
 
@@ -269,8 +270,8 @@ export class BacklinkService {
       const graphs = kpGraphsMap.get(kp.id) ?? [];
       return {
         id: kp.id,
-        title: kp.title,
-        summary: kp.summary ?? undefined,
+        title: resolveLocalizedText(kp.title),
+        summary: resolveLocalizedText(kp.summary) || undefined,
         graphIds: graphs.map(g => g.id),
         graphTitles: graphs.map(g => g.title),
         inCurrentGraph: graphId ? kpIdsInGraph.has(kp.id) : false,

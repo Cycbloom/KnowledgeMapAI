@@ -84,10 +84,11 @@ const HighlightText: React.FC<{ text: string; query: string; className?: string 
   className = '' 
 }) => {
   const highlighted = useMemo(() => {
-    if (!text || !query.trim()) return text || '';
+    const safeText = typeof text === 'string' ? text : String(text ?? '');
+    if (!safeText || !query.trim()) return safeText;
     
     const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    const parts = text.split(regex);
+    const parts = safeText.split(regex);
     
     return parts.map((part, i) => 
       regex.test(part) 

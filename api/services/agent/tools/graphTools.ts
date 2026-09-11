@@ -664,7 +664,7 @@ export const searchGraphsTool: AgentTool = {
           )
         `,
         )
-        .ilike("knowledge_points.title", `%${query}%`)
+        .filter("knowledge_points.title->>zh-CN", "ilike", `%${query}%`)
         .eq("knowledge_graphs.user_id", userId);
 
       if (nodesError) {

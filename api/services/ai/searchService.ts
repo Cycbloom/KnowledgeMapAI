@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { aiService } from "./aiService";
 import { logger } from "../../utils/logger";
 import { notDeleted } from '../common/softDeleteHelper';
+import { resolveLocalizedText } from "../../../shared/utils/localization";
 
 export interface SearchResult {
   graphs: SearchGraphResult[];
@@ -119,7 +120,7 @@ export class SearchService {
       supabase
         .from("knowledge_points")
         .select("id, title, content, owner_id, updated_at")
-        .or(`title.ilike.${pattern},content.ilike.${pattern}`)
+        .or(`title->>zh-CN.ilike.${pattern},content->>zh-CN.ilike.${pattern}`)
         .limit(20),
       // P1 Task 5.3: 笔记纳入全局搜索（RLS 自动按 user_id 过滤）
       notDeleted(supabase
@@ -181,8 +182,8 @@ export class SearchService {
         return {
           id: kp?.id || gn.knowledge_point_id,
           knowledge_point_id: gn.knowledge_point_id,
-          title: kp?.title || "",
-          content: kp?.content || "",
+          title: resolveLocalizedText(kp?.title),
+          content: resolveLocalizedText(kp?.content),
           graph_id: gn.graph_id,
           graph_title: kgTitle,
           knowledge_graphs: knowledgeGraphs ?? undefined,

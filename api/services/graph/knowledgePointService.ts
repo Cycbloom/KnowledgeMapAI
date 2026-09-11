@@ -398,7 +398,7 @@ export class KnowledgePointService {
       .eq('visibility', 'public');
 
     if (search) {
-      query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%`);
+      query = query.or(`title->>zh-CN.ilike.%${search}%,content->>zh-CN.ilike.%${search}%`);
     }
 
     const { data, error, count } = await query

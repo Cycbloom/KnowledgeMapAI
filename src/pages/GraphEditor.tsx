@@ -159,12 +159,6 @@ const ConceptAggregationPanel = lazy(() =>
   })),
 );
 
-const Console = lazy(() =>
-  import("../components/Console/Console").then((module) => ({
-    default: module.Console,
-  })),
-);
-
 const GraphModalManager = lazy(() =>
   import("../components/GraphEditor/modals/GraphModalManager").then((module) => ({
     default: module.GraphModalManager,
@@ -231,7 +225,7 @@ export const GraphEditor = () => {
   const { goBack } = useNavigateBack();
   const [searchParams, setSearchParams] = useSearchParams();
   const nodeIdFromUrl = searchParams.get("node_id");
-  const { token, user } = useStore();
+  const { token } = useStore();
   const { t } = useTranslation();
   const { isDark, toggleTheme } = useTheme();
   const { isMobile } = useIsMobile();
@@ -287,7 +281,7 @@ export const GraphEditor = () => {
   const [isSmartStyleOpen, setIsSmartStyleOpen] = useState(false);
   const [isNodeTranslateOpen, setIsNodeTranslateOpen] = useState(false);
 
-  const panelState = useGraphEditorPanelState({ userId: user?.id || "" });
+  const panelState = useGraphEditorPanelState();
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
@@ -856,13 +850,6 @@ export const GraphEditor = () => {
       showHelp: () => panelState.setIsShortcutHelpOpen(true),
       openCommandPalette: () => panelState.setIsCommandPaletteOpen((prev) => !prev),
       toggleTheme,
-      openConsole: () => {
-        if (panelState.isConsoleOpen) {
-          panelState.closeConsole();
-        } else {
-          panelState.openConsole();
-        }
-      },
       "setViewMode:mindmap": () => setViewMode("mindmap"),
       "setViewMode:timeline": () => setViewMode("timeline"),
       "setViewMode:tree": () => setViewMode("tree"),
@@ -2152,51 +2139,6 @@ export const GraphEditor = () => {
             onStartLearning={handleMobileStartLearning}
             onDelete={handleMobileDelete}
           />
-        </Suspense>
-      )}
-      {user?.id && (
-        <Suspense fallback={<ViewLoader />}>
-          <ErrorBoundary
-            resetKeys={[panelState.isConsoleOpen]}
-            fallbackRender={(error, resetErrorBoundary) => {
-              if (!panelState.isConsoleOpen) return null;
-              return (
-                <div className="fixed bottom-4 right-4 w-[600px] max-h-[70vh] rounded-xl shadow-2xl border border-red-200 dark:border-red-800 bg-white dark:bg-slate-900 z-50 p-4">
-                  <div className="flex items-start gap-2 mb-3">
-                    <AlertTriangle className="w-5 h-5 text-red-500 dark:text-red-400 shrink-0 mt-0.5" />
-                    <div className="min-w-0">
-                      <p className="font-semibold text-gray-900 dark:text-gray-100">{t("graphEditor.errors.consoleCrash")}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 break-words">
-                        {error.message}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <button
-                      onClick={panelState.closeConsole}
-                      className="px-3 py-1.5 text-sm rounded-md border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
-                    >
-                      {t("common.close")}
-                    </button>
-                    <button
-                      onClick={resetErrorBoundary}
-                      className="px-3 py-1.5 text-sm rounded-md bg-primary-600 text-white hover:bg-primary-700 transition-colors"
-                    >
-                      {t("common.retry")}
-                    </button>
-                  </div>
-                </div>
-              );
-            }}
-          >
-            <Console
-              isOpen={panelState.isConsoleOpen}
-              onClose={panelState.closeConsole}
-              context={panelState.consoleContext}
-              onToggleMinimize={panelState.toggleConsoleMinimize}
-              isMinimized={panelState.isConsoleMinimized}
-            />
-          </ErrorBoundary>
         </Suspense>
       )}
 

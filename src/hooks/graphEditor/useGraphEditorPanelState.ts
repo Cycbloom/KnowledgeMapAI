@@ -1,11 +1,5 @@
 import { useState } from 'react';
-import { useConsole } from '../console/useConsole';
-import type { CommandContext } from '@/services/console';
 import type { ExtractedConcept } from '../../types';
-
-export interface UseGraphEditorPanelStateProps {
-  userId: string;
-}
 
 export interface UseGraphEditorPanelStateReturn {
   // Style settings
@@ -40,20 +34,9 @@ export interface UseGraphEditorPanelStateReturn {
   // Action result
   actionResult: { title: string; content: string } | null;
   setActionResult: React.Dispatch<React.SetStateAction<{ title: string; content: string } | null>>;
-  // Console
-  isConsoleOpen: boolean;
-  isConsoleMinimized: boolean;
-  consoleContext: CommandContext;
-  openConsole: () => void;
-  closeConsole: () => void;
-  toggleConsoleMinimize: () => void;
 }
 
-export function useGraphEditorPanelState(
-  props: UseGraphEditorPanelStateProps,
-): UseGraphEditorPanelStateReturn {
-  const { userId } = props;
-
+export function useGraphEditorPanelState(): UseGraphEditorPanelStateReturn {
   // Style settings
   const [isStyleSettingsOpen, setIsStyleSettingsOpen] = useState(false);
 
@@ -88,16 +71,6 @@ export function useGraphEditorPanelState(
     content: string;
   } | null>(null);
 
-  // Console
-  const {
-    isOpen: isConsoleOpen,
-    isMinimized: isConsoleMinimized,
-    context: consoleContext,
-    open: openConsole,
-    close: closeConsole,
-    toggleMinimize: toggleConsoleMinimize,
-  } = useConsole({ userId, autoRegisterCommands: true });
-
   return {
     // Style settings
     isStyleSettingsOpen,
@@ -131,12 +104,5 @@ export function useGraphEditorPanelState(
     // Action result
     actionResult,
     setActionResult,
-    // Console
-    isConsoleOpen,
-    isConsoleMinimized,
-    consoleContext,
-    openConsole,
-    closeConsole,
-    toggleConsoleMinimize,
   };
 }

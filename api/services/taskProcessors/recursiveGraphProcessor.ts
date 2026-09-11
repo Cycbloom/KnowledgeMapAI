@@ -18,6 +18,7 @@ import {
 import { graphLockService } from "../common/graphLockService";
 import { graphTaskService } from "../scheduler/graphTaskService";
 import { notDeleted } from '../common/softDeleteHelper';
+import { cacheService, CacheKeys } from "../common/cacheService";
 
 interface RecursiveGraphPayload {
   graph_id: string;
@@ -129,7 +130,7 @@ export class RecursiveGraphProcessor implements TaskProcessor {
         }
       }
 
-      const { root: rootData, coreNodes } = await generateGraphSkeleton(
+      const { root: rootData, coreNodes, description } = await generateGraphSkeleton(
         supabase,
         {
           topic,
@@ -142,6 +143,28 @@ export class RecursiveGraphProcessor implements TaskProcessor {
           sessionId,
         },
       );
+
+      // 深度拓展时，将 AI 生成的详细图谱描述回写至图谱记录（与 AI 制图 initGraph 行为一致），
+      // 使图谱介绍更丰富；语言跟随模型输出的 {{outputLanguage}}。
+      const graphDescription =
+        typeof description === "string" && description.trim()
+          ? description.trim()
+          : undefined;
+      if (graphDescription) {
+        const { error: descErr } = await supabase
+          .from("knowledge_graphs")
+          .update({ description: graphDescription })
+          .eq("id", graph_id);
+        if (descErr) {
+          logger.warn("Failed to update graph description after deep expand", descErr);
+        } else {
+          // 描述已变更，主动失效用户图谱列表与图谱地图缓存，确保前端拉到最新描述
+          cacheService.del([
+            CacheKeys.USER_GRAPHS(userId),
+            CacheKeys.GRAPH_MAP(userId),
+          ]);
+        }
+      }
 
       // 复杂度降低：预构建核心节点标题 Set，替代下方 filter 内对每条 nodeMap 项 O(n) 的 coreNodes.some() 扫描
       const coreNodeTitleSet = new Set(coreNodes.map((c) => c.title));

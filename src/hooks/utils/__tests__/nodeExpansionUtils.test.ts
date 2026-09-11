@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import { buildExpandRequest } from '../nodeExpansionUtils';
+import { describe, it, expect, vi } from 'vitest';
+import { buildExpandRequest, processExpandSuggestions, type ExpandSuggestion } from '../nodeExpansionUtils';
 import type { Node, Edge } from '../../../types';
 
-function makeNode(id: string, title: string, content?: string): Node {
-  return { id, title, content } as Node;
+function makeNode(id: string, title: string, content?: string, properties?: Record<string, unknown>): Node {
+  return { id, title, content, properties } as Node;
 }
 
 function makeEdge(source: string, target: string): Edge {
@@ -68,5 +68,133 @@ describe('buildExpandRequest', () => {
       graphId: 'graph-1',
     });
     expect(req.graph_id).toBe('graph-1');
+  });
+});
+
+describe('processExpandSuggestions', () => {
+  function run({
+    selectedNode,
+    nodes,
+    edges,
+    suggestions,
+  }: {
+    selectedNode: Node;
+    nodes: Node[];
+    edges: Edge[];
+    suggestions: ExpandSuggestion[];
+  }) {
+    const createNode = vi.fn(async (data: Record<string, unknown>) => {
+      const newNode = { id: `new-${data.title}`, title: data.title, properties: data.properties } as unknown as Node;
+      nodes.push(newNode);
+      return newNode;
+    });
+    const createEdge = vi.fn(async (data: Record<string, unknown>) => {
+      return { id: `edge-${data.source_knowledge_point_id}-${data.target_knowledge_point_id}` } as unknown as Edge;
+    });
+    const onNodeCreated = vi.fn();
+    const onEdgeCreated = vi.fn();
+    return {
+      createNode,
+      createEdge,
+      onNodeCreated,
+      onEdgeCreated,
+      resultPromise: processExpandSuggestions({
+        selectedNode,
+        nodes,
+        edges,
+        suggestions,
+        graphId: 'graph-1',
+        createNode,
+        createEdge,
+        onNodeCreated,
+        onEdgeCreated,
+      }),
+    };
+  }
+
+  it('specific 建议命中图内同名节点时复用（只连边不新建）', async () => {
+    const selectedNode = makeNode('parent', '项目A');
+    const existing = makeNode('existing', 'React 虚拟 DOM');
+    const { resultPromise, createNode, createEdge, onEdgeCreated } = run({
+      selectedNode,
+      nodes: [selectedNode, existing],
+      edges: [],
+      suggestions: [{ title: 'React 虚拟 DOM', specificity: 'specific' }],
+    });
+    const result = await resultPromise;
+
+    expect(createNode).not.toHaveBeenCalled();
+    expect(createEdge).toHaveBeenCalledTimes(1);
+    expect(createEdge.mock.calls[0][0]).toMatchObject({
+      source_knowledge_point_id: 'parent',
+      target_knowledge_point_id: 'existing',
+    });
+    expect(onEdgeCreated).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ newNodesCount: 0, newEdgesCount: 1 });
+  });
+
+  it('generic 建议即使图内有同名节点也新建（防误合并）', async () => {
+    const selectedNode = makeNode('parent', '项目B');
+    const existing = makeNode('existing', '未来展望');
+    const { resultPromise, createNode, createEdge } = run({
+      selectedNode,
+      nodes: [selectedNode, existing],
+      edges: [],
+      suggestions: [{ title: '未来展望', specificity: 'generic' }],
+    });
+    const result = await resultPromise;
+
+    expect(createNode).toHaveBeenCalledTimes(1);
+    expect(createNode.mock.calls[0][0].properties).toEqual({ specificity: 'generic' });
+    expect(createEdge).toHaveBeenCalledTimes(1);
+    // 新建的边指向新节点而非已存在的「未来展望」
+    expect(createEdge.mock.calls[0][0].target_knowledge_point_id).toBe('new-未来展望');
+    expect(result).toEqual({ newNodesCount: 1, newEdgesCount: 1 });
+  });
+
+  it('specific 建议命中图内 generic 节点时同样新建（不参与复用）', async () => {
+    const selectedNode = makeNode('parent', '项目C');
+    const existing = makeNode('existing', '未来展望', undefined, { specificity: 'generic' });
+    const { resultPromise, createNode, createEdge } = run({
+      selectedNode,
+      nodes: [selectedNode, existing],
+      edges: [],
+      suggestions: [{ title: '未来展望', specificity: 'specific' }],
+    });
+    const result = await resultPromise;
+
+    expect(createNode).toHaveBeenCalledTimes(1);
+    expect(createEdge).toHaveBeenCalledTimes(1);
+    expect(createEdge.mock.calls[0][0].target_knowledge_point_id).toBe('new-未来展望');
+    expect(result).toEqual({ newNodesCount: 1, newEdgesCount: 1 });
+  });
+
+  it('标题归一化匹配：大小写/空格差异仍可复用', async () => {
+    const selectedNode = makeNode('parent', '项目D');
+    const existing = makeNode('existing', ' 未来展望 ');
+    const { resultPromise, createNode } = run({
+      selectedNode,
+      nodes: [selectedNode, existing],
+      edges: [],
+      suggestions: [{ title: '未来展望', specificity: 'specific' }],
+    });
+    await resultPromise;
+
+    expect(createNode).not.toHaveBeenCalled();
+  });
+
+  it('同名且边已存在时不重复连边', async () => {
+    const selectedNode = makeNode('parent', '项目E');
+    const existing = makeNode('existing', 'TCP 三次握手');
+    const { resultPromise, createEdge } = run({
+      selectedNode,
+      nodes: [selectedNode, existing],
+      edges: [makeEdge('parent', 'existing')],
+      suggestions: [{ title: 'TCP 三次握手', specificity: 'specific' }],
+    });
+    const result = await resultPromise;
+
+    expect(createEdge).not.toHaveBeenCalled();
+    expect(result).toEqual({ newNodesCount: 0, newEdgesCount: 0 });
   });
 });

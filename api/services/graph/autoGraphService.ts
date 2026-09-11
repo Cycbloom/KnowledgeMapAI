@@ -1,4 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import type { NodeSpecificity } from "@shared/types";
 import { graphNodeService } from "./graphNodeService";
 import { edgeService } from "./edgeService";
 import { asyncTaskService } from "../asyncTaskService";
@@ -43,6 +44,8 @@ interface AIGeneratedNode {
   needsRefinement?: boolean;
   suggestedContent?: string;
   color?: string;
+  /** 特异性标注：specific=精确专名，generic=泛化名称（不参与知识点复用判定） */
+  specificity?: NodeSpecificity;
 }
 
 interface ExistingChild {
@@ -260,9 +263,11 @@ export class AutoGraphService {
       logger.info(`Dedup: ${mergedCount} nodes merged with existing concepts`);
     }
 
-    // 跨图谱知识复用：对本次需新建的节点做全局语义检索，命中则复用本人已有的知识点，避免重复创建
+    // 跨图谱知识复用：对本次需新建的节点做全局语义检索，命中则复用本人已有的知识点，避免重复创建。
+    // 泛化名称（generic）跳过复用：不同图谱中的同名泛化节点语义可能不同，复用会造成知识点串味。
     const crossReuseMap = new Map<string, string>();
     for (const nodeData of nodesToCreate) {
+      if (nodeData.properties?.specificity === "generic") continue;
       const reusedId = await findReusableKnowledgePointId(supabase, userId, nodeData.title, {
         excludeGraphId: graphId,
       });
@@ -1367,6 +1372,7 @@ export class AutoGraphService {
         const tempId = node.id || `temp-${index}`;
 
         const properties = {
+          ...(node.specificity && { specificity: node.specificity }),
           ...(node.backboneModule && { backboneModule: node.backboneModule }),
           ...(node.needsRefinement !== undefined && {
             needsRefinement: node.needsRefinement,

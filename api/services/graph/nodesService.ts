@@ -143,8 +143,14 @@ export class NodesService {
       isNewKnowledgePoint = true;
     }
 
-    // 默认自动启用跨图谱知识复用：若本人已有同义知识点，则关联复用，不新建
-    if (!knowledgePointId && reuse_existing && title) {
+    // 默认自动启用跨图谱知识复用：若本人已有同义知识点，则关联复用，不新建。
+    // 泛化名称（specificity === "generic"）跳过复用：不同图谱中的同名泛化节点语义可能不同。
+    if (
+      !knowledgePointId &&
+      reuse_existing &&
+      title &&
+      properties?.specificity !== "generic"
+    ) {
       const reusedId = await findReusableKnowledgePointId(supabase, userId, title, {
         excludeGraphId: graph_id,
       });

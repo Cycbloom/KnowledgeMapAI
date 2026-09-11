@@ -13,6 +13,11 @@ import { getNextLevel } from "../../utils/levelUtils";
 import { notDeleted } from "../common/softDeleteHelper";
 import { cacheService, CacheKeys } from "../common/cacheService";
 import { graphTaskService } from "../scheduler/graphTaskService";
+import { getGraphNodeTitleMap, canReuseNode } from "../graph/graphDuplicateService";
+import {
+  resolveLocalizedText,
+  type LocalizedText,
+} from "../../../shared/utils/localization";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
@@ -97,19 +102,9 @@ export class ExpandGraphProcessor implements TaskProcessor {
 
       const graphId = payload.graph_id || currentGraphNode.graph_id;
 
-      const { data: allGraphNodes } = await notDeleted(supabase
-        .from("graph_nodes")
-        .select("knowledge_points(title)")
-        .eq("graph_id", graphId)
-        );
-
-      const existingNodeTitles = new Set<string>();
-      (allGraphNodes || []).forEach((gn: KPTitleRef) => {
-        const kp = Array.isArray(gn.knowledge_points)
-          ? gn.knowledge_points[0]
-          : gn.knowledge_points;
-        if (kp?.title) existingNodeTitles.add(kp.title);
-      });
+      // 图内全部节点（title → {kpId, specificity}），供 AI 提示与复用判定共用：
+      // 统一由 graphDuplicateService 查询并按当前语言解析 title。
+      const existingNodeByTitle = await getGraphNodeTitleMap(supabase, graphId);
 
       const { data: childEdges } = await notDeleted(supabase
         .from("edges")
@@ -124,7 +119,11 @@ export class ExpandGraphProcessor implements TaskProcessor {
         const kp = Array.isArray(edge.knowledge_points)
           ? edge.knowledge_points[0]
           : edge.knowledge_points;
-        if (kp?.title) existingChildTitles.add(kp.title);
+        // title 为按语言 key 的 JSONB，需解析为字符串再给 AI 提示
+        const title = kp?.title
+          ? resolveLocalizedText(kp.title as LocalizedText)
+          : "";
+        if (title) existingChildTitles.add(title);
       });
 
       control.throwIfAborted();
@@ -148,7 +147,7 @@ export class ExpandGraphProcessor implements TaskProcessor {
         nodeContent,
         nodeLevel: currentGraphNode.level || "normal",
         existingChildren: Array.from(existingChildTitles),
-        existingNodes: Array.from(existingNodeTitles),
+        existingNodes: Array.from(existingNodeByTitle.keys()),
         providerType: payload.provider as AIProviderType | undefined,
         model: payload.model,
         userId,
@@ -156,29 +155,6 @@ export class ExpandGraphProcessor implements TaskProcessor {
       });
 
       control.throwIfAborted();
-
-      const { data: allExistingNodes } = await notDeleted(supabase
-        .from("graph_nodes")
-        .select("id, knowledge_point_id, knowledge_points(id, title)")
-        .eq("graph_id", graphId)
-        );
-
-      const existingNodeByTitle = new Map<
-        string,
-        { kpId?: string; knowledge_point_id: string | null }
-      >();
-      for (const gn of allExistingNodes ?? []) {
-        const kp = Array.isArray(gn.knowledge_points)
-          ? gn.knowledge_points[0]
-          : gn.knowledge_points;
-        const title = kp?.title;
-        if (title) {
-          existingNodeByTitle.set(title, {
-            kpId: kp?.id,
-            knowledge_point_id: gn.knowledge_point_id,
-          });
-        }
-      }
 
       const newLevel = getNextLevel(currentGraphNode.level || "normal");
 
@@ -191,8 +167,13 @@ export class ExpandGraphProcessor implements TaskProcessor {
         const child = children[i];
         const existing = existingNodeByTitle.get(child.title);
 
-        if (existing) {
-          const existingKpId = existing.kpId || existing.knowledge_point_id;
+        // 泛化名称（specificity === "generic"）不参与本图复用：即使图内已有同名节点，
+        // 也应新建独立节点，避免「项目现状」等跨上下文语义不同的节点被误合并。
+        const canReuse =
+          !!existing && canReuseNode(child.specificity, existing.specificity);
+
+        if (canReuse) {
+          const existingKpId = existing.knowledgePointId;
           if (existingKpId && existingKpId !== nodeId) {
             const { data: dupEdge } = await notDeleted(supabase
               .from("edges")
@@ -233,6 +214,9 @@ export class ExpandGraphProcessor implements TaskProcessor {
               level: newLevel,
               x_position: x,
               y_position: y,
+              properties: child.specificity
+                ? { specificity: child.specificity }
+                : undefined,
             },
           );
 
@@ -240,8 +224,8 @@ export class ExpandGraphProcessor implements TaskProcessor {
             createdCount++;
             nodeTitles.push(child.title);
             existingNodeByTitle.set(child.title, {
-              kpId: newNode.knowledge_point_id,
-              knowledge_point_id: newNode.knowledge_point_id,
+              knowledgePointId: newNode.knowledge_point_id,
+              specificity: child.specificity,
             });
 
             await supabase.from("edges").insert({

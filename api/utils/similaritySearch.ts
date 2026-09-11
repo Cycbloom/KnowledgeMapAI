@@ -139,6 +139,27 @@ export async function findReusableKnowledgePointId(
     }
   }
 
+  // 泛化名称（properties.specificity === "generic"）不参与复用：
+  // 此类节点在不同图谱/上下文中语义可能不同，复用会造成知识点串味（扩大化风险）。
+  const candidateIds = candidates.map((s) => s.id);
+  const { data: candidateKps } = await supabase
+    .from("knowledge_points")
+    .select("id, properties")
+    .in("id", candidateIds);
+  const genericIds = new Set(
+    (candidateKps || [])
+      .filter(
+        (kp) =>
+          (kp.properties as { specificity?: string } | null)
+            ?.specificity === "generic",
+      )
+      .map((kp) => kp.id),
+  );
+  if (genericIds.size > 0) {
+    candidates = candidates.filter((s) => !genericIds.has(s.id));
+    if (candidates.length === 0) return null;
+  }
+
   const best = candidates[0];
   if (best.similarity >= threshold) {
     return best.id;

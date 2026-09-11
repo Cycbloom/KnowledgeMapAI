@@ -17,8 +17,11 @@ import {
 } from "../ai/nodeSuggestionService";
 import { graphLockService } from "../common/graphLockService";
 import { graphTaskService } from "../scheduler/graphTaskService";
-import { notDeleted } from '../common/softDeleteHelper';
 import { cacheService, CacheKeys } from "../common/cacheService";
+import {
+  getGraphNodeTitleMap,
+  canReuseNode,
+} from "../graph/graphDuplicateService";
 
 interface RecursiveGraphPayload {
   graph_id: string;
@@ -108,27 +111,14 @@ export class RecursiveGraphProcessor implements TaskProcessor {
 
       let totalNodes = 0;
       let totalEdges = 0;
-      const nodeMap = new Map<string, string>();
+      // 本批次创建的节点（按创建顺序）。不用 title 做 key：
+      // generic 同名节点会新建多个，title→id 的 Map 会被后创建的覆盖，导致部分节点无法作为父节点被深度展开。
+      const createdNodes: Array<{ id: string; title: string; level: string }> = [];
 
-      const { data: existingNodes } = await notDeleted(supabase
-        .from("graph_nodes")
-        .select("knowledge_points(title)")
-        .eq("graph_id", graph_id)
-        );
-
-      const existingNodeTitles = new Set<string>();
-      if (existingNodes) {
-        for (const node of existingNodes) {
-          if (node.knowledge_points) {
-            const kp = Array.isArray(node.knowledge_points)
-              ? node.knowledge_points[0]
-              : node.knowledge_points;
-            if (kp && kp.title) {
-              existingNodeTitles.add(kp.title);
-            }
-          }
-        }
-      }
+      // 图内已有节点（title → {kpId, specificity}）：
+      // 复用判定仅当双方均为 specific（精确专名）才成立，泛化名称（generic）
+      // 即使同名也新建独立节点，避免「项目现状」「未来展望」等跨上下文语义串味。
+      const existingNodeTitles = await getGraphNodeTitleMap(supabase, graph_id);
 
       const { root: rootData, coreNodes, description } = await generateGraphSkeleton(
         supabase,
@@ -166,9 +156,6 @@ export class RecursiveGraphProcessor implements TaskProcessor {
         }
       }
 
-      // 复杂度降低：预构建核心节点标题 Set，替代下方 filter 内对每条 nodeMap 项 O(n) 的 coreNodes.some() 扫描
-      const coreNodeTitleSet = new Set(coreNodes.map((c) => c.title));
-
       const rootNodeResult = await createNodeWithCrossGraphReuse(
         supabase,
         userId,
@@ -179,15 +166,21 @@ export class RecursiveGraphProcessor implements TaskProcessor {
           level: "root",
           x_position: 400,
           y_position: 300,
+          specificity: rootData.specificity,
         },
       );
 
       if (rootNodeResult) {
-        nodeMap.set(rootData.title, rootNodeResult.id);
+        createdNodes.push({
+          id: rootNodeResult.id,
+          title: rootData.title,
+          level: "root",
+        });
         totalNodes++;
 
         for (const coreNode of coreNodes) {
-          if (existingNodeTitles.has(coreNode.title)) {
+          const existing = existingNodeTitles.get(coreNode.title);
+          if (existing && canReuseNode(coreNode.specificity, existing.specificity)) {
             logger.info(
               `[GraphTaskService] Skipping duplicate node: ${coreNode.title}, parent: ${rootData.title}`,
             );
@@ -204,13 +197,21 @@ export class RecursiveGraphProcessor implements TaskProcessor {
               level: "core",
               x_position: 200 + Math.random() * 400,
               y_position: 500 + Math.random() * 200,
+              specificity: coreNode.specificity,
             },
           );
 
           if (childNodeResult) {
-            nodeMap.set(coreNode.title, childNodeResult.id);
+            createdNodes.push({
+              id: childNodeResult.id,
+              title: coreNode.title,
+              level: "core",
+            });
             totalNodes++;
-            existingNodeTitles.add(coreNode.title);
+            existingNodeTitles.set(coreNode.title, {
+              knowledgePointId: childNodeResult.id,
+              specificity: coreNode.specificity,
+            });
 
             await supabase.from("edges").insert({
               graph_id,
@@ -238,16 +239,14 @@ export class RecursiveGraphProcessor implements TaskProcessor {
       );
 
       if (depth >= 2) {
-        const coreNodeEntries = Array.from(nodeMap.entries()).filter(
-          ([title]) => title !== rootData.title,
-        );
+        const coreNodeEntries = createdNodes.filter((n) => n.level === "core");
         logger.info(
           `Starting depth 2 expansion for ${coreNodeEntries.length} core nodes`,
         );
 
         for (let i = 0; i < coreNodeEntries.length; i++) {
           control.throwIfAborted();
-          const [nodeTitle, nodeId] = coreNodeEntries[i];
+          const { title: nodeTitle, id: nodeId } = coreNodeEntries[i];
 
           logger.debug(
             `Expanding core node ${i + 1}/${coreNodeEntries.length}: ${nodeTitle}`,
@@ -280,7 +279,8 @@ export class RecursiveGraphProcessor implements TaskProcessor {
             });
 
             for (const child of children.slice(0, 5)) {
-              if (existingNodeTitles.has(child.title)) {
+              const existing = existingNodeTitles.get(child.title);
+              if (existing && canReuseNode(child.specificity, existing.specificity)) {
                 logger.info(
                   `[GraphTaskService] Skipping duplicate node: ${child.title}, parent: ${nodeTitle}`,
                 );
@@ -297,13 +297,21 @@ export class RecursiveGraphProcessor implements TaskProcessor {
                   level: "sub",
                   x_position: 100 + Math.random() * 600,
                   y_position: 700 + Math.random() * 200,
+                  specificity: child.specificity,
                 },
               );
 
               if (subNodeResult) {
-                nodeMap.set(child.title, subNodeResult.id);
+                createdNodes.push({
+                  id: subNodeResult.id,
+                  title: child.title,
+                  level: "sub",
+                });
                 totalNodes++;
-                existingNodeTitles.add(child.title);
+                existingNodeTitles.set(child.title, {
+                  knowledgePointId: subNodeResult.id,
+                  specificity: child.specificity,
+                });
 
                 await supabase.from("edges").insert({
                   graph_id,
@@ -322,18 +330,11 @@ export class RecursiveGraphProcessor implements TaskProcessor {
 
       if (depth >= 3) {
         logger.info(`Starting depth 3 expansion for sub-nodes`);
-        const subNodeEntries = Array.from(nodeMap.entries()).filter(
-          ([title]) => {
-            return (
-              title !== rootData.title &&
-              !coreNodeTitleSet.has(title)
-            );
-          },
-        );
+        const subNodeEntries = createdNodes.filter((n) => n.level === "sub");
 
         for (let i = 0; i < Math.min(subNodeEntries.length, 10); i++) {
           control.throwIfAborted();
-          const [nodeTitle, nodeId] = subNodeEntries[i];
+          const { title: nodeTitle, id: nodeId } = subNodeEntries[i];
 
           logger.debug(
             `Expanding sub-node ${i + 1}/${Math.min(subNodeEntries.length, 10)}: ${nodeTitle}`,
@@ -367,7 +368,8 @@ export class RecursiveGraphProcessor implements TaskProcessor {
             });
 
             for (const child of children.slice(0, 3)) {
-              if (existingNodeTitles.has(child.title)) {
+              const existing = existingNodeTitles.get(child.title);
+              if (existing && canReuseNode(child.specificity, existing.specificity)) {
                 logger.info(
                   `[GraphTaskService] Skipping duplicate node: ${child.title}, parent: ${nodeTitle}`,
                 );
@@ -384,12 +386,16 @@ export class RecursiveGraphProcessor implements TaskProcessor {
                   level: "leaf",
                   x_position: 50 + Math.random() * 700,
                   y_position: 900 + Math.random() * 200,
+                  specificity: child.specificity,
                 },
               );
 
               if (leafNodeResult) {
                 totalNodes++;
-                existingNodeTitles.add(child.title);
+                existingNodeTitles.set(child.title, {
+                  knowledgePointId: leafNodeResult.id,
+                  specificity: child.specificity,
+                });
 
                 await supabase.from("edges").insert({
                   graph_id,

@@ -10,7 +10,12 @@ import {
 } from "../ai/nodeSuggestionService";
 import { graphNodeService } from "../graph/graphNodeService";
 import { findReusableKnowledgePointId } from "../../utils/similaritySearch";
-import type { NodeLevel } from "@shared/types/graph";
+import { getGraphNodeTitleMap, canReuseNode } from "../graph/graphDuplicateService";
+import type { NodeLevel, NodeSpecificity } from "@shared/types/graph";
+import {
+  resolveLocalizedText,
+  type LocalizedText,
+} from "../../../shared/utils/localization";
 
 interface KPTitleRef {
   knowledge_points?: { title?: string } | { title?: string }[] | null;
@@ -23,6 +28,9 @@ interface CreatedNodeRef {
 /**
  * 带跨图谱复用的建节点：命中本人已有的同义知识点则复用（仅新增 graph_nodes 关联），
  * 否则按原逻辑新建知识点节点。返回值 id 统一为 knowledge_point_id，供边关系引用。
+ *
+ * 特异性防护：泛化名称（specificity === "generic"）跳过跨图谱复用直接新建，
+ * 避免「项目现状」「未来展望」这类跨上下文语义不同的同名节点被误合并。
  */
 export async function createNodeWithCrossGraphReuse(
   supabase: SupabaseClient,
@@ -34,9 +42,10 @@ export async function createNodeWithCrossGraphReuse(
     level: string;
     x_position: number;
     y_position: number;
+    specificity?: NodeSpecificity;
   },
 ): Promise<CreatedNodeRef | null> {
-  if (userId) {
+  if (userId && data.specificity !== "generic") {
     const reusedId = await findReusableKnowledgePointId(supabase, userId, data.title, {
       excludeGraphId: graphId,
     });
@@ -60,6 +69,7 @@ export async function createNodeWithCrossGraphReuse(
     level: data.level,
     x_position: data.x_position,
     y_position: data.y_position,
+    properties: data.specificity ? { specificity: data.specificity } : undefined,
   });
 }
 
@@ -77,19 +87,10 @@ export async function generateNodesForGraph(
     let totalNodes = 0;
     const effectiveSessionId = sessionId || crypto.randomUUID();
 
-    const { data: existingNodes } = await notDeleted(supabase
-      .from("graph_nodes")
-      .select("knowledge_points(title)")
-      .eq("graph_id", graphId)
-      );
-
-    const existingNodeTitles = new Set<string>();
-    existingNodes?.forEach((gn: KPTitleRef) => {
-      const kp = Array.isArray(gn.knowledge_points)
-        ? gn.knowledge_points[0]
-        : gn.knowledge_points;
-      if (kp?.title) existingNodeTitles.add(kp.title);
-    });
+    // 图内已有节点（title → {kpId, specificity}）：
+    // 复用判定仅当双方均为 specific（精确专名）才成立，泛化名称（generic）
+    // 即使同名也新建独立节点，避免「项目现状」「未来展望」等跨上下文语义串味。
+    const existingNodeTitles = await getGraphNodeTitleMap(supabase, graphId);
 
     const { root, coreNodes } = await generateGraphSkeleton(supabase, {
       topic,
@@ -112,6 +113,7 @@ export async function generateNodesForGraph(
           level: "root",
           x_position: 400,
           y_position: 300,
+          specificity: root.specificity,
         },
       );
 
@@ -123,7 +125,8 @@ export async function generateNodesForGraph(
         for (let i = 0; i < coreNodes.length; i++) {
           const coreNode = coreNodes[i];
 
-          if (existingNodeTitles.has(coreNode.title)) {
+          const existing = existingNodeTitles.get(coreNode.title);
+          if (existing && canReuseNode(coreNode.specificity, existing.specificity)) {
             logger.warn(
               `[GraphTaskService] Skipping duplicate node: ${coreNode.title}`,
             );
@@ -143,13 +146,17 @@ export async function generateNodesForGraph(
               level: "core",
               x_position: 400 + radius * Math.cos(angle),
               y_position: 300 + radius * Math.sin(angle),
+              specificity: coreNode.specificity,
             },
           );
 
           if (childNodeResult) {
             totalNodes++;
             coreNodeIds.push(childNodeResult.id);
-            existingNodeTitles.add(coreNode.title);
+            existingNodeTitles.set(coreNode.title, {
+              knowledgePointId: childNodeResult.id,
+              specificity: coreNode.specificity,
+            });
 
             await supabase.from("edges").insert({
               graph_id: graphId,
@@ -208,6 +215,10 @@ export async function expandNodeForGraph(
     let totalNodes = 0;
     const effectiveSessionId = sessionId || crypto.randomUUID();
 
+    // 图内已有节点（title → {kpId, specificity}），复用判定与 AI 提示共用：
+    // 泛化名称（generic）即使同名也新建独立节点，避免跨上下文语义串味。
+    const existingNodeTitles = await getGraphNodeTitleMap(supabase, graphId);
+
     const { data: existingChildEdges } = await notDeleted(supabase
       .from("edges")
       .select(
@@ -216,12 +227,16 @@ export async function expandNodeForGraph(
       .eq("source_knowledge_point_id", parentNodeId)
       );
 
+    // 直接子节点标题（已解析为字符串），供 AI 提示「已有的子节点」去重
     const existingChildTitles = new Set<string>();
     existingChildEdges?.forEach((edge: KPTitleRef) => {
       const kp = Array.isArray(edge.knowledge_points)
         ? edge.knowledge_points[0]
         : edge.knowledge_points;
-      if (kp?.title) existingChildTitles.add(kp.title);
+      const title = kp?.title
+        ? resolveLocalizedText(kp.title as LocalizedText)
+        : "";
+      if (title) existingChildTitles.add(title);
     });
 
     const { children } = await generateChildSuggestions(supabase, {
@@ -242,7 +257,8 @@ export async function expandNodeForGraph(
       for (let i = 0; i < children.length; i++) {
         const child = children[i];
 
-        if (existingChildTitles.has(child.title)) {
+        const existing = existingNodeTitles.get(child.title);
+        if (existing && canReuseNode(child.specificity, existing.specificity)) {
           logger.warn(
             `[GraphTaskService] Skipping duplicate child node: ${child.title}, parent: ${parentNodeTitle}`,
           );
@@ -262,13 +278,17 @@ export async function expandNodeForGraph(
             level: getNextLevel(parentLevel),
             x_position: 400 + radius * Math.cos(angle),
             y_position: 300 + radius * Math.sin(angle),
+            specificity: child.specificity,
           },
         );
 
         if (childNodeResult) {
           totalNodes++;
           childNodeIds.push(childNodeResult.id);
-          existingChildTitles.add(child.title);
+          existingNodeTitles.set(child.title, {
+            knowledgePointId: childNodeResult.id,
+            specificity: child.specificity,
+          });
 
           await supabase.from("edges").insert({
             graph_id: graphId,

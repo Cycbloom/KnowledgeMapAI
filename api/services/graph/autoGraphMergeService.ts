@@ -6,11 +6,18 @@ import {
   resolveLocalizedText,
   type LocalizedText,
 } from "../../../shared/utils/localization";
+import { canReuseNode } from "../../../shared/utils/nodeSpecificity";
 import type { AINodeData } from "./autoGraphService";
 
 const MERGE_THRESHOLD = parseFloat(
   process.env.CONCEPT_MERGE_THRESHOLD || "0.85",
 );
+
+/** 从节点 properties 中读取特异性标注 */
+const specificityOf = (properties?: Record<string, unknown>): string | undefined =>
+  typeof properties?.specificity === "string"
+    ? properties.specificity
+    : undefined;
 
 export class AutoGraphMergeService {
   async deduplicateNodes(
@@ -35,17 +42,21 @@ export class AutoGraphMergeService {
         knowledge_points (
           id,
           title,
-          embedding
+          embedding,
+          properties
         )
       `,
         )
         .eq("graph_id", graphId),
     );
 
-    const normalizedTitleToKpId = new Map<string, string>();
+    const normalizedTitleToKpId = new Map<
+      string,
+      { kpId: string; specificity?: string }
+    >();
     const embeddingMap = new Map<
       string,
-      { kpId: string; embedding: number[] }
+      { kpId: string; embedding: number[]; specificity?: string }
     >();
 
     if (existingGraphNodes) {
@@ -54,16 +65,18 @@ export class AutoGraphMergeService {
           id: string;
           title: string;
           embedding?: number[];
+          properties?: Record<string, unknown>;
         } | null;
         if (kp) {
           normalizedTitleToKpId.set(
             normalizeTitle(resolveLocalizedText(kp.title as LocalizedText)),
-            kp.id,
+            { kpId: kp.id, specificity: specificityOf(kp.properties) },
           );
           if (kp.embedding) {
             embeddingMap.set(kp.id, {
               kpId: kp.id,
               embedding: kp.embedding as number[],
+              specificity: specificityOf(kp.properties),
             });
           }
         }
@@ -74,18 +87,28 @@ export class AutoGraphMergeService {
       if (mergedIndices.has(i)) continue;
       const node = nodes[i];
       const normTitle = normalizeTitle(node.title);
+      const newSpecificity = specificityOf(node.properties);
 
-      const existingKpId = normalizedTitleToKpId.get(normTitle);
-      if (existingKpId) {
-        reusedKpIds.set(node.tempId, existingKpId);
+      const existingEntry = normalizedTitleToKpId.get(normTitle);
+      // 泛化名称（generic）不参与任何层级的合并判定：
+      // 同名或向量相似的 generic 节点在不同上下文语义可能不同，合并会造成知识点串味。
+      if (
+        existingEntry &&
+        canReuseNode(newSpecificity, existingEntry.specificity)
+      ) {
+        reusedKpIds.set(node.tempId, existingEntry.kpId);
         mergedIndices.add(i);
         logger.info(
-          `Dedup (title): "${node.title}" merged with existing kp ${existingKpId}`,
+          `Dedup (title): "${node.title}" merged with existing kp ${existingEntry.kpId}`,
         );
         continue;
       }
 
-      if (node.embedding && embeddingMap.size > 0) {
+      if (
+        node.embedding &&
+        embeddingMap.size > 0 &&
+        newSpecificity !== "generic"
+      ) {
         try {
           const { data: similarResults, error: rpcError } = await supabase.rpc(
             "match_knowledge_points",
@@ -100,7 +123,11 @@ export class AutoGraphMergeService {
           if (!rpcError && similarResults && Array.isArray(similarResults)) {
             for (const similar of similarResults) {
               const existingEmbed = embeddingMap.get(similar.id);
-              if (existingEmbed && similar.similarity >= MERGE_THRESHOLD) {
+              if (
+                existingEmbed &&
+                similar.similarity >= MERGE_THRESHOLD &&
+                canReuseNode(newSpecificity, existingEmbed.specificity)
+              ) {
                 reusedKpIds.set(node.tempId, similar.id);
                 mergedIndices.add(i);
                 logger.info(
@@ -110,13 +137,16 @@ export class AutoGraphMergeService {
               }
             }
           } else {
-            for (const [, { kpId, embedding }] of embeddingMap) {
+            for (const [, { kpId, embedding, specificity }] of embeddingMap) {
               const similarity =
                 await conceptAggregationService.calculateSimilarity(
                   node.embedding,
                   embedding,
                 );
-              if (similarity >= MERGE_THRESHOLD) {
+              if (
+                similarity >= MERGE_THRESHOLD &&
+                canReuseNode(newSpecificity, specificity)
+              ) {
                 reusedKpIds.set(node.tempId, kpId);
                 mergedIndices.add(i);
                 logger.info(
@@ -127,13 +157,16 @@ export class AutoGraphMergeService {
             }
           }
         } catch {
-          for (const [, { kpId, embedding }] of embeddingMap) {
+          for (const [, { kpId, embedding, specificity }] of embeddingMap) {
             const similarity =
               await conceptAggregationService.calculateSimilarity(
                 node.embedding,
                 embedding,
               );
-            if (similarity >= MERGE_THRESHOLD) {
+            if (
+              similarity >= MERGE_THRESHOLD &&
+              canReuseNode(newSpecificity, specificity)
+            ) {
               reusedKpIds.set(node.tempId, kpId);
               mergedIndices.add(i);
               logger.info(
@@ -147,6 +180,8 @@ export class AutoGraphMergeService {
     }
 
     // 复杂度降低：用归一化标题索引把嵌套 O(n²) 去重改为单趟 O(n) 遍历
+    // 泛化名称（generic）不参与批次内 title 合并：同一批次内两个 generic 同名
+    // 可能隶属不同父节点/语义，各自保留为独立节点。
     const titleIndex = new Map<string, number>();
     for (let i = 0; i < nodes.length; i++) {
       if (mergedIndices.has(i)) continue;
@@ -154,7 +189,12 @@ export class AutoGraphMergeService {
       const firstIndex = titleIndex.get(normI);
       if (firstIndex === undefined) {
         titleIndex.set(normI, i);
-      } else {
+      } else if (
+        canReuseNode(
+          specificityOf(nodes[i].properties),
+          specificityOf(nodes[firstIndex].properties),
+        )
+      ) {
         mergedIndices.add(i);
         logger.info(
           `Dedup (batch title): "${nodes[i].title}" merged into "${nodes[firstIndex].title}"`,
@@ -166,13 +206,17 @@ export class AutoGraphMergeService {
       if (mergedIndices.has(i)) continue;
       const embI = nodes[i].embedding;
       if (!embI) continue;
+      const specI = specificityOf(nodes[i].properties);
       for (let j = i + 1; j < nodes.length; j++) {
         if (mergedIndices.has(j)) continue;
         const embJ = nodes[j].embedding;
         if (!embJ) continue;
         const similarity =
           await conceptAggregationService.calculateSimilarity(embI, embJ);
-        if (similarity >= MERGE_THRESHOLD) {
+        if (
+          similarity >= MERGE_THRESHOLD &&
+          canReuseNode(specificityOf(nodes[j].properties), specI)
+        ) {
           mergedIndices.add(j);
           logger.info(
             `Dedup (batch vector): "${nodes[j].title}" merged into "${nodes[i].title}" (sim: ${similarity.toFixed(3)})`,

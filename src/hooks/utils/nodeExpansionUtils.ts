@@ -1,10 +1,14 @@
 import { Node, Edge } from '../../types';
+import type { NodeSpecificity } from '@shared/types';
+import { canReuseNode } from '@shared/utils/nodeSpecificity';
 import { getLevel, getNextLevel, getLevelColorHex } from '../../utils/graph/graphUtils';
 import { logger } from '../../utils/logger';
 
 export interface ExpandSuggestion {
   title: string;
   content?: string;
+  /** 特异性标注：specific=精确专名，generic=泛化名称（不参与复用判定，避免误合并） */
+  specificity?: NodeSpecificity;
 }
 
 export interface ExpandNodeParams {
@@ -55,12 +59,16 @@ export async function processExpandSuggestions({
   let newNodesCount = 0;
   let newEdgesCount = 0;
 
+  // 标题归一化：trim + 小写，避免「未来展望 」与「未来展望」等细微差异导致同义节点漏匹配
+  const normalizeTitle = (title: string) => title.trim().toLowerCase();
+
   // 预处理：将 title->首节点、无向边偶对分别索引为 O(1) 查找，
   // 避免在 suggestions 循环内对 nodes/edges 做线性扫描（原为 O(suggestions*(n+m))）
   const nodesByTitle = new Map<string, Node>();
   for (const n of nodes) {
-    if (!nodesByTitle.has(n.title)) {
-      nodesByTitle.set(n.title, n);
+    const key = normalizeTitle(n.title);
+    if (!nodesByTitle.has(key)) {
+      nodesByTitle.set(key, n);
     }
   }
   const connectedEdgePairs = new Set<string>();
@@ -71,13 +79,22 @@ export async function processExpandSuggestions({
     connectedEdgePairs.add(`${b}|${a}`);
   }
 
+  // 复用判定：泛化名称（generic）一律不参与，避免「项目现状」「未来展望」等
+  // 跨上下文语义不同的同名节点被误合并。判定逻辑与后端共用 shared canReuseNode。
   for (const s of suggestions) {
-    const existingNode = nodesByTitle.get(s.title);
-    
-    if (existingNode) {
+    const existingNode = nodesByTitle.get(normalizeTitle(s.title));
+    const canReuse =
+      !!existingNode &&
+      existingNode.id !== selectedNode.id &&
+      canReuseNode(
+        s.specificity,
+        existingNode.properties?.specificity as NodeSpecificity | undefined,
+      );
+
+    if (canReuse) {
       const edgeExists = connectedEdgePairs.has(`${selectedNode.id}|${existingNode.id}`);
-      
-      if (!edgeExists && existingNode.id !== selectedNode.id) {
+
+      if (!edgeExists) {
         const newEdge = await createEdge({
           source_knowledge_point_id: selectedNode.id,
           target_knowledge_point_id: existingNode.id,
@@ -101,7 +118,7 @@ export async function processExpandSuggestions({
         y_position: y,
         color: getLevelColorHex(newLevel),
         level: newLevel,
-        properties: {}
+        properties: s.specificity ? { specificity: s.specificity } : {}
       });
       
       if (!newNode) {

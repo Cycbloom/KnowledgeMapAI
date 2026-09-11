@@ -9,6 +9,7 @@ import type { StudyCard } from "../../../shared/types/common";
 import { transactionExecutor } from "../../database/transactionExecutor";
 import { notDeleted } from '../common/softDeleteHelper';
 import { getKnowledgePoint } from '../../utils/nodeHelpers';
+import { buildGraphDisambiguationContext } from '../graph/graphDisambiguationContext';
 import { resolveLocalizedText } from '../../../shared/utils/localization';
 import { cardDifficultyToNumber } from '../../../shared/types/quiz';
 import { deriveFocusTopicFallback } from '../../../shared/utils/cards';
@@ -171,6 +172,13 @@ export class QuizSetGenerationService {
       const difficulty = config.difficulty || "medium";
       const count = 1;
 
+      // 方案G：消歧上下文（图谱元数据 + 祖先链 + 直接子节点）：best-effort，失败不影响生成
+      const disambiguation = await buildGraphDisambiguationContext(
+        supabase,
+        quizSet.graph_id,
+        oldCard.knowledge_point_id,
+      );
+
       const aiResult = await aiService.generateCards(
         resolveLocalizedText(kp?.title),
         resolveLocalizedText(kp?.content),
@@ -182,6 +190,7 @@ export class QuizSetGenerationService {
           model: config.model,
           userId,
           graphId: quizSet.graph_id,
+          disambiguation,
         },
       );
 

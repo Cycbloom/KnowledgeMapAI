@@ -15,11 +15,15 @@ import { aiService } from '../../services/ai';
 import { asyncTaskService } from '../../services/asyncTaskService';
 import { graphNodeService } from '../../services/graph';
 import { studyRouteService } from '../../services/study';
+import { buildGraphMetaContext } from '../../services/graph/graphDisambiguationContext';
 
 const router = Router();
 
 router.post('/generate-cards', requireAuth, validate(generateCardsSchema), async (req: AuthedRequest, res: Response) => {
   const { node_title, node_content, count, types, provider, model, difficulty, custom_prompt, language, graph_id } = req.body;
+
+  // 方案G：消歧上下文（无 node_id，仅图谱级元数据）：best-effort，失败不影响生成
+  const disambiguation = await buildGraphMetaContext(req.supabase, graph_id);
 
   const aiResult = await aiService.generateCards(node_title, node_content, { 
     count, 
@@ -31,6 +35,7 @@ router.post('/generate-cards', requireAuth, validate(generateCardsSchema), async
     difficulty,
     customPrompt: custom_prompt,
     language: language ?? undefined,
+    disambiguation,
   });
   res.json({ cards: aiResult.cards || [] });
 });

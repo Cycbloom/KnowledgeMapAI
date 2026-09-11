@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { buildLearningMaterialContext } from "../../services/graph/learningMaterialContext";
+import { buildGraphDisambiguationContext, buildGraphMetaContext } from "../../services/graph/graphDisambiguationContext";
 
 /**
  * 可编程 mock Supabase：`from(table)` 返回链式 builder，
@@ -54,7 +54,7 @@ function createSupabase(
 const ok = (data: unknown) => ({ data, error: null });
 const fail = () => ({ data: null, error: new Error("mock query failed") });
 
-describe("buildLearningMaterialContext", () => {
+describe("buildGraphDisambiguationContext", () => {
   it("完整构建：图谱元数据 + 祖先链 + 子节点大纲", async () => {
     const supabase = createSupabase({
       knowledge_graphs: () =>
@@ -94,7 +94,7 @@ describe("buildLearningMaterialContext", () => {
       },
     });
 
-    const ctx = await buildLearningMaterialContext(supabase, "g1", "n1", "zh-CN");
+    const ctx = await buildGraphDisambiguationContext(supabase, "g1", "n1", "zh-CN");
 
     expect(ctx.hasContext).toBe(true);
     expect(ctx.graphTitle).toBe("深度学习");
@@ -124,7 +124,7 @@ describe("buildLearningMaterialContext", () => {
       },
     });
 
-    const ctx = await buildLearningMaterialContext(supabase, "g1", "n1");
+    const ctx = await buildGraphDisambiguationContext(supabase, "g1", "n1");
 
     expect(ctx.parentChain).toBe("B");
   });
@@ -133,7 +133,7 @@ describe("buildLearningMaterialContext", () => {
     const from = vi.fn();
     const supabase = { from } as unknown as SupabaseClient;
 
-    const ctx = await buildLearningMaterialContext(supabase, undefined, "n1");
+    const ctx = await buildGraphDisambiguationContext(supabase, undefined, "n1");
 
     expect(ctx.hasContext).toBe(false);
     expect(ctx.graphTitle).toBeUndefined();
@@ -149,7 +149,7 @@ describe("buildLearningMaterialContext", () => {
       graph_nodes: fail,
     });
 
-    const ctx = await buildLearningMaterialContext(supabase, "g1", "n1");
+    const ctx = await buildGraphDisambiguationContext(supabase, "g1", "n1");
 
     expect(ctx.hasContext).toBe(false);
     expect(ctx.graphTitle).toBeUndefined();
@@ -166,12 +166,55 @@ describe("buildLearningMaterialContext", () => {
       graph_nodes: () => ok([]),
     });
 
-    const ctx = await buildLearningMaterialContext(supabase, "g1", "n1");
+    const ctx = await buildGraphDisambiguationContext(supabase, "g1", "n1");
 
     expect(ctx.hasContext).toBe(true);
     expect(ctx.graphTitle).toBe("电力工程");
     expect(ctx.graphDomain).toBe("电气");
     expect(ctx.parentChain).toBeUndefined();
     expect(ctx.childrenOutline).toBeUndefined();
+  });
+});
+
+describe("buildGraphMetaContext", () => {
+  it("仅返回图谱级元数据（不查询 edges / graph_nodes）", async () => {
+    const from = vi.fn((table: string) => {
+      if (table === "knowledge_graphs") {
+        return createChain(() =>
+          ok({ id: "g1", title: "深度学习", description: "深度学习与神经网络", domain: "AI" }),
+        );
+      }
+      return createChain(() => ({ data: null, error: null }));
+    });
+    const supabase = { from } as unknown as SupabaseClient;
+
+    const ctx = await buildGraphMetaContext(supabase, "g1");
+
+    expect(ctx.hasContext).toBe(true);
+    expect(ctx.graphTitle).toBe("深度学习");
+    expect(ctx.graphDescription).toBe("深度学习与神经网络");
+    expect(ctx.graphDomain).toBe("AI");
+    expect(ctx.parentChain).toBeUndefined();
+    expect(from.mock.calls.map((c) => c[0])).toEqual(["knowledge_graphs"]);
+  });
+
+  it("无 graph_id：直接返回空上下文", async () => {
+    const from = vi.fn();
+    const supabase = { from } as unknown as SupabaseClient;
+
+    const ctx = await buildGraphMetaContext(supabase, undefined);
+
+    expect(ctx.hasContext).toBe(false);
+    expect(ctx.graphTitle).toBeUndefined();
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it("查询失败：返回空上下文，绝不抛错", async () => {
+    const supabase = createSupabase({ knowledge_graphs: fail });
+
+    const ctx = await buildGraphMetaContext(supabase, "g1");
+
+    expect(ctx.hasContext).toBe(false);
+    expect(ctx.graphTitle).toBeUndefined();
   });
 });

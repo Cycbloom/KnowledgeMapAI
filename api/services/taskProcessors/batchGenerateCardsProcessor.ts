@@ -22,6 +22,7 @@ import type { GenerateCardsCoverage } from '../ai/cardGenerationService';
 import { deriveFocusTopicFallback } from '@shared/utils/cards';
 import { resolveLocalizedText } from '@shared/utils/localization';
 import { resolveInitialNextReview } from '../study/cardInitialSchedule';
+import { buildGraphDisambiguationContext } from '../graph/graphDisambiguationContext';
 
 interface BatchGenerateCardsPayload {
   node_ids: string[];
@@ -398,6 +399,14 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
           }
         }
 
+        // 方案G：消歧上下文（图谱元数据 + 祖先链 + 直接子节点）：best-effort，失败不影响生成
+        const disambiguation = await buildGraphDisambiguationContext(
+          supabase,
+          node.graph_id,
+          node.id,
+          language,
+        );
+
         try {
           const CONCURRENCY = 3;
           let nodeCardCount = 0;
@@ -424,6 +433,7 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
                   ...(needsChildren && nodeChildren.length > 0 ? { childrenNodes: nodeChildren } : {}),
                   ...(needsSiblings && nodeSiblings.length > 0 ? { siblingNodes: nodeSiblings } : {}),
                   maxSiblingDistractors: 3,
+                  disambiguation,
                 });
                 const rawCards = (aiResult.cards || []) as AIGeneratedCard[];
                 // 方案B：入库前 normalize AI 自评难度，非法值回退到本任务难度

@@ -131,7 +131,7 @@ export class ContentGenerationService {
       language?: string;
       schema_id?: string;
       // 消歧上下文：图谱元数据 + 祖先链 + 直接子节点
-      // （由调用方如 generateLearningMaterialProcessor 通过 buildLearningMaterialContext 提供）
+      // （由调用方如 generateLearningMaterialProcessor 通过 buildGraphDisambiguationContext 提供）
       graphTitle?: string;
       graphDescription?: string;
       graphDomain?: string;

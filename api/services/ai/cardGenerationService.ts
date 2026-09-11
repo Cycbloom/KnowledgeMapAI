@@ -19,6 +19,7 @@ import {
   dedupedRequest,
   generateRequestKey,
 } from "./aiUtils";
+import type { GraphDisambiguationContext } from "../graph/graphDisambiguationContext";
 
 export type CardDifficulty = "easy" | "medium" | "hard" | "mixed";
 
@@ -75,6 +76,11 @@ export interface GenerateCardsOptions {
   childrenNodes?: { knowledgePointId: string; title: string; content: string | null }[];
   /** 方案F：兄弟节点经 AI 相关性筛选后最多注入的干扰项数量（默认 3） */
   maxSiblingDistractors?: number;
+  /**
+   * 方案G：消歧上下文（图谱元数据 + 祖先链 + 直接子节点）。
+   * 解决同一知识点名称在不同知识图谱中含义不同的问题，代码级追加，不依赖模板内容。
+   */
+  disambiguation?: GraphDisambiguationContext;
 }
 
 class CardGenerationService {
@@ -366,6 +372,13 @@ ${relevantSiblings.map((n) => `- ${n.title}${n.content ? `: ${n.content}` : ""}`
             // 方案E：grounding —— 每题必须携带「原文依据」evidence，并限制拼接进 explanation
             systemPrompt += `\n\nGROUNDING: Every card MUST include an "evidence" field: the shortest verbatim phrase or sentence from the provided source material that directly supports / contains the answer. If the answer is not grounded in the source, revise the question or answer until it is. Never fabricate facts not present in the source.`;
 
+            // 方案G：代码级追加「消歧上下文」——不依赖模板内容（用户自定义模板同样生效），
+            // 解决同一知识点名称在不同知识图谱中含义不同的歧义问题。
+            const disambiguationBlock = this.buildGraphContextBlock(options.disambiguation);
+            if (disambiguationBlock) {
+              systemPrompt += `\n\n${disambiguationBlock}`;
+            }
+
             // 方案D：重试次数引用（onRetry 递增，驱动温度退火）
             const attemptRef = { current: 0 };
             const completion = await withTimeoutAndRetry(
@@ -470,6 +483,47 @@ ${relevantSiblings.map((n) => `- ${n.title}${n.content ? `: ${n.content}` : ""}`
         message: err.message || "AI card generation failed",
       });
     }
+  }
+
+  /**
+   * 组装「消歧上下文」prompt 块：图谱元数据 + 祖先链 + 直接子节点。
+   * 任一字段存在时返回非空块；全部缺失返回空串（零输出、无回归）。
+   */
+  private buildGraphContextBlock(
+    disambiguation?: GraphDisambiguationContext,
+  ): string {
+    const { graphTitle, graphDescription, graphDomain, parentChain, childrenOutline } =
+      disambiguation ?? {};
+    if (
+      !graphTitle && !graphDescription && !graphDomain &&
+      !parentChain && !childrenOutline
+    ) {
+      return "";
+    }
+
+    const lines: string[] = ["## Knowledge Graph Context"];
+    const graphRef = [graphTitle ? `"${graphTitle}"` : undefined, graphDomain ? `domain: ${graphDomain}` : undefined]
+      .filter((s): s is string => Boolean(s))
+      .join(" ");
+    if (graphRef) {
+      lines.push(`This knowledge point belongs to the knowledge graph ${graphRef}.`);
+    }
+    if (graphDescription) {
+      lines.push(`Graph description: ${graphDescription}`);
+    }
+    if (parentChain) {
+      lines.push(`Position in this graph's hierarchy: ${parentChain}`);
+    }
+    if (childrenOutline) {
+      lines.push("This node covers the following sub-concepts in this graph:");
+      lines.push(childrenOutline);
+    }
+    lines.push(
+      "IMPORTANT: Interpret the topic strictly within this knowledge graph's context. " +
+        "If the term has multiple meanings across different fields, use the graph context above " +
+        "to determine the intended meaning, and state the assumed meaning in the Introduction.",
+    );
+    return lines.join("\n");
   }
 
   /**

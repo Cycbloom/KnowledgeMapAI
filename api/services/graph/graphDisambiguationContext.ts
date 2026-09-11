@@ -4,9 +4,10 @@ import { resolveLocalizedText, type LocalizedText } from '@shared/utils/localiza
 import { notDeleted } from '../common/softDeleteHelper';
 
 /**
- * 学习资料生成的「消歧上下文」：解决同一知识点名称在不同知识图谱中含义不同的问题。
+ * 生成类任务的「消歧上下文」：解决同一知识点名称在不同知识图谱中含义不同的问题
+ * （学习资料生成 / 题目生成通用）。
  *
- * 生成学习资料时仅凭节点标题(topic)+正文(context)无法区分同名异义（如 "Transformer"
+ * 生成时仅凭节点标题(topic)+正文(context)无法区分同名异义（如 "Transformer"
  * 在深度学习 vs 电力工程图谱中含义完全不同）。本 helper 自动收集：
  * 1. 图谱元数据（title / description / domain）
  * 2. 祖先链（沿 edges 反向向上最多 5 层，自根向下）
@@ -16,7 +17,7 @@ import { notDeleted } from '../common/softDeleteHelper';
  * - 全部 best-effort，任何一步失败返回空字段，绝不阻断生成（与 siblingNodesService 一致）；
  * - edges / graph_nodes 均需按 graph_id 过滤并排除软删除，避免多图谱共享知识点时跨图谱串节点。
  */
-export interface LearningMaterialContext {
+export interface GraphDisambiguationContext {
   graphTitle?: string;
   graphDescription?: string;
   graphDomain?: string;
@@ -68,7 +69,7 @@ async function fetchGraphMeta(
   if (error || !data) {
     if (error) {
       logger.warn(
-        `[LearningMaterialContext] Failed to fetch graph meta ${graphId}:`,
+        `[GraphDisambiguationContext] Failed to fetch graph meta ${graphId}:`,
         error,
       );
     }
@@ -106,7 +107,7 @@ async function fetchAncestorIds(
 
     if (error) {
       logger.warn(
-        `[LearningMaterialContext] Failed to fetch parent edge for ${current}:`,
+        `[GraphDisambiguationContext] Failed to fetch parent edge for ${current}:`,
         error,
       );
       break;
@@ -140,7 +141,7 @@ async function fetchKpTitlesByIds(
 
   if (error) {
     logger.warn(
-      `[LearningMaterialContext] Failed to fetch kp titles for ${ids.length} ids:`,
+      `[GraphDisambiguationContext] Failed to fetch kp titles for ${ids.length} ids:`,
       error,
     );
     return titleById;
@@ -171,7 +172,7 @@ async function fetchChildrenOutline(
 
   if (edgeError) {
     logger.warn(
-      `[LearningMaterialContext] Failed to fetch child edges for ${nodeId}:`,
+      `[GraphDisambiguationContext] Failed to fetch child edges for ${nodeId}:`,
       edgeError,
     );
     return undefined;
@@ -191,7 +192,7 @@ async function fetchChildrenOutline(
 
   if (error) {
     logger.warn(
-      `[LearningMaterialContext] Failed to fetch child details for ${nodeId}:`,
+      `[GraphDisambiguationContext] Failed to fetch child details for ${nodeId}:`,
       error,
     );
     return undefined;
@@ -214,16 +215,36 @@ async function fetchChildrenOutline(
 }
 
 /**
- * 收集学习资料生成的消歧上下文（图谱元数据 + 祖先链 + 直接子节点）。
+ * 仅收集图谱级消歧上下文（title / description / domain），不含层级信息。
+ * 用于没有 node_id 的同步路径（如 console 手动生成）。
+ * 永不抛错：任何异常均记录日志后返回空字段。
+ */
+export async function buildGraphMetaContext(
+  supabase: SupabaseClient,
+  graphId: string | undefined,
+): Promise<Pick<GraphDisambiguationContext, 'graphTitle' | 'graphDescription' | 'graphDomain' | 'hasContext'>> {
+  if (!graphId) return { hasContext: false };
+
+  const meta = await fetchGraphMeta(supabase, graphId);
+  return {
+    graphTitle: meta.title,
+    graphDescription: meta.description,
+    graphDomain: meta.domain,
+    hasContext: Boolean(meta.title || meta.description || meta.domain),
+  };
+}
+
+/**
+ * 收集生成任务的消歧上下文（图谱元数据 + 祖先链 + 直接子节点）。
  * 无 graphId 时无法限定图谱范围，直接返回空上下文。
  * 永不抛错：任何异常均记录日志后返回部分/空结果。
  */
-export async function buildLearningMaterialContext(
+export async function buildGraphDisambiguationContext(
   supabase: SupabaseClient,
   graphId: string | undefined,
   nodeId: string,
   language?: string,
-): Promise<LearningMaterialContext> {
+): Promise<GraphDisambiguationContext> {
   if (!graphId) return { hasContext: false };
 
   const meta = await fetchGraphMeta(supabase, graphId);
@@ -246,7 +267,7 @@ export async function buildLearningMaterialContext(
     }
   } catch (err) {
     logger.warn(
-      `[LearningMaterialContext] Failed to build ancestor chain for ${nodeId}:`,
+      `[GraphDisambiguationContext] Failed to build ancestor chain for ${nodeId}:`,
       err,
     );
   }
@@ -261,7 +282,7 @@ export async function buildLearningMaterialContext(
     );
   } catch (err) {
     logger.warn(
-      `[LearningMaterialContext] Failed to build children outline for ${nodeId}:`,
+      `[GraphDisambiguationContext] Failed to build children outline for ${nodeId}:`,
       err,
     );
   }

@@ -9,6 +9,7 @@ import { aiService } from "../ai/aiService";
 import { getSupabaseAdmin } from "../../supabase";
 import type { StudyCard } from "../../../shared/types/common";
 import { notDeleted } from '../common/softDeleteHelper';
+import { buildGraphDisambiguationContext } from '../graph/graphDisambiguationContext';
 
 interface CreateCardWithGraphNodeData {
   knowledge_point_id: string;
@@ -253,6 +254,13 @@ export class StudyRouteService {
 
     for (const gn of graphNodes) {
       try {
+        // 方案G：消歧上下文（图谱元数据 + 祖先链 + 直接子节点）：best-effort，失败不影响生成
+        const disambiguation = await buildGraphDisambiguationContext(
+          getSupabaseAdmin(),
+          gn.graph_id,
+          gn.knowledge_point_id,
+        );
+
         const aiResult = await aiService.generateCards(
           gn.title || "",
           gn.content || "",
@@ -263,6 +271,7 @@ export class StudyRouteService {
             model: config.model,
             userId,
             graphId: gn.graph_id,
+            disambiguation,
           },
         );
 

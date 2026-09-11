@@ -17,6 +17,7 @@ import { deriveFocusTopicFallback } from '@shared/utils/cards';
 import { resolveLocalizedText } from '@shared/utils/localization';
 import { getKnowledgePoint } from '../../utils/nodeHelpers';
 import { resolveInitialNextReview } from '../study/cardInitialSchedule';
+import { buildGraphDisambiguationContext } from '../graph/graphDisambiguationContext';
 
 interface QuizGenerationTaskConfig {
   cardTypes: string[];
@@ -290,6 +291,13 @@ export class QuizGenerationProcessor implements TaskProcessor {
         const { node, parentNode, tasks, effectiveDifficulty } = plan;
         let context = parentNode ? `Parent Node: "${parentNode.title}"` : 'Root Node';
 
+        // 方案G：消歧上下文（图谱元数据 + 祖先链 + 直接子节点）：best-effort，失败不影响生成
+        const disambiguation = await buildGraphDisambiguationContext(
+          supabase,
+          node.graph_id,
+          node.id,
+        );
+
         if (customPrompt) {
           context = `${context}\n\nCustom Instructions: ${customPrompt}`;
         }
@@ -312,6 +320,7 @@ export class QuizGenerationProcessor implements TaskProcessor {
               userId,
               graphId: quizSet.graph_id,
               customPrompt,
+              disambiguation,
             });
 
             const cards = (aiResult.cards || []) as GeneratedCard[];

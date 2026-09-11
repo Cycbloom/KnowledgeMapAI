@@ -21,6 +21,7 @@ import type { GenerateCardsCoverage } from '../ai/cardGenerationService';
 import { deriveFocusTopicFallback } from '@shared/utils/cards';
 import { buildTasksToRun as buildTasksToRunShared } from './questionTaskDispatcher';
 import { resolveInitialNextReview } from '../study/cardInitialSchedule';
+import { buildGraphDisambiguationContext } from '../graph/graphDisambiguationContext';
 
 interface GenerateQuestionsPayload {
   knowledge_point_id: string;
@@ -125,6 +126,15 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
         .single();
       const graph_id = payload.graph_id || graphNodeData?.graph_id;
 
+      // 方案G：消歧上下文（图谱元数据 + 祖先链 + 直接子节点）：best-effort，失败不影响生成
+      const language = config?.language;
+      const disambiguation = await buildGraphDisambiguationContext(
+        supabase,
+        graph_id,
+        node_id,
+        language,
+      );
+
       // 方案F：兄弟节点干扰项 —— 覆盖 with_siblings / graph 时查询当前节点的同父兄弟节点
       const coverage = (config?.coverage as GenerateCardsCoverage) ?? 'current_only';
       const needsSiblings = coverage === 'with_siblings' || coverage === 'graph';
@@ -167,7 +177,6 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
 
       const provider = config?.provider || payload.provider;
       const model = config?.model || payload.model;
-      const language = config?.language;
       const customPrompt = config?.custom_prompt;
 
       logger.debug(
@@ -207,6 +216,7 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
               ...(needsChildren && childrenNodes.length > 0 ? { childrenNodes } : {}),
               ...(needsSiblings && siblingNodes.length > 0 ? { siblingNodes } : {}),
               maxSiblingDistractors: 3,
+              disambiguation,
             },
           );
           const cards = (aiResult.cards || []) as AIGeneratedCard[];

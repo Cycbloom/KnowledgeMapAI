@@ -538,8 +538,9 @@ Requirements:
 1. Generate exactly {{count}} cards.
 2. Allowed Types: {{allowedTypes}}.
 3. Mix the types if multiple are selected.
+4. Make each question SELF-CONTAINED and directly answerable on its own. Do NOT use material-referencing prefaces such as "材料中/文中/上文提到/根据材料" — the learner answers the flashcard without reading the source material. 
 {{#if difficulty}}
-4. Difficulty: {{difficulty}}.
+5. Difficulty: {{difficulty}}.
 {{/if}}
 
 {{#if includesQA}}

@@ -61,7 +61,7 @@ test.describe("关键用户旅程冒烟测试", () => {
     expect(node.title).toBe(nodeTitle);
 
     // 通过 GET 验证节点已持久化
-    const getRes = await authedRequest(page, "GET", `/api/v1/nodes/${node.id}`);
+    const getRes = await authedRequest(page, "GET", `/api/v1/nodes/${node.id}?graph_id=${testGraph.id}`);
     expect(getRes.ok).toBe(true);
     const fetched = getRes.body as { title: string; graph_id: string };
     expect(fetched.title).toBe(nodeTitle);

@@ -262,7 +262,7 @@ export const LearningMode = () => {
           if (s.status === "completed") {
             setMaterialProgress(null);
             setIsPreGenPending(false);
-            const fresh = await api.nodes.get(nodeId);
+            const fresh = await api.nodes.get(nodeId, graphId ?? "");
             if (preGenSessionRef.current !== genSession) return;
             const freshMaterial = fresh.learning_material?.[materialLangCode];
             if (freshMaterial && freshMaterial.trim().length > 0) {
@@ -468,10 +468,10 @@ export const LearningMode = () => {
   const { data: node, isLoading: isNodeLoading } = useQuery({
     queryKey: queryKeys.nodeDetail(nodeId ?? ""),
     queryFn: () => {
-      if (!nodeId) {
-        throw new Error("nodeId is required");
+      if (!nodeId || !graphId) {
+        throw new Error("nodeId and graphId are required");
       }
-      return api.nodes.get(nodeId);
+      return api.nodes.get(nodeId, graphId);
     },
     enabled: !!nodeId,
     ...defaultQueryConfig,

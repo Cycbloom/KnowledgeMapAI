@@ -12,6 +12,7 @@ import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { transactionExecutor } from '../../database/transactionExecutor';
 import { notDeleted } from '../common/softDeleteHelper';
+import { checkGraphAccess } from '../common/graphAccess';
 import { nodeBatchService } from './nodeBatchService';
 import {
   mergeLocalizedTranslation,
@@ -313,9 +314,25 @@ export class NodesService {
 
   async getNode(
     supabase: SupabaseClient,
-    _userId: string,
+    userId: string,
     knowledgePointId: string,
+    graphId: string,
   ) {
+    // 校验调用者对目标图谱有访问权（owner / 协作者 / 公共图谱 viewer）
+    const access = await checkGraphAccess(supabase, graphId, userId, {
+      requiredRole: 'viewer',
+      includePublic: true,
+    });
+    if (!access.hasAccess) {
+      throw new AppError(
+        i18next.t('graphMap.nodes.errors.unauthorizedAccess'),
+        403,
+        ErrorCodes.AUTH_FORBIDDEN,
+      );
+    }
+
+    // 同一知识点可存在于多个图谱，需按 (graph_id, knowledge_point_id) 唯一定位，
+    // 否则 maybeSingle 会因命中多行触发 PGRST116。
     const { data: graphNode, error } = await notDeleted(supabase
       .from('graph_nodes')
       .select(
@@ -345,6 +362,7 @@ export class NodesService {
       )
     `,
       )
+      .eq('graph_id', graphId)
       .eq('knowledge_point_id', knowledgePointId)
       )
       .maybeSingle();

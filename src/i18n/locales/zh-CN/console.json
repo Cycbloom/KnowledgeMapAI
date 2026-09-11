@@ -405,7 +405,7 @@
       "aiAnalyzeDesc": "使用 AI 分析图谱",
       "aiAnalyzeUsage": "ai analyze --graph <图谱ID> --type <类型>",
       "aiGenerateDesc": "使用 AI 为节点生成内容",
-      "aiGenerateUsage": "ai generate --type <类型> --node <节点ID>",
+      "aiGenerateUsage": "ai generate --type <类型> --node <节点ID> --graph <图谱ID>",
       "aiBatchDesc": "批量处理图谱节点（警告操作）",
       "aiBatchUsage": "ai batch --graph <图谱ID> --operation <操作>",
       "graphToAnalyzeOption": "要分析的图谱 ID",

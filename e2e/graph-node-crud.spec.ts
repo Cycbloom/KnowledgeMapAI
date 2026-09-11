@@ -59,7 +59,7 @@ test.describe("图谱节点增删改冒烟测试", () => {
     const nodeId = await createNormalNode(page, testGraph.id, nodeTitle);
 
     // 通过 GET 读回相同 title 与 graph_id
-    const getRes = await authedRequest(page, "GET", `/api/v1/nodes/${nodeId}`);
+    const getRes = await authedRequest(page, "GET", `/api/v1/nodes/${nodeId}?graph_id=${testGraph.id}`);
     expect(getRes.ok).toBe(true);
     const fetched = getRes.body as NodeResponse;
     expect(fetched.title).toBe(nodeTitle);
@@ -89,7 +89,7 @@ test.describe("图谱节点增删改冒烟测试", () => {
     expect(updated.title).toBe(updatedTitle);
 
     // 通过 GET 再次读回,确认更新已持久化
-    const getRes = await authedRequest(page, "GET", `/api/v1/nodes/${nodeId}`);
+    const getRes = await authedRequest(page, "GET", `/api/v1/nodes/${nodeId}?graph_id=${testGraph.id}`);
     expect(getRes.ok).toBe(true);
     const fetched = getRes.body as NodeResponse;
     expect(fetched.title).toBe(updatedTitle);
@@ -114,7 +114,7 @@ test.describe("图谱节点增删改冒烟测试", () => {
     expect(deleteRes.ok, `删除节点失败: HTTP ${deleteRes.status}`).toBe(true);
 
     // 删除后再次 GET 应返回 404（软删除后不可见）
-    const getRes = await authedRequest(page, "GET", `/api/v1/nodes/${nodeId}`);
+    const getRes = await authedRequest(page, "GET", `/api/v1/nodes/${nodeId}?graph_id=${testGraph.id}`);
     expect(getRes.status).toBe(404);
     const body = getRes.body as ErrorResponse;
     expect(body.code).toBe("RESOURCE_NODE_NOT_FOUND");

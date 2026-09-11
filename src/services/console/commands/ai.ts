@@ -67,6 +67,7 @@ const handleAiAnalyze = async (args: ParsedArgs, _context: CommandContext): Prom
 const handleAiGenerate = async (args: ParsedArgs, _context: CommandContext): Promise<CommandResult> => {
   const type = args.options.type as string;
   const nodeId = args.options.node as string;
+  const graphId = args.options.graph as string;
 
   if (!type) {
     return { success: false, error: i18n.t('console.commands.ai.generateTypeRequired') };
@@ -76,13 +77,17 @@ const handleAiGenerate = async (args: ParsedArgs, _context: CommandContext): Pro
     return { success: false, error: i18n.t('console.commands.ai.nodeIdRequiredOption') };
   }
 
+  if (!graphId) {
+    return { success: false, error: i18n.t('console.commands.ai.graphIdRequiredOption') };
+  }
+
   const validTypes = ['content', 'learning-material', 'cards', 'expansion'];
   if (!validTypes.includes(type)) {
     return { success: false, error: i18n.t('console.commands.ai.invalidGenerateType', { types: validTypes.join(', ') }) };
   }
 
   try {
-    const node = await nodesApi.get(nodeId);
+    const node = await nodesApi.get(nodeId, graphId);
     const nodeTitle = node.title || i18n.t('console.commands.common.noTitle');
     const nodeContent = node.content || '';
 
@@ -271,6 +276,13 @@ export const aiCommand: Command = {
           alias: 'n',
           type: 'string',
           description: i18n.t('console.commands.ai.nodeOption'),
+          required: true,
+        },
+        {
+          name: 'graph',
+          alias: 'g',
+          type: 'string',
+          description: i18n.t('console.commands.ai.graphOptionAi'),
           required: true,
         },
       ],

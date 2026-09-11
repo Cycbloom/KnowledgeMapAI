@@ -43,10 +43,10 @@ describe('nodesApi', () => {
   });
 
   describe('get', () => {
-    it('应该调用 GET /nodes/${id}', () => {
-      nodesApi.get('n1');
+    it('应该调用 GET /nodes/${id}?graph_id=${graphId}', () => {
+      nodesApi.get('n1', 'g1');
 
-      expect(request).toHaveBeenCalledWith('/nodes/n1');
+      expect(request).toHaveBeenCalledWith('/nodes/n1?graph_id=g1');
     });
   });
 

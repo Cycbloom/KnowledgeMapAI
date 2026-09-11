@@ -9,7 +9,7 @@ import type {
 export interface INodesApi {
   create(data: CreateNodeData): Promise<Node>;
 
-  get(id: string): Promise<Node>;
+  get(id: string, graphId: string): Promise<Node>;
 
   update(
     id: string,

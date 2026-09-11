@@ -12,7 +12,7 @@ import type { INodesApi, IEdgesApi } from './contracts';
 export const nodesApi: INodesApi = {
   create: (data: CreateNodeData) => request<Node>('/nodes', { method: 'POST', body: JSON.stringify(data) }),
   
-  get: (id: string) => request<Node>(`/nodes/${id}`),
+  get: (id: string, graphId: string) => request<Node>(`/nodes/${id}?graph_id=${encodeURIComponent(graphId)}`),
   
   update: (id: string, data: UpdateNodeData & { keywords?: Record<string, Keyword[]> }) => request<Node>(`/nodes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   

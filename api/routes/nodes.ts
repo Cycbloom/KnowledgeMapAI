@@ -14,6 +14,8 @@ import {
 } from "../schemas/index";
 import { nodesService, knowledgePointService } from "../services/graph";
 import { logSecurityEvent, createSecurityEvent } from "../services/audit/auditService";
+import { AppError } from "../middleware/errorHandler";
+import { ErrorCodes } from "../../shared/types/errorCodes";
 
 const router = Router();
 
@@ -37,7 +39,11 @@ router.get(
   requireAuth,
   async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
-    const data = await nodesService.getNode(req.supabase, req.user.id, id);
+    const graphId = typeof req.query.graph_id === "string" ? req.query.graph_id : "";
+    if (!graphId) {
+      throw new AppError("graph_id is required", 400, ErrorCodes.VALIDATION_ERROR);
+    }
+    const data = await nodesService.getNode(req.supabase, req.user.id, id, graphId);
     res.json(data);
   },
 );

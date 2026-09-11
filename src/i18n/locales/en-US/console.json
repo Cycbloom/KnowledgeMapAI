@@ -406,7 +406,7 @@
       "aiAnalyzeDesc": "Analyze graph using AI",
       "aiAnalyzeUsage": "ai analyze --graph <graphId> --type <type>",
       "aiGenerateDesc": "Generate content for node using AI",
-      "aiGenerateUsage": "ai generate --type <type> --node <nodeId>",
+      "aiGenerateUsage": "ai generate --type <type> --node <nodeId> --graph <graphId>",
       "aiBatchDesc": "Batch process graph nodes (warning operation)",
       "aiBatchUsage": "ai batch --graph <graphId> --operation <operation>",
       "graphToAnalyzeOption": "Graph ID to analyze",

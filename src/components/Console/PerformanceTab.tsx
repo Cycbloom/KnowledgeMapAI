@@ -960,7 +960,12 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
   }, [timeRange]);
 
   // 计算 query 参数
-  const startTime = getTimeRangeTimestamp();
+  // useMemo 使 startTime 在同一 timeRange 下保持稳定，避免 Date.now()
+  // 每次渲染变化导致 queryKey 抖动、无限重新拉取 /logs 与 /stats
+  const startTime = useMemo(
+    () => getTimeRangeTimestamp(),
+    [getTimeRangeTimestamp],
+  );
   const logsQuery = {
     startTime,
     operation: filterOperation || undefined,

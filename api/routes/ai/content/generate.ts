@@ -24,6 +24,10 @@ import {
 } from "../../../services/ai";
 import { logger } from "../../../utils/logger";
 import {
+  buildGraphMetaContext,
+  formatGraphContextBlock,
+} from "../../../services/graph/graphDisambiguationContext";
+import {
   setSSEHeaders,
   sendStreamChunk,
   sendStreamDone,
@@ -65,6 +69,13 @@ router.post(
       language,
     );
 
+    // 图谱级消歧上下文（best-effort）：同步入口无 node_id，仅注入图谱元数据
+    const graphMeta = await buildGraphMetaContext(req.supabase, graph_id);
+    const graphBlock = formatGraphContextBlock(graphMeta);
+    const systemPromptWithContext = `${systemPrompt}${
+      graphBlock ? `\n\n${graphBlock}` : ""
+    }`;
+
     const enrichedMetadata = await enrichMetadata(req.supabase, {
       graphId: graph_id,
       userId: req.user.id,
@@ -75,7 +86,7 @@ router.post(
     const startTime = Date.now();
     const completion = await provider.client.chat.completions.create({
       messages: [
-        { role: "system", content: systemPrompt },
+        { role: "system", content: systemPromptWithContext },
         {
           role: "user",
           content: `Topic: ${topic}\nContext: ${context || "General knowledge"}`,
@@ -121,6 +132,9 @@ router.post(
     const { topic, context, level, provider, model, graph_id, language, schema_id } =
       req.body;
 
+    // 图谱级消歧上下文（best-effort）：与后台 generate_learning_material 任务对齐
+    const graphMeta = await buildGraphMetaContext(req.supabase, graph_id);
+
     const result = await aiService.generateLearningMaterial(topic, context, {
       provider,
       model,
@@ -129,6 +143,9 @@ router.post(
       graphId: graph_id,
       language,
       schema_id,
+      graphTitle: graphMeta.graphTitle,
+      graphDescription: graphMeta.graphDescription,
+      graphDomain: graphMeta.graphDomain,
     });
     res.json({ content: result.content, keywords: result.keywords });
   },
@@ -314,6 +331,13 @@ router.post(
         language,
       );
 
+      // 图谱级消歧上下文（best-effort）：同步入口无 node_id，仅注入图谱元数据
+      const graphMeta = await buildGraphMetaContext(req.supabase, graph_id);
+      const graphBlock = formatGraphContextBlock(graphMeta);
+      const systemPromptWithContext = `${systemPrompt}${
+        graphBlock ? `\n\n${graphBlock}` : ""
+      }`;
+
       const enrichedMetadata = await enrichMetadata(req.supabase, {
         graphId: graph_id,
         userId: req.user.id,
@@ -324,7 +348,7 @@ router.post(
       const startTime = Date.now();
       const stream = await provider.client.chat.completions.create({
         messages: [
-          { role: "system", content: systemPrompt },
+          { role: "system", content: systemPromptWithContext },
           {
             role: "user",
             content: `Topic: ${topic}\nContext: ${context || "General knowledge"}`,

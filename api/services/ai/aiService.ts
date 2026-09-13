@@ -187,6 +187,12 @@ export class AIService {
       graphId?: string;
       language?: string;
       schema_id?: string;
+      // 消歧上下文：图谱元数据（由同步路由通过 buildGraphMetaContext 提供）
+      graphTitle?: string;
+      graphDescription?: string;
+      graphDomain?: string;
+      parentChain?: string;
+      childrenOutline?: string;
     },
   ) {
     return contentGenerationService.generateLearningMaterial(topic, context, options);

@@ -25,6 +25,7 @@ import {
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { generateChildSuggestions } from "./nodeSuggestionService";
+import { buildGraphMetaContext } from "../graph/graphDisambiguationContext";
 
 export class KnowledgeExpansionService {
   async expandKnowledge(
@@ -48,12 +49,19 @@ export class KnowledgeExpansionService {
     const cacheKey = CacheKeys.AI_EXPAND(
       nodeTitle,
       options.contextLevel || "normal",
+      options.graphId,
     );
 
     try {
       return await cacheService.getOrSet<{ suggestions: unknown[] }>(
         cacheKey,
         async () => {
+          // 消歧上下文：同步链路无 node_id，仅注入图谱级元数据（best-effort）
+          const disambiguation = await buildGraphMetaContext(
+            getSupabaseAdmin(),
+            options.graphId,
+          );
+
           const result = await generateChildSuggestions(getSupabaseAdmin(), {
             nodeTitle,
             nodeContent,
@@ -70,6 +78,7 @@ export class KnowledgeExpansionService {
             userId: options.userId,
             graphId: options.graphId,
             allowMock: true,
+            disambiguation,
           });
 
           return { suggestions: result.children };

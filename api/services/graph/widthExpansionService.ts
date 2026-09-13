@@ -6,6 +6,7 @@ import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { checkDuplicateGraphTopic } from "../../utils/similaritySearch";
 import { aiService } from "../ai/aiService";
+import { buildGraphMetaContext } from "./graphDisambiguationContext";
 import { notDeleted } from "../common/softDeleteHelper";
 import { cacheService, CacheKeys } from "../common/cacheService";
 
@@ -105,11 +106,16 @@ async function suggestRelatedGraphs(
     );
   }
 
+  // 图谱级消歧上下文（best-effort）：补充源图谱描述/领域，帮助 AI 更准确定位领域边界
+  const graphMeta = await buildGraphMetaContext(supabase, params.sourceGraphId);
+
   const systemPrompt = await promptService.getRenderedPrompt(
     supabase,
     "infinite_graph_expansion",
     {
       domainTitle: params.sourceGraphTitle,
+      domainDescription: graphMeta.graphDescription,
+      domainField: graphMeta.graphDomain,
       maxGraphsPerLevel: params.max_graphs_per_level,
       parentDomainName: undefined,
     },

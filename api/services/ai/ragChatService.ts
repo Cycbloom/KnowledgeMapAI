@@ -8,6 +8,10 @@ import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { withAIMonitoring } from "./aiMonitor";
 import { withTimeoutAndRetry, LONG_TIMEOUT } from "../../../shared/utils/retry";
 import type { RAGSearchResult, RAGResponse } from "./ragService";
+import {
+  buildGraphMetaContext,
+  formatGraphContextBlock,
+} from "../graph/graphDisambiguationContext";
 
 export class RAGChatService {
 
@@ -68,18 +72,23 @@ export class RAGChatService {
         : "";
 
     const supabase = getSupabaseAdmin();
-    const systemPrompt = await promptService.getRenderedPrompt(
-      supabase,
-      "rag_chat",
-      {
-        context: context || "(暂无相关上下文)",
-        languageInstruction,
-        graphContextHint,
-      },
-      undefined,
-      graphId,
-      language,
-    );
+    // 图谱级消歧上下文（best-effort）：注入图谱标题/描述/领域，回答贴合当前图谱语义
+    const graphMeta = await buildGraphMetaContext(supabase, graphId);
+    const graphMetaBlock = formatGraphContextBlock(graphMeta);
+
+    const systemPrompt =
+      (await promptService.getRenderedPrompt(
+        supabase,
+        "rag_chat",
+        {
+          context: context || "(暂无相关上下文)",
+          languageInstruction,
+          graphContextHint,
+        },
+        undefined,
+        graphId,
+        language,
+      )) + (graphMetaBlock ? `\n\n${graphMetaBlock}` : "");
 
     const messages: Array<{
       role: "system" | "user" | "assistant";
@@ -273,18 +282,23 @@ export class RAGChatService {
         : "";
 
     const supabase = getSupabaseAdmin();
-    const systemPrompt = await promptService.getRenderedPrompt(
-      supabase,
-      "rag_chat",
-      {
-        context: context || "(暂无相关上下文)",
-        languageInstruction,
-        graphContextHint,
-      },
-      undefined,
-      graphId,
-      language,
-    );
+    // 图谱级消歧上下文（best-effort）：注入图谱标题/描述/领域，回答贴合当前图谱语义
+    const graphMeta = await buildGraphMetaContext(supabase, graphId);
+    const graphMetaBlock = formatGraphContextBlock(graphMeta);
+
+    const systemPrompt =
+      (await promptService.getRenderedPrompt(
+        supabase,
+        "rag_chat",
+        {
+          context: context || "(暂无相关上下文)",
+          languageInstruction,
+          graphContextHint,
+        },
+        undefined,
+        graphId,
+        language,
+      )) + (graphMetaBlock ? `\n\n${graphMetaBlock}` : "");
 
     const messages: Array<{
       role: "system" | "user" | "assistant";

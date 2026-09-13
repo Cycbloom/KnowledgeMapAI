@@ -7,6 +7,10 @@ import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { notDeleted } from '../common/softDeleteHelper';
 import {
+  buildGraphMetaContext,
+  formatGraphContextBlock,
+} from './graphDisambiguationContext';
+import {
   resolveLocalizedText,
   type LocalizedText,
 } from "../../../shared/utils/localization";
@@ -17,7 +21,7 @@ import { normalizeTitle, type HierarchySuggestion } from "./conceptAggregationSh
  */
 export class ConceptHierarchyService {
   async identifyHierarchy(
-    _supabase: SupabaseClient,
+    supabase: SupabaseClient,
     graphId: string,
     concepts: Array<{ id: string; title: string }>,
   ): Promise<HierarchySuggestion[]> {
@@ -35,7 +39,11 @@ export class ConceptHierarchyService {
         .map((c) => `- ${c.id}: ${c.title}`)
         .join("\n");
 
-      const prompt = `分析以下概念之间的 is-a（属于/包含）层级关系。
+      // 图谱级消歧上下文（best-effort）：帮助 AI 按当前图谱语义判断概念的抽象/具体关系
+      const graphMeta = await buildGraphMetaContext(supabase, graphId);
+      const graphContextBlock = formatGraphContextBlock(graphMeta);
+
+      const prompt = `${graphContextBlock ? `${graphContextBlock}\n\n` : ""}分析以下概念之间的 is-a（属于/包含）层级关系。
 
 概念列表：
 ${conceptList}

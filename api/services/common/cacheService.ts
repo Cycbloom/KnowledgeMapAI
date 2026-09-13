@@ -15,7 +15,8 @@ export const CacheKeys = {
   TASK_TEMPLATES: (userId: string, filtersKey: string) => `task_templates_${userId}_${filtersKey}`,
   TASK_TEMPLATE_CATEGORIES: (userId: string) => `task_template_categories_${userId}`,
   PROMPT_TEMPLATE: (code: string, userId: string = 'system', graphId: string = 'none') => `prompt_template_${code}_${userId}_${graphId}`,
-  AI_EXPAND: (title: string, level: string) => `ai_expand_${title}_${level}`,
+  AI_EXPAND: (title: string, level: string, graphId?: string) =>
+    `ai_expand_${graphId || "global"}_${title}_${level}`,
   AI_CARDS: (topic: string, types: string[], count: number) => `ai_cards_${topic}_${types.sort().join('_')}_${count}`,
   LEARNING_PATH: (graphId: string) => `learning_path_${graphId}`,
   KNOWLEDGE_POINT: (id: string) => `knowledge_point_${id}`,

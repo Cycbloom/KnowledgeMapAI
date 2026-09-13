@@ -1,6 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { buildGraphDisambiguationContext, buildGraphMetaContext } from "../../services/graph/graphDisambiguationContext";
+import {
+  buildGraphDisambiguationContext,
+  buildGraphMetaContext,
+  formatGraphContextBlock,
+} from "../../services/graph/graphDisambiguationContext";
 
 /**
  * 可编程 mock Supabase：`from(table)` 返回链式 builder，
@@ -216,5 +220,52 @@ describe("buildGraphMetaContext", () => {
 
     expect(ctx.hasContext).toBe(false);
     expect(ctx.graphTitle).toBeUndefined();
+  });
+});
+
+describe("formatGraphContextBlock", () => {
+  it("全部字段缺失：返回空串（零输出）", () => {
+    expect(
+      formatGraphContextBlock({
+        graphTitle: undefined,
+        graphDescription: undefined,
+        graphDomain: undefined,
+        parentChain: undefined,
+        childrenOutline: undefined,
+      }),
+    ).toBe("");
+  });
+
+  it("图谱元数据 + 层级信息：输出结构化块", () => {
+    const block = formatGraphContextBlock({
+      graphTitle: "深度学习",
+      graphDescription: "深度学习与神经网络",
+      graphDomain: "AI",
+      parentChain: "神经网络基础 → 注意力机制",
+      childrenOutline: "- 自注意力机制\n- 多头注意力",
+    });
+
+    expect(block).toContain('"深度学习"');
+    expect(block).toContain("domain: AI");
+    expect(block).toContain("Graph description: 深度学习与神经网络");
+    expect(block).toContain(
+      "Position in this graph's hierarchy: 神经网络基础 → 注意力机制",
+    );
+    expect(block).toContain("- 自注意力机制");
+    expect(block).toContain("Interpret the topic strictly within this knowledge graph");
+  });
+
+  it("仅图谱标题：最小可用的块", () => {
+    const block = formatGraphContextBlock({
+      graphTitle: "软件工程",
+      graphDescription: undefined,
+      graphDomain: undefined,
+      parentChain: undefined,
+      childrenOutline: undefined,
+    });
+
+    expect(block).toContain('"软件工程"');
+    expect(block).not.toContain("Graph description:");
+    expect(block).toContain("Interpret the topic strictly within this knowledge graph");
   });
 });

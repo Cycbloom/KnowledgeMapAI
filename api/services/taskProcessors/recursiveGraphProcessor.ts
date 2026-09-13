@@ -22,6 +22,10 @@ import {
   getGraphNodeTitleMap,
   canReuseNode,
 } from "../graph/graphDuplicateService";
+import {
+  buildGraphMetaContext,
+  buildGraphDisambiguationContext,
+} from "../graph/graphDisambiguationContext";
 
 interface RecursiveGraphPayload {
   graph_id: string;
@@ -120,6 +124,9 @@ export class RecursiveGraphProcessor implements TaskProcessor {
       // 即使同名也新建独立节点，避免「项目现状」「未来展望」等跨上下文语义串味。
       const existingNodeTitles = await getGraphNodeTitleMap(supabase, graph_id);
 
+      // 骨架生成发生在已有图谱上：注入图谱级上下文，让 AI 按当前图谱主题生成 root/core
+      const graphMeta = await buildGraphMetaContext(supabase, graph_id);
+
       const { root: rootData, coreNodes, description } = await generateGraphSkeleton(
         supabase,
         {
@@ -131,6 +138,7 @@ export class RecursiveGraphProcessor implements TaskProcessor {
           userId,
           graphId: graph_id,
           sessionId,
+          disambiguation: graphMeta,
         },
       );
 
@@ -266,6 +274,11 @@ export class RecursiveGraphProcessor implements TaskProcessor {
           );
 
           try {
+            const disambiguation = await buildGraphDisambiguationContext(
+              supabase,
+              graph_id,
+              nodeId,
+            );
             const { children } = await generateChildSuggestions(supabase, {
               nodeTitle,
               nodeContent: "",
@@ -276,6 +289,7 @@ export class RecursiveGraphProcessor implements TaskProcessor {
               userId,
               graphId: graph_id,
               sessionId,
+              disambiguation,
             });
 
             for (const child of children.slice(0, 5)) {
@@ -355,6 +369,11 @@ export class RecursiveGraphProcessor implements TaskProcessor {
           );
 
           try {
+            const disambiguation = await buildGraphDisambiguationContext(
+              supabase,
+              graph_id,
+              nodeId,
+            );
             const { children } = await generateChildSuggestions(supabase, {
               nodeTitle,
               nodeContent: "",
@@ -365,6 +384,7 @@ export class RecursiveGraphProcessor implements TaskProcessor {
               userId,
               graphId: graph_id,
               sessionId,
+              disambiguation,
             });
 
             for (const child of children.slice(0, 3)) {

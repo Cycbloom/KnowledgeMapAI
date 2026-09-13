@@ -13,6 +13,10 @@ import {
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { logger } from "../../utils/logger";
+import {
+  formatGraphContextBlock,
+  type GraphDisambiguationContext,
+} from "../graph/graphDisambiguationContext";
 
 export interface GeneratedChildNode {
   title: string;
@@ -50,6 +54,12 @@ export interface GenerateChildSuggestionsParams {
   graphId?: string;
   sessionId?: string;
   allowMock?: boolean;
+  /**
+   * 消歧上下文（图谱元数据 + 祖先链 + 直接子节点），由调用方
+   * 通过 buildGraphDisambiguationContext / buildGraphMetaContext 提供。
+   * 有值时以代码级方式无条件追加到 system prompt，兼容任意模板。
+   */
+  disambiguation?: GraphDisambiguationContext;
 }
 
 export interface GenerateGraphSkeletonParams {
@@ -66,6 +76,12 @@ export interface GenerateGraphSkeletonParams {
   userId?: string;
   graphId?: string;
   sessionId?: string;
+  /**
+   * 消歧上下文（图谱元数据 + 祖先链 + 直接子节点），由调用方
+   * 通过 buildGraphDisambiguationContext / buildGraphMetaContext 提供。
+   * 有值时以代码级方式无条件追加到 system prompt，兼容任意模板。
+   */
+  disambiguation?: GraphDisambiguationContext;
 }
 
 const MAX_PARSE_RETRIES = 2;
@@ -114,6 +130,7 @@ export async function generateChildSuggestions(
     graphId,
     sessionId,
     allowMock = false,
+    disambiguation,
   } = params;
 
   const resolvedProvider = await resolveProvider({ provider, providerType });
@@ -158,14 +175,15 @@ export async function generateChildSuggestions(
         : "",
   };
 
-  const systemPrompt = await promptService.getRenderedPrompt(
-    supabase,
-    "auto_graph_expand",
-    templateContext,
-    userId,
-    graphId,
-    language,
-  );
+  const systemPrompt =
+    (await promptService.getRenderedPrompt(
+      supabase,
+      "auto_graph_expand",
+      templateContext,
+      userId,
+      graphId,
+      language,
+    )) + disambiguationBlock(disambiguation);
 
   let parsed: { children?: GeneratedChildNode[] | null } | null | undefined;
 
@@ -302,6 +320,7 @@ export async function generateGraphSkeleton(
     userId,
     graphId,
     sessionId,
+    disambiguation,
   } = params;
 
   const resolvedProvider = await resolveProvider({ provider, providerType });
@@ -344,14 +363,15 @@ export async function generateGraphSkeleton(
           existingNodesInGraph,
         };
 
-  const systemPrompt = await promptService.getRenderedPrompt(
-    supabase,
-    "auto_graph_init",
-    templateContext,
-    userId,
-    graphId,
-    language,
-  );
+  const systemPrompt =
+    (await promptService.getRenderedPrompt(
+      supabase,
+      "auto_graph_init",
+      templateContext,
+      userId,
+      graphId,
+      language,
+    )) + disambiguationBlock(disambiguation);
 
   const run = () =>
     withAIMonitoring(
@@ -448,4 +468,16 @@ export async function generateGraphSkeleton(
         ? parsed.description.trim()
         : undefined,
   };
+}
+
+/**
+ * 将消歧上下文格式化为 system prompt 追加块。
+ * 无上下文或全空时返回空串（零输出、无回归），保证代码级追加兼容任意模板。
+ */
+function disambiguationBlock(
+  ctx: GraphDisambiguationContext | undefined,
+): string {
+  if (!ctx || !ctx.hasContext) return "";
+  const block = formatGraphContextBlock(ctx);
+  return block ? `\n\n${block}` : "";
 }

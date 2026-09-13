@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { NodeSpecificity } from "@shared/types";
 import { graphNodeService } from "./graphNodeService";
+import { buildGraphDisambiguationContext } from "./graphDisambiguationContext";
 import { edgeService } from "./edgeService";
 import { asyncTaskService } from "../asyncTaskService";
 import { logger } from "../../utils/logger";
@@ -1331,6 +1332,14 @@ export class AutoGraphService {
 
     const sessionId = inputSessionId || crypto.randomUUID();
 
+    // 消歧上下文：图谱元数据 + 祖先链 + 直接子节点，best-effort（失败返回空字段，不阻断展开）
+    const disambiguation = await buildGraphDisambiguationContext(
+      supabase,
+      graphId,
+      nodeId,
+      language,
+    );
+
     const result = await generateChildSuggestions(supabase, {
       nodeTitle,
       nodeContent,
@@ -1347,6 +1356,7 @@ export class AutoGraphService {
       userId,
       graphId,
       sessionId,
+      disambiguation,
     });
 
     return {

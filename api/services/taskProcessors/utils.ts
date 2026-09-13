@@ -11,6 +11,7 @@ import {
 import { graphNodeService } from "../graph/graphNodeService";
 import { findReusableKnowledgePointId } from "../../utils/similaritySearch";
 import { getGraphNodeTitleMap, canReuseNode } from "../graph/graphDuplicateService";
+import { buildGraphDisambiguationContext } from "../graph/graphDisambiguationContext";
 import type { NodeLevel, NodeSpecificity } from "@shared/types/graph";
 import {
   resolveLocalizedText,
@@ -239,6 +240,13 @@ export async function expandNodeForGraph(
       if (title) existingChildTitles.add(title);
     });
 
+    // 消歧上下文：图谱元数据 + 祖先链 + 直接子节点，best-effort（失败返回空字段，不阻断展开）
+    const disambiguation = await buildGraphDisambiguationContext(
+      supabase,
+      graphId,
+      parentNodeId,
+    );
+
     const { children } = await generateChildSuggestions(supabase, {
       nodeTitle: parentNodeTitle,
       nodeContent: parentNodeContent,
@@ -249,6 +257,7 @@ export async function expandNodeForGraph(
       userId,
       graphId,
       sessionId: effectiveSessionId,
+      disambiguation,
     });
 
     if (children.length > 0) {

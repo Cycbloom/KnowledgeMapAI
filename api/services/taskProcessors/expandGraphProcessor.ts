@@ -14,6 +14,7 @@ import { notDeleted } from "../common/softDeleteHelper";
 import { cacheService, CacheKeys } from "../common/cacheService";
 import { graphTaskService } from "../scheduler/graphTaskService";
 import { getGraphNodeTitleMap, canReuseNode } from "../graph/graphDuplicateService";
+import { buildGraphDisambiguationContext } from "../graph/graphDisambiguationContext";
 import {
   resolveLocalizedText,
   type LocalizedText,
@@ -142,6 +143,14 @@ export class ExpandGraphProcessor implements TaskProcessor {
         userId,
       );
 
+      // 消歧上下文：图谱元数据 + 祖先链 + 直接子节点，best-effort（失败返回空字段，不阻断展开）
+      const disambiguation = await buildGraphDisambiguationContext(
+        supabase,
+        graphId,
+        nodeId,
+        payload.language as string | undefined,
+      );
+
       const { children } = await generateChildSuggestions(supabase, {
         nodeTitle: nodeTitle || nodeId,
         nodeContent,
@@ -152,6 +161,7 @@ export class ExpandGraphProcessor implements TaskProcessor {
         model: payload.model,
         userId,
         graphId,
+        disambiguation,
       });
 
       control.throwIfAborted();

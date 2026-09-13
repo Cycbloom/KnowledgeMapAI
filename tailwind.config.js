@@ -89,6 +89,7 @@ export default {
         base: "var(--z-base)",
         dropdown: "var(--z-dropdown)",
         "modal-overlay": "var(--z-modal-overlay)",
+        notification: "var(--z-notification)",
         modal: "var(--z-modal)",
         "modal-upper": "var(--z-modal-upper)",
         fullscreen: "var(--z-fullscreen)",

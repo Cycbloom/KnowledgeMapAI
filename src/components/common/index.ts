@@ -90,3 +90,4 @@ export type { StaggerChildrenProps } from "./StaggerChildren";
 export { VirtualList, VirtualGrid } from "./VirtualList";
 export type { VirtualListProps, VirtualGridProps } from "./VirtualList";
 export { UpdateOverlay } from "./UpdateOverlay";
+export { NotificationHost } from "./NotificationHost";

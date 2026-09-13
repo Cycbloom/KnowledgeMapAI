@@ -39,21 +39,22 @@ import { Breadcrumb } from "./Breadcrumb";
 import { HeaderGreeting } from "./HeaderGreeting";
 import { NotificationCenter } from "../Notifications/NotificationCenter";
 import { AchievementNotification } from "../Scheduler/AchievementNotification";
-import { LevelTestNotification } from "../Learning/LevelTestNotification";
+import { LevelTestNotificationBridge } from "../Learning/LevelTestNotification";
 import { useLevelTestNotificationStore } from "../../store/useLevelTestNotificationStore";
-import { RelationDiscoveryNotification } from "../GraphEditor/RelationDiscoveryNotification";
+import { RelationDiscoveryNotificationBridge } from "../GraphEditor/RelationDiscoveryNotification";
 import { useRelationDiscoveryNotificationStore } from "../../store/useRelationDiscoveryNotificationStore";
-import { AutoClassifyNotification } from "../GraphMap/AutoClassifyNotification";
+import { AutoClassifyNotificationBridge } from "../GraphMap/AutoClassifyNotification";
 import { useAutoClassifyNotificationStore } from "../../store/useAutoClassifyNotificationStore";
 import { useAutoClassifyPanelStore } from "../../store/useAutoClassifyPanelStore";
-import { GoalDialogVariantNotification } from "../GraphMap/GoalDialogVariantNotification";
+import { GoalDialogVariantNotificationBridge } from "../GraphMap/GoalDialogVariantNotification";
 import { useGoalDialogVariantNotificationStore } from "../../store/useGoalDialogVariantNotificationStore";
 import { useGoalDialogVariantOpenStore } from "../../store/useGoalDialogVariantOpenStore";
-import { GraphExpansionNotification } from "../GraphMap/GraphExpansionNotification";
+import { GraphExpansionNotificationBridge } from "../GraphMap/GraphExpansionNotification";
 import { useGraphExpansionNotificationStore } from "../../store/useGraphExpansionNotificationStore";
 import { EmbeddingBackfillToast } from "../Notifications/EmbeddingBackfillToast";
 import { ReviewReminderToast } from "../Notifications/ReviewReminderToast";
 import { DeadlineReminderToast } from "../Notifications/DeadlineReminderToast";
+import { NotificationHost } from "../common/NotificationHost";
 import { AnimatedOutlet } from "./AnimatedOutlet";
 import { useIsMobile } from "../../hooks/common/useIsMobile";
 import { useSwipeBack } from "../../hooks/gesture/useSwipeBack";
@@ -526,8 +527,6 @@ export const Layout = () => {
     [queryClient],
   );
 
-  const levelTestNotice = useLevelTestNotificationStore((s) => s.notice);
-
   const handleLevelTestStart = useCallback(() => {
     const notice = useLevelTestNotificationStore.getState().notice;
     if (!notice) return;
@@ -542,10 +541,6 @@ export const Layout = () => {
     useLevelTestNotificationStore.getState().clearNotice();
   }, []);
 
-  const relationNotice = useRelationDiscoveryNotificationStore(
-    (s) => s.notice,
-  );
-
   const handleRelationContinue = useCallback(() => {
     const notice = useRelationDiscoveryNotificationStore.getState().notice;
     if (!notice) return;
@@ -559,10 +554,6 @@ export const Layout = () => {
     useRelationDiscoveryNotificationStore.getState().clearNotice();
   }, []);
 
-  const autoClassifyNotice = useAutoClassifyNotificationStore(
-    (s) => s.notice,
-  );
-
   const handleAutoClassifyContinue = useCallback(() => {
     const notice = useAutoClassifyNotificationStore.getState().notice;
     if (!notice) return;
@@ -575,10 +566,6 @@ export const Layout = () => {
     useAutoClassifyNotificationStore.getState().clearNotice();
   }, []);
 
-  const goalVariantNotice = useGoalDialogVariantNotificationStore(
-    (s) => s.notice,
-  );
-
   const handleGoalVariantContinue = useCallback(() => {
     const notice = useGoalDialogVariantNotificationStore.getState().notice;
     if (!notice) return;
@@ -590,10 +577,6 @@ export const Layout = () => {
   const handleGoalVariantClose = useCallback(() => {
     useGoalDialogVariantNotificationStore.getState().clearNotice();
   }, []);
-
-  const graphExpansionNotice = useGraphExpansionNotificationStore(
-    (s) => s.notice,
-  );
 
   const handleGraphExpansionContinue = useCallback(() => {
     const notice = useGraphExpansionNotificationStore.getState().notice;
@@ -882,31 +865,12 @@ export const Layout = () => {
           <EmbeddingBackfillToast />
           <ReviewReminderToast />
           <DeadlineReminderToast />
-          <LevelTestNotification
-            notice={levelTestNotice}
-            onClose={handleLevelTestClose}
-            onStart={handleLevelTestStart}
-          />
-          <RelationDiscoveryNotification
-            notice={relationNotice}
-            onClose={handleRelationClose}
-            onContinue={handleRelationContinue}
-          />
-          <AutoClassifyNotification
-            notice={autoClassifyNotice}
-            onClose={handleAutoClassifyClose}
-            onContinue={handleAutoClassifyContinue}
-          />
-          <GoalDialogVariantNotification
-            notice={goalVariantNotice}
-            onClose={handleGoalVariantClose}
-            onContinue={handleGoalVariantContinue}
-          />
-          <GraphExpansionNotification
-            notice={graphExpansionNotice}
-            onClose={handleGraphExpansionClose}
-            onContinue={handleGraphExpansionContinue}
-          />
+          <LevelTestNotificationBridge onClose={handleLevelTestClose} onStart={handleLevelTestStart} />
+          <RelationDiscoveryNotificationBridge onClose={handleRelationClose} onContinue={handleRelationContinue} />
+          <AutoClassifyNotificationBridge onClose={handleAutoClassifyClose} onContinue={handleAutoClassifyContinue} />
+          <GoalDialogVariantNotificationBridge onClose={handleGoalVariantClose} onContinue={handleGoalVariantContinue} />
+          <GraphExpansionNotificationBridge onClose={handleGraphExpansionClose} onContinue={handleGraphExpansionContinue} />
+          <NotificationHost />
           {isMobile ? <MobileFocusTimer /> : <FocusTimer />}
           {isHelpOpen && (
             <Suspense fallback={null}>

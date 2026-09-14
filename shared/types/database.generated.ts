@@ -2607,7 +2607,6 @@ export type Database = {
       }
       prompt_templates: {
         Row: {
-          callers: string[] | null
           code: string
           created_at: string | null
           description: Json | null
@@ -2620,7 +2619,6 @@ export type Database = {
           variables: string[] | null
         }
         Insert: {
-          callers?: string[] | null
           code: string
           created_at?: string | null
           description?: Json | null
@@ -2633,7 +2631,6 @@ export type Database = {
           variables?: string[] | null
         }
         Update: {
-          callers?: string[] | null
           code?: string
           created_at?: string | null
           description?: Json | null

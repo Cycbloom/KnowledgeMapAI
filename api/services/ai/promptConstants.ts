@@ -24,7 +24,6 @@ export interface PromptTemplate {
   graph_id?: string | null;
   template_content: string;
   description?: { zh?: string; en?: string } | null;
-  callers?: string[] | null;
   variables?: string[] | null;
   created_at: string;
   updated_at: string;

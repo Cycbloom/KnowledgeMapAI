@@ -11,7 +11,6 @@ CREATE TABLE IF NOT EXISTS prompt_templates (
   graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE CASCADE,
   template_content TEXT NOT NULL,
   description JSONB,
-  callers TEXT[] DEFAULT '{}',
   variables TEXT[] DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),

@@ -1,6 +1,8 @@
 import { getAIProviderForTask, getAIProvider } from "./factory";
 import type { AIProviderType } from "@shared/types";
 import type { Keyword } from "@shared/types/graph";
+import { getCategoryOptions } from "@shared/template/promptDefaults";
+import { formatGraphContextBlock } from "@shared/template/formatGraphContextBlock";
 import {
   isEnglishLanguage,
   dedupedRequest,
@@ -244,9 +246,7 @@ export class ContentGenerationService {
                 /\{\{outputLanguage\}\}/g,
                 outputLanguage,
               );
-              const categoryOptions = isEnglishLanguage(options.language)
-                ? "'Definition', 'Concept', 'Method', 'Conclusion', 'Principle', 'Application', 'Terminology'"
-                : "'定义', '概念', '方法', '结论', '原理', '应用', '术语'";
+              const categoryOptions = getCategoryOptions(options.language);
               systemPrompt = systemPrompt.replace(
                 /\{\{categoryOptions\}\}/g,
                 categoryOptions,
@@ -361,37 +361,7 @@ export class ContentGenerationService {
     parentChain?: string;
     childrenOutline?: string;
   }): string {
-    const { graphTitle, graphDescription, graphDomain, parentChain, childrenOutline } = options;
-    if (
-      !graphTitle && !graphDescription && !graphDomain &&
-      !parentChain && !childrenOutline
-    ) {
-      return "";
-    }
-
-    const lines: string[] = ["## Knowledge Graph Context"];
-    const graphRef = [graphTitle ? `"${graphTitle}"` : undefined, graphDomain ? `domain: ${graphDomain}` : undefined]
-      .filter((s): s is string => Boolean(s))
-      .join(" ");
-    if (graphRef) {
-      lines.push(`This knowledge point belongs to the knowledge graph ${graphRef}.`);
-    }
-    if (graphDescription) {
-      lines.push(`Graph description: ${graphDescription}`);
-    }
-    if (parentChain) {
-      lines.push(`Position in this graph's hierarchy: ${parentChain}`);
-    }
-    if (childrenOutline) {
-      lines.push("This node covers the following sub-concepts in this graph:");
-      lines.push(childrenOutline);
-    }
-    lines.push(
-      "IMPORTANT: Interpret the topic strictly within this knowledge graph's context. " +
-        "If the term has multiple meanings across different fields, use the graph context above " +
-        "to determine the intended meaning, and state the assumed meaning in the Introduction.",
-    );
-    return lines.join("\n");
+    return formatGraphContextBlock(options);
   }
 
   async generateTaskDetails(

@@ -8,6 +8,7 @@ import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { withAIMonitoring } from "./aiMonitor";
 import { withTimeoutAndRetry, LONG_TIMEOUT } from "../../../shared/utils/retry";
 import type { RAGSearchResult, RAGResponse } from "./ragService";
+import { GRAPH_CONTEXT_HINT } from "@shared/template/injections";
 import {
   buildGraphMetaContext,
   formatGraphContextBlock,
@@ -60,7 +61,7 @@ export class RAGChatService {
 
     const graphContextHint =
       useGraphContext && graphId && context.includes("[图谱关联节点]")
-        ? `\n\n重要提示：以下知识上下文中包含通过图谱关系发现的关联节点（标记为"图谱关联"）。这些节点之间存在图谱关系路径，请利用这些关系进行推理和解释，帮助用户理解知识之间的深层联系。\n`
+        ? `\n\n${GRAPH_CONTEXT_HINT}\n`
         : "";
 
     const supabase = getSupabaseAdmin();

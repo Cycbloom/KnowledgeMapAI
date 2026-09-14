@@ -7,6 +7,7 @@ import { promptService } from "./promptService";
 import { getSupabaseAdmin } from "../../supabase";
 import { logger } from "../../utils/logger";
 import { withAIMonitoring } from "./aiMonitor";
+import { WEB_SEARCH_SYSTEM_HINT } from "@shared/template/injections";
 import {
   getMockResponse,
 } from "./mock";
@@ -58,10 +59,7 @@ const webSearchTool = {
   },
 } as const;
 
-// 附加到 system prompt 末尾，让模型知道具备联网能力并主动调用
-const WEB_SEARCH_SYSTEM_HINT =
-  "\n\n【能力提示】你可以调用工具 web_search 联网搜索，获取实时、最新或超出你知识范围的信息。" +
-  "当用户提问涉及最新新闻、时效数据、实时资讯，或你无法确定答案时，请优先调用 web_search 后再作答。";
+// 附加到 system prompt 末尾，让模型知道具备联网能力并主动调用（shared/template/injections）
 
 // 工具调用的消息元素（assistant / tool role）
 interface ToolRoleMessage {

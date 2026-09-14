@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { TemplateEngine } from "../../utils/templateEngine";
+import { renderPromptContent } from "@shared/template/renderPrompt";
 import { cacheService, CacheKeys } from "../common/cacheService";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
@@ -12,7 +13,6 @@ import {
   type PromptListOptions,
   type PromptCreateData,
   type PromptUpdateData,
-  isEnglishLanguage,
   getLanguageInstruction,
   DEFAULT_PROMPTS,
   OUTPUT_SCHEMAS,
@@ -57,6 +57,9 @@ function mergeSystemTemplatesWithDefaults(
       user_id: null,
       graph_id: null,
       template_content: DEFAULT_PROMPTS[code],
+      variables: TemplateEngine.extractVariables(
+        `${DEFAULT_PROMPTS[code]}\n${OUTPUT_SCHEMAS[code] ?? ""}`,
+      ),
       created_at: now,
       updated_at: now,
     });
@@ -73,6 +76,22 @@ function mergeSystemTemplatesWithDefaults(
   return Array.from(merged.values()).sort((a, b) =>
     a.code.localeCompare(b.code),
   );
+}
+
+/**
+ * 确保每条模板都带 variables 元数据：DB 已注册则用 DB 值，
+ * 否则从模板文本自动提取（保证新 code 无需手动注册即可获得变量清单）。
+ */
+function fillTemplateVariables(rows: PromptTemplate[]): PromptTemplate[] {
+  return rows.map((row) => ({
+    ...row,
+    variables:
+      row.variables && row.variables.length > 0
+        ? row.variables
+        : TemplateEngine.extractVariables(
+            `${row.template_content ?? ""}\n${OUTPUT_SCHEMAS[row.code] ?? ""}`,
+          ),
+  }));
 }
 
 export class PromptService {
@@ -119,9 +138,9 @@ export class PromptService {
     }
 
     return {
-      system: mergeSystemTemplatesWithDefaults(systemTemplates),
-      user: userTemplates || [],
-      graph: graphTemplates,
+      system: fillTemplateVariables(mergeSystemTemplatesWithDefaults(systemTemplates)),
+      user: fillTemplateVariables(userTemplates || []),
+      graph: fillTemplateVariables(graphTemplates),
     };
   }
 
@@ -245,12 +264,6 @@ export class PromptService {
   ): Promise<string> {
     const template = await this.getTemplate(supabase, code, userId, graphId);
 
-    // 预计算输出语言并注入渲染上下文。模板正文中的 {{outputLanguage}} 依赖该变量，
-    // 必须由 TemplateEngine.render 正确替换（放在上下文里，而不是事后 replace，
-    // 否则会被模板引擎当作缺失变量替换成空字符串）。
-    const outputLanguage = isEnglishLanguage(language) ? "English" : "Chinese";
-    const renderContext = { ...context, outputLanguage };
-
     let content = "";
     let source: "graph" | "user" | "system" | "default" = "default";
 
@@ -262,12 +275,7 @@ export class PromptService {
       const defaultPrompt = DEFAULT_PROMPTS[code];
       if (defaultPrompt) {
         logger.info(`[prompt:${code}] source=default (fallback)`);
-        try {
-          content = TemplateEngine.render(defaultPrompt, renderContext);
-        } catch (e) {
-          logger.error(`Failed to render default prompt ${code}`, e);
-          content = defaultPrompt;
-        }
+        content = defaultPrompt;
       } else {
         logger.warn(
           `No template found for code: ${code}. Using empty fallback.`,
@@ -286,34 +294,24 @@ export class PromptService {
       logger.info(
         `[prompt:${code}] source=${source} template_id=${template.id ?? "unsaved"}`,
       );
-      try {
-        content = TemplateEngine.render(template.template_content, renderContext);
-      } catch (e) {
-        logger.error(`Failed to render prompt ${code}`, e);
-        content = template.template_content;
-      }
+      content = template.template_content;
     }
 
-    // Append fixed schema if exists
-    if (OUTPUT_SCHEMAS[code]) {
-      content += `\n\n${OUTPUT_SCHEMAS[code]}`;
+    // 统一渲染收尾（shared/renderPrompt）：变量渲染 + schema 追加 +
+    // outputLanguage/categoryOptions 兜底 + 语言指令。渲染失败回退原文+schema。
+    try {
+      return renderPromptContent({
+        content,
+        context,
+        language,
+        schema: OUTPUT_SCHEMAS[code],
+      });
+    } catch (e) {
+      logger.error(`Failed to render prompt ${code}`, e);
+      return (
+        content + (OUTPUT_SCHEMAS[code] ? `\n\n${OUTPUT_SCHEMAS[code]}` : "")
+      );
     }
-
-    // Replace output language placeholder in schemas
-    // （正文模板里的 {{outputLanguage}} 已在渲染阶段替换，这里兜底处理 schema 中的占位符）
-    content = content.replace(/\{\{outputLanguage\}\}/g, outputLanguage);
-
-    // Replace category options based on language
-    const categoryOptions = isEnglishLanguage(language)
-      ? "'Definition', 'Concept', 'Method', 'Conclusion', 'Principle', 'Application', 'Terminology'"
-      : "'定义', '概念', '方法', '结论', '原理', '应用', '术语'";
-    content = content.replace(/\{\{categoryOptions\}\}/g, categoryOptions);
-
-    // Append language instruction based on the language parameter
-    const languageInstruction = getLanguageInstruction(language);
-    content += `\n\n${languageInstruction}`;
-
-    return content;
   }
 
   /**

@@ -2617,6 +2617,7 @@ export type Database = {
           template_content: string
           updated_at: string | null
           user_id: string | null
+          variables: string[] | null
         }
         Insert: {
           callers?: string[] | null
@@ -2629,6 +2630,7 @@ export type Database = {
           template_content: string
           updated_at?: string | null
           user_id?: string | null
+          variables?: string[] | null
         }
         Update: {
           callers?: string[] | null
@@ -2641,6 +2643,7 @@ export type Database = {
           template_content?: string
           updated_at?: string | null
           user_id?: string | null
+          variables?: string[] | null
         }
         Relationships: [
           {

@@ -7,27 +7,14 @@
 // （如 Electron 桌面应用 DB 离线场景），不应被视为主要 prompt 来源。
 // 新增 prompt 请优先写入 DB seed，而非本文件。
 // =====================================================
+import {
+  getLanguageInstruction,
+  isEnglishLanguage,
+} from "@shared/template/promptDefaults";
+
+export { getLanguageInstruction, isEnglishLanguage };
+
 export type PromptScope = "system" | "user" | "graph";
-
-const LANGUAGE_INSTRUCTIONS: Record<string, string> = {
-  "zh-CN": "请用中文回答。",
-  "en-US": "Please respond in English.",
-  zh: "请用中文回答。",
-  en: "Please respond in English.",
-};
-
-function isEnglishLanguage(language?: string): boolean {
-  if (!language) return false;
-  return language === "en-US" || language === "en" || language.startsWith("en");
-}
-
-export function getLanguageInstruction(language?: string): string {
-  if (!language) return LANGUAGE_INSTRUCTIONS["zh-CN"];
-  if (isEnglishLanguage(language)) return LANGUAGE_INSTRUCTIONS["en-US"];
-  return LANGUAGE_INSTRUCTIONS["zh-CN"];
-}
-
-export { isEnglishLanguage };
 
 export interface PromptTemplate {
   id: string | null;
@@ -36,6 +23,9 @@ export interface PromptTemplate {
   user_id?: string | null;
   graph_id?: string | null;
   template_content: string;
+  description?: { zh?: string; en?: string } | null;
+  callers?: string[] | null;
+  variables?: string[] | null;
   created_at: string;
   updated_at: string;
 }

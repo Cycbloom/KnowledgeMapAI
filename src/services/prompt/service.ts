@@ -1,5 +1,4 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { TemplateEngine } from './templateEngine';
 import {
   PromptTemplate,
   PromptListOptions,
@@ -10,22 +9,7 @@ import {
 import { DEFAULT_PROMPTS } from './templates';
 import { OUTPUT_SCHEMAS } from './schemas';
 import { logger } from '@/utils/logger';
-
-const LANGUAGE_INSTRUCTIONS: Record<string, string> = {
-  "zh-CN": "请用中文回答。",
-  "en-US": "Please respond in English.",
-};
-
-function isEnglishLanguage(language?: string): boolean {
-  if (!language) return false;
-  return language === "en-US" || language === "en" || language.startsWith("en");
-}
-
-function getLanguageInstruction(language?: string): string {
-  return isEnglishLanguage(language)
-    ? LANGUAGE_INSTRUCTIONS["en-US"]
-    : LANGUAGE_INSTRUCTIONS["zh-CN"];
-}
+import { renderPromptContent } from '@shared/template/renderPrompt';
 
 export class MobilePromptService {
   private templateCache: Map<string, { template: PromptTemplate; timestamp: number }> = new Map();
@@ -184,53 +168,28 @@ export class MobilePromptService {
   ): Promise<string> {
     const template = await this.getTemplate(supabase, code, userId, graphId);
 
-    // 预计算输出语言并注入渲染上下文，避免模板正文中的 {{outputLanguage}}
-    // 被模板引擎当作缺失变量替换成空字符串
-    const outputLanguage = isEnglishLanguage(language) ? 'English' : 'Chinese';
-    const renderContext = { ...context, outputLanguage };
-
     let content = '';
 
     if (!template) {
       const defaultPrompt = DEFAULT_PROMPTS[code];
       if (defaultPrompt) {
-        try {
-          content = TemplateEngine.render(defaultPrompt, renderContext);
-        } catch (e) {
-          logger.error(`[PromptService] Failed to render default prompt ${code}`, e);
-          content = defaultPrompt;
-        }
+        content = defaultPrompt;
       } else {
         logger.warn(`[PromptService] No template found for code: ${code}. Using empty fallback.`);
         content = '';
       }
     } else {
-      try {
-        content = TemplateEngine.render(template.template_content, renderContext);
-      } catch (e) {
-        logger.error(`[PromptService] Failed to render prompt ${code}`, e);
-        content = template.template_content;
-      }
+      content = template.template_content;
     }
 
-    if (OUTPUT_SCHEMAS[code]) {
-      content += `\n\n${OUTPUT_SCHEMAS[code]}`;
-    }
-
-    // Replace output language placeholder in schemas
-    // （正文模板里的 {{outputLanguage}} 已在渲染阶段替换，这里兜底处理 schema 中的占位符）
-    content = content.replace(/\{\{outputLanguage\}\}/g, outputLanguage);
-
-    // Replace category options based on language
-    const categoryOptions = isEnglishLanguage(language)
-      ? "'Definition', 'Concept', 'Method', 'Conclusion', 'Principle', 'Application', 'Terminology'"
-      : "'定义', '概念', '方法', '结论', '原理', '应用', '术语'";
-    content = content.replace(/\{\{categoryOptions\}\}/g, categoryOptions);
-
-    // Append language instruction based on the language parameter
-    content += `\n\n${getLanguageInstruction(language)}`;
-
-    return content;
+    // 统一渲染收尾（shared/renderPrompt）：变量渲染 + schema 追加 +
+    // outputLanguage/categoryOptions 兜底 + 语言指令
+    return renderPromptContent({
+      content,
+      context,
+      language,
+      schema: OUTPUT_SCHEMAS[code],
+    });
   }
 
   async getTemplate(

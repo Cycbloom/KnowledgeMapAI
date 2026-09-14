@@ -1,9 +1,7 @@
 import { logger } from "../../utils/logger";
+import { isEnglishLanguage } from "@shared/template/promptDefaults";
 
-export function isEnglishLanguage(language?: string): boolean {
-  if (!language) return false;
-  return language === "en-US" || language === "en" || language.startsWith("en");
-}
+export { isEnglishLanguage };
 
 const pendingRequests = new Map<string, Promise<unknown>>();
 

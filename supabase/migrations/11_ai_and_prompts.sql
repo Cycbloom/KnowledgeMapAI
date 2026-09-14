@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS prompt_templates (
   template_content TEXT NOT NULL,
   description JSONB,
   callers TEXT[] DEFAULT '{}',
+  variables TEXT[] DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   CONSTRAINT prompt_templates_user_id_check CHECK (

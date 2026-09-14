@@ -2607,8 +2607,10 @@ export type Database = {
       }
       prompt_templates: {
         Row: {
+          callers: string[] | null
           code: string
           created_at: string | null
+          description: Json | null
           graph_id: string | null
           id: string
           scope: Database["public"]["Enums"]["prompt_scope"]
@@ -2617,8 +2619,10 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          callers?: string[] | null
           code: string
           created_at?: string | null
+          description?: Json | null
           graph_id?: string | null
           id?: string
           scope: Database["public"]["Enums"]["prompt_scope"]
@@ -2627,8 +2631,10 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          callers?: string[] | null
           code?: string
           created_at?: string | null
+          description?: Json | null
           graph_id?: string | null
           id?: string
           scope?: Database["public"]["Enums"]["prompt_scope"]

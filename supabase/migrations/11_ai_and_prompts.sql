@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS prompt_templates (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE CASCADE,
   template_content TEXT NOT NULL,
+  description JSONB,
+  callers TEXT[] DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   CONSTRAINT prompt_templates_user_id_check CHECK (

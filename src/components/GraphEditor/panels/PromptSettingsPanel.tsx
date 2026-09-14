@@ -15,7 +15,11 @@ import {
   Wrench,
   ChevronDown,
   LayoutTemplate,
-  BookOpen,
+  Route,
+  FileText,
+  PenLine,
+  Search,
+  ScrollText,
 } from "lucide-react";
 
 interface PromptSettingsPanelProps {
@@ -41,14 +45,22 @@ const PROMPT_CATEGORIES = [
     icon: Network,
     color: "emerald",
     codes: [
-      "branch_suggestions",
-      "recommend_connections",
       "text_to_graph",
       "document_to_graph",
-      "infinite_graph_expansion",
+      "image_to_graph",
       "auto_graph_init",
       "auto_graph_expand",
+      "infinite_graph_expansion",
+      "branch_suggestions",
+      "recommend_connections",
+      "node_relation_discovery",
+      "discover_graph_relations",
+      "cross_graph_connection_analysis",
       "auto_domain_classify",
+      "concept_hierarchy",
+      "knowledge_gap_analysis",
+      "deep_analysis",
+      "backbone_generation",
     ],
   },
   {
@@ -63,25 +75,43 @@ const PROMPT_CATEGORIES = [
       "generate_cards_multi_choice",
       "generate_cards_fill_blank",
       "generate_cards_essay",
+      "generate_cards_cloze",
+      "generate_cards_select_from_options",
+      "generate_cards_matching",
+      "generate_cards_ordering",
     ],
   },
   {
     id: "ai_chat",
     icon: MessageSquare,
     color: "amber",
-    codes: ["chat", "tutor_chat", "generate_content"],
+    codes: ["chat", "tutor_chat", "rag_chat", "suggest_questions", "suggest_next_topic"],
   },
   {
-    id: "task_scheduler",
-    icon: Wrench,
-    color: "cyan",
-    codes: ["generate_task_details"],
+    id: "learning_path",
+    icon: Route,
+    color: "sky",
+    codes: [
+      "learning_path_generate",
+      "learning_path_questions",
+      "cross_graph_goal_dialog",
+      "cross_graph_goal_suggest",
+      "cross_graph_path_variants",
+    ],
   },
   {
-    id: "literature_analysis",
-    icon: BookOpen,
-    color: "blue",
-    codes: ["literature_concept_extraction", "literature_relation_inference"],
+    id: "content_generation",
+    icon: FileText,
+    color: "indigo",
+    codes: [
+      "learning_material",
+      "learning_schema_assist",
+      "podcast_script",
+      "podcast_system",
+      "generate_content",
+      "generate_task_details",
+      "template_application",
+    ],
   },
   {
     id: "template_generation",
@@ -110,10 +140,38 @@ const PROMPT_CATEGORIES = [
     ],
   },
   {
-    id: "other",
+    id: "literature_analysis",
+    icon: ScrollText,
+    color: "blue",
+    codes: [
+      "literature_concept_extraction",
+      "literature_metadata_extraction",
+      "literature_relation_inference",
+    ],
+  },
+  {
+    id: "notes_writing",
+    icon: PenLine,
+    color: "teal",
+    codes: [
+      "notes_daily_summary",
+      "notes_extract_concepts",
+      "notes_writing_continue",
+      "notes_writing_rewrite",
+      "notes_writing_expand",
+    ],
+  },
+  {
+    id: "rag_retrieval",
+    icon: Search,
+    color: "cyan",
+    codes: ["query_rewrite", "chunk_contextualize"],
+  },
+  {
+    id: "system_tools",
     icon: Wrench,
     color: "slate",
-    codes: ["term_annotation"],
+    codes: ["optimize_prompt", "grade_answer", "term_annotation"],
   },
 ];
 
@@ -163,13 +221,31 @@ const CATEGORY_COLOR_MAP: Record<
     icon: "text-slate-600 dark:text-slate-400",
     border: "border-slate-200 dark:border-slate-500",
   },
+  sky: {
+    bg: "bg-sky-50/70 dark:bg-sky-900/30",
+    bgHover: "hover:bg-sky-100/80 dark:hover:bg-sky-900/50",
+    icon: "text-sky-600 dark:text-sky-400",
+    border: "border-sky-200 dark:border-sky-700",
+  },
+  indigo: {
+    bg: "bg-indigo-50/70 dark:bg-indigo-900/30",
+    bgHover: "hover:bg-indigo-100/80 dark:hover:bg-indigo-900/50",
+    icon: "text-indigo-600 dark:text-indigo-400",
+    border: "border-indigo-200 dark:border-indigo-700",
+  },
+  teal: {
+    bg: "bg-teal-50/70 dark:bg-teal-900/30",
+    bgHover: "hover:bg-teal-100/80 dark:hover:bg-teal-900/50",
+    icon: "text-teal-600 dark:text-teal-400",
+    border: "border-teal-200 dark:border-teal-700",
+  },
 };
 
 export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
   graphId,
   scope,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [templates, setTemplates] = useState<PromptTemplates>({
     system: [],
     user: [],
@@ -193,6 +269,30 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
       defaultValue: source,
     });
   }, [t]);
+
+  // 从 DB 的 description（JSONB {zh,en}）中按当前界面语言取用途描述
+  const getPromptDescription = useCallback(
+    (tpl: PromptTemplateEntry): string | undefined => {
+      const desc = tpl?.description as
+        | { zh?: string; en?: string }
+        | null
+        | undefined;
+      if (!desc) return undefined;
+      const lang = i18n.language?.toLowerCase().startsWith("en")
+        ? "en"
+        : "zh";
+      return desc[lang] ?? desc.zh ?? desc.en;
+    },
+    [i18n.language],
+  );
+
+  const getPromptCallers = useCallback(
+    (tpl: PromptTemplateEntry): string[] => {
+      const callers = tpl?.callers as string[] | null | undefined;
+      return Array.isArray(callers) ? callers : [];
+    },
+    [],
+  );
 
   const categories = useMemo(() => {
     return PROMPT_CATEGORIES.map((category) => ({
@@ -447,7 +547,7 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
             </button>
 
             <div
-              className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"}`}
+              className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? "max-h-[10000px] opacity-100" : "max-h-0 opacity-0"}`}
             >
               <div className="divide-y dark:divide-gray-700">
                 {category.codes.map((code) => {
@@ -461,13 +561,13 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
                       key={code}
                       className="p-4 flex items-center justify-between bg-white/80 hover:bg-gray-50/80 transition-colors dark:bg-gray-800/80 dark:hover:bg-gray-750/80"
                     >
-                      <div>
-                        <h4 className="font-medium text-gray-900 dark:text-white">
-                          {getPromptTypeLabel(code)}
-                        </h4>
-                        <div className="flex items-center gap-2 text-xs mt-1">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-medium text-gray-900 dark:text-white">
+                            {getPromptTypeLabel(code)}
+                          </h4>
                           <span
-                            className={`px-2 py-0.5 rounded-full border ${
+                            className={`px-2 py-0.5 rounded-full border text-xs ${
                               effective.source === "Graph"
                                 ? "bg-primary-50 text-primary-700 border-primary-200"
                                 : effective.source === "User"
@@ -478,9 +578,31 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
                             {getSourceName(effective.source)}
                           </span>
                           {typeof effective.updated_at === 'string' && effective.updated_at && (
-                            <span className="text-gray-400">
+                            <span className="text-xs text-gray-400">
                               {t('graphEditor.promptSettings.updatedAt')}{" "}
                               {formatDate(effective.updated_at as string, "short")}
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-1 flex items-center gap-2 min-w-0">
+                          {getPromptDescription(effective) && (
+                            <span
+                              className="flex-1 min-w-0 text-xs text-gray-500 dark:text-gray-400 truncate"
+                              title={getPromptDescription(effective)}
+                            >
+                              {getPromptDescription(effective)}
+                            </span>
+                          )}
+                          {getPromptCallers(effective).length > 0 && (
+                            <span className="flex flex-wrap gap-1 shrink-0">
+                              {getPromptCallers(effective).map((caller) => (
+                                <span
+                                  key={caller}
+                                  className="px-1.5 py-0.5 text-[10px] rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300"
+                                >
+                                  {caller}
+                                </span>
+                              ))}
                             </span>
                           )}
                         </div>

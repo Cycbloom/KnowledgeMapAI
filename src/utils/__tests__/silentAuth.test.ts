@@ -237,7 +237,7 @@ describe('restoreSession（自愈链路）', () => {
 
     expect(signOut).toHaveBeenCalledTimes(1);
     expect(restored?.user?.email).toBe('owner-new@local.app');
-    expect(getOwnerCredentials()?.email).toMatch(/^owner-.+@local\.app$/);
+    expect(getOwnerCredentials()?.email).toBe('owner@local.app');
   });
 
   it('drops dead local credentials and re-provisions when no cached session exists', async () => {

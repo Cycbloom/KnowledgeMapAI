@@ -1,11 +1,13 @@
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
-import { bytesToBase64 } from './bytesToBase64';
 
 /**
  * 无感知会话（专属用户）工具
  *
- * 应用为单用户本地工具：首次设置向导完成后自动创建一个专属用户，
- * 随机凭证保存在 localStorage，后续启动用凭证静默重登，用户全程无感知。
+ * 应用为单用户本地工具：使用固定默认账号自动登录，凭证保存在 localStorage，
+ * 后续启动用凭证静默重登，用户全程无感知。
+ *
+ * 固定默认账号（而非随机账号）：确保退出登录后重建/重登始终回到**同一个**账号，
+ * 不会在每次启动时不断生成随机新 owner 造成账号膨胀。
  */
 
 const CREDENTIALS_KEY = 'km-owner-credentials';
@@ -15,15 +17,16 @@ interface OwnerCredentials {
   password: string;
 }
 
-const generateRandomPassword = (): string => {
-  const bytes = new Uint8Array(32);
-  crypto.getRandomValues(bytes);
-  return bytesToBase64(bytes);
-};
+/**
+ * 固定默认专属账号。
+ * 仅用于开发/测试的自动登录兜底（生产环境 restoreSession 返回 null，不会走此路径）。
+ */
+const DEFAULT_OWNER_EMAIL = 'owner@local.app';
+const DEFAULT_OWNER_PASSWORD = 'Kmap-local-owner-default-2024';
 
 const generateCredentials = (): OwnerCredentials => ({
-  email: `owner-${crypto.randomUUID()}@local.app`,
-  password: generateRandomPassword(),
+  email: DEFAULT_OWNER_EMAIL,
+  password: DEFAULT_OWNER_PASSWORD,
 });
 
 export const getOwnerCredentials = (): OwnerCredentials | null => {
@@ -94,7 +97,7 @@ export const provisionOwner = async (
     email: credentials.email,
     password: credentials.password,
     options: {
-      // 友好默认显示名，避免界面回退显示 owner-<uuid> 邮箱前缀；
+      // 友好默认显示名，避免界面回退显示 owner@local.app 邮箱前缀；
       // 用户可随时在个人资料页修改
       data: { name: 'Owner' },
     },

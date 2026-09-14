@@ -86,9 +86,9 @@ npm run db:local:reset
 
 应用为单用户工具，不存在测试账号或登录表单：
 
-- 首次启动进入设置向导，完成 Supabase 配置后自动创建一个专属用户（邮箱形如 `owner-{uuid}@local.app`，随机凭证保存在浏览器 localStorage，key 为 `km-owner-credentials`），随后直达首页
+- 首次启动进入设置向导，完成 Supabase 配置后自动登录固定默认账号（邮箱 `owner@local.app`，凭证保存在浏览器 localStorage，key 为 `km-owner-credentials`；开发/测试环境凭证丢失时会自动重建为同一默认账号），随后直达首页
 - 之后启动自动恢复会话；凭证失效时用本地凭证静默重登，全程无感
-- `npm run db:seed` **不依赖前端先启动**：会优先复用已存在的 `owner-*@local.app` 用户；若用户已存在但密码未知则自动重置（bcrypt）；若用户不存在则直接在 `auth.users` 中创建同格式账号。运行结束会在终端打印 DevTools localStorage 注入命令，并把可复现凭证落盘到 `.seed-owner-credentials.json`（已在 `.gitignore` 中忽略）
+- `npm run db:seed` **不依赖前端先启动**：会优先复用已存在的默认账号 `owner@local.app`；若用户不存在则直接在 `auth.users` 中创建。运行结束会在终端打印 DevTools localStorage 注入命令，并把可复现凭证落盘到 `.seed-owner-credentials.json`（已在 `.gitignore` 中忽略）
 
 > 注入命令用法：启动 Web/Electron 应用 → F12 打开 DevTools Console → 粘贴 seed 末尾打印的 3 行命令（`localStorage.clear(); setItem(...); location.reload();`）即可自动登入同一 owner，看到 seed 写入的全部演示数据（图谱、卡片、任务、成就等）。
 
@@ -567,7 +567,7 @@ npm run db:check-types
   ```bash
   npm run db:seed
   ```
-  该命令**不需要先启动前端**：会自动在 `auth.users` 中寻找/创建与前端同格式的 `owner-{uuid}@local.app` 用户，重置密码并将全部演示数据关联到该用户。
+  该命令**不需要先启动前端**：会自动在 `auth.users` 中寻找/创建固定默认账号 `owner@local.app`（与前端 `src/utils/silentAuth.ts` 默认账号一致），重置密码并将全部演示数据关联到该用户。
 - 脚本执行末尾会输出两段信息：
   1. **DevTools 注入命令**（3 行 JS）—— 在 Web/Electron 应用的 Console 粘贴后即可静默登录到 seed owner 并看到演示数据
   2. **本地凭证文件** `.seed-owner-credentials.json`——重复跑 seed 时会优先复用该密码，避免反复重置；该文件已在 `.gitignore` 中忽略，不进入版本控制

@@ -1,13 +1,13 @@
 """以真实 owner 身份打开 KnowledgeMap Web 应用（供 AI / 代理调试用）。
 
-背景：应用是单用户自动登录。全新 Playwright 上下文没有 localStorage 凭证，
-会走 provisionOwner() 自动创建了一个空的临时 owner 账号，看不到真实数据。
-本脚本在页面加载前把 .dev-owner-credentials.json（已 gitignore）里的真实
-owner 凭证预注入 localStorage['km-owner-credentials']，应用既有的
+背景：应用是单用户自动登录（固定默认账号 owner@local.app）。全新 Playwright
+上下文没有 localStorage 凭证，会走 provisionOwner() 自动登录一个空的默认 owner，
+看不到真实数据。本脚本在页面加载前把 .dev-owner-credentials.json（已 gitignore）
+里的真实 owner 凭证预注入 localStorage['km-owner-credentials']，应用既有的
 silentSignIn 静默重登链路会自动登录成真实 owner，展示全部真实数据。
 零应用代码改动。
 
-该文件由应用在开发期「自动创建新 owner 时」经过
+该文件由应用在开发期「自动登录默认 owner 时」经过
 POST /api/v1/owner-credentials 自动同步（见 src/utils/silentAuth.ts）。
 用法：
     python scripts/webapp_login.py                    # 有头浏览器，保持打开

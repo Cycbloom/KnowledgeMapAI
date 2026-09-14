@@ -44,13 +44,19 @@ const CREDENTIALS_OUTPUT_FILE = path.resolve(
   '../.seed-owner-credentials.json',
 );
 
-/** Mirrors frontend provisionOwner's credential generator — owner-<uuid>@local.app + 32-byte base64 password. */
+/** Fixed default owner — keep in sync with src/utils/silentAuth.ts DEFAULT_OWNER_* . */
+const DEFAULT_OWNER_EMAIL = 'owner@local.app';
+const DEFAULT_OWNER_PASSWORD = 'Kmap-local-owner-default-2024';
+
+/** 固定默认 owner 邮箱判定。 */
+const isOwnerEmail = (email: string | null | undefined): boolean =>
+  email?.toLowerCase() === 'owner@local.app';
+
+/** 与前端 provisionOwner 一致：始终指向固定默认 owner@local.app。 */
 function generateOwnerCredentials(): OwnerCredentials {
-  const bytes = new Uint8Array(32);
-  crypto.getRandomValues(bytes);
   return {
-    email: `owner-${crypto.randomUUID()}@local.app`,
-    password: Buffer.from(bytes).toString('base64'),
+    email: DEFAULT_OWNER_EMAIL,
+    password: DEFAULT_OWNER_PASSWORD,
   };
 }
 
@@ -111,9 +117,9 @@ async function resetUserPasswordViaPg(userId: string, creds: OwnerCredentials): 
 async function materializeCredentialsFor(userId: string, emailHint?: string | null): Promise<OwnerCredentials> {
   const cached = await loadPersistedCredentials(userId);
   if (cached) return cached;
-  const keepEmail = emailHint && /^owner-[0-9a-f-]{36}@local\.app$/i.test(emailHint);
+  const keepEmail = emailHint && isOwnerEmail(emailHint);
   const fresh: OwnerCredentials = keepEmail
-    ? { email: emailHint, password: generateOwnerCredentials().password }
+    ? { email: emailHint as string, password: generateOwnerCredentials().password }
     : generateOwnerCredentials();
   await resetUserPasswordViaPg(userId, fresh);
   return fresh;
@@ -165,13 +171,13 @@ function buildPgPool(): Pool {
   return new Pool({ host, port, user, database, password, ssl: false, connectionTimeoutMillis: 5000 });
 }
 
-/** Query auth.users via direct Postgres — prefer frontend-style owner-<uuid>@local.app users. */
+/** Query auth.users via direct Postgres — prefer the fixed default owner@local.app. */
 async function listOwnerUserViaPg(): Promise<{ id: string; email?: string | null } | null> {
   const pool = buildPgPool();
   try {
     const { rows } = await pool.query<{ id: string; email?: string | null }>(
       `SELECT id::text AS id, email FROM auth.users ORDER BY
-         CASE WHEN email ~ '^owner-[0-9a-f-]{36}@local\\.app$' THEN 0 ELSE 1 END ASC,
+         CASE WHEN email = 'owner@local.app' THEN 0 ELSE 1 END ASC,
          created_at ASC
        LIMIT 1`,
     );

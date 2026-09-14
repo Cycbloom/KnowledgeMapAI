@@ -124,12 +124,12 @@ describe("Login 页面（无感知会话）", () => {
       },
       { timeout: 5000 },
     );
-    // 随机凭证：邮箱为 owner-<uuid>@local.app 形式
+    // 固定默认账号：邮箱为 owner@local.app（与 src/utils/silentAuth.ts DEFAULT_OWNER_EMAIL 一致）
     const signUpArg = mockSignUp.mock.calls[0]?.[0] as {
       email: string;
       password: string;
     };
-    expect(signUpArg.email).toMatch(/^owner-.+@local\.app$/);
+    expect(signUpArg.email).toBe('owner@local.app');
     expect(signUpArg.password.length).toBeGreaterThan(0);
     await waitFor(
       () => {

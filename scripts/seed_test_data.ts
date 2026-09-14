@@ -3,7 +3,6 @@ import * as dotenv from 'dotenv';
 import { Pool } from 'pg';
 import { writeFile, mkdir } from 'node:fs/promises';
 import * as path from 'node:path';
-import * as crypto from 'node:crypto';
 
 dotenv.config();
 
@@ -35,20 +34,21 @@ const CREDENTIALS_OUTPUT_FILE = path.resolve(
 );
 
 /**
- * Mirrors src/utils/silentAuth.ts generateCredentials — same email layout,
- * same password strength (32 random bytes → base64). The generated email
- * format `owner-<uuid>@local.app` matches what provisionOwner() creates on
- * the frontend so both sides produce indistinguishable accounts.
+ * 固定默认专属账号 — 与 src/utils/silentAuth.ts 的 DEFAULT_OWNER_EMAIL / DEFAULT_OWNER_PASSWORD 保持一致。
+ * 单用户工具使用固定账号：演示数据始终归属 owner@local.app，保证退出登录后重建/重登
+ * 都落在同一个账号上，也能被前端默认账号看到。
  */
-const generateOwnerCredentials = (): OwnerCredentials => {
-  const bytes = new Uint8Array(32);
-  crypto.getRandomValues(bytes);
-  const password = Buffer.from(bytes).toString('base64');
-  return {
-    email: `owner-${crypto.randomUUID()}@local.app`,
-    password,
-  };
-};
+const DEFAULT_OWNER_EMAIL = 'owner@local.app';
+const DEFAULT_OWNER_PASSWORD = 'Kmap-local-owner-default-2024';
+
+/** 判断是否为固定默认 owner 邮箱。 */
+const isOwnerEmail = (email: string | null | undefined): boolean =>
+  email?.toLowerCase() === 'owner@local.app';
+
+const generateOwnerCredentials = (): OwnerCredentials => ({
+  email: DEFAULT_OWNER_EMAIL,
+  password: DEFAULT_OWNER_PASSWORD,
+});
 
 /**
  * Persist seed credentials to disk so later scripts (e2e setup, ownership
@@ -153,12 +153,10 @@ async function materializeCredentialsForExistingUser(user: {
 }): Promise<OwnerCredentials> {
   const cached = await loadPersistedCredentials(user.id);
   if (cached) return cached;
-  const fresh: OwnerCredentials = user.email && /^owner-[0-9a-f-]{36}@local\.app$/i.test(user.email)
-    // The user was created by an earlier provisionOwner run — keep the stable
-    // owner-<uuid>@local.app email, only rotate the unknown password.
-    ? { email: user.email, password: generateOwnerCredentials().password }
-    // Otherwise issue a brand-new frontend-style credentials pair and
-    // attempt to sync the email column too (best-effort UPDATE further down).
+  const fresh: OwnerCredentials = isOwnerEmail(user.email)
+    // 该用户即默认 owner —— 保留固定邮箱，只把密码重置为固定默认密码（避免无法回放原密码）。
+    ? { email: user.email as string, password: generateOwnerCredentials().password }
+    // 否则签发固定默认账号的凭证，并尽力把 email 列同步为 owner@local.app（见下方 best-effort UPDATE）。
     : generateOwnerCredentials();
 
   const ok = await resetUserPasswordViaPg(user.id, fresh);
@@ -493,8 +491,8 @@ async function createOwnerUserViaPg(
    *
    * Accepts an explicit credentials argument so every caller (Auth Admin API vs
    * pure-SQL path, re-runs against .seed-owner-credentials.json) produces
-   * accounts indistinguishable from frontend-generated `owner-<uuid>@local.app`
-   * owners created by silentAuth.provisionOwner.
+   * accounts identical to the fixed default `owner@local.app`
+   * owner provisioned by silentAuth.
    */
   const { email: EMAIL, password: PLAIN_PASSWORD } = credentials;
   const pool = buildPgPool();
@@ -592,10 +590,9 @@ async function getOwnerUser(): Promise<SeedOwnerUser> {
   try {
     const { data: existingUsers, error } = await supabase.auth.admin.listUsers();
     if (!error && existingUsers?.users?.length) {
-      // Prefer frontend-created owner accounts (owner-<uuid>@local.app) so the
-      // seed writes rows to the same user the app will sign into. Fall back to
-      // users[0] if no match (e.g. a previous seed ran with the old format).
-      const owner = existingUsers.users.find(u => u.email && /^owner-[0-9a-f-]{36}@local\.app$/i.test(u.email))
+      // Prefer the fixed default owner (owner@local.app) so the seed writes rows
+      // to the same user the app signs into. Fall back to users[0] otherwise.
+      const owner = existingUsers.users.find(u => isOwnerEmail(u.email))
         ?? existingUsers.users[0];
       console.log('✅ Owner user found via Auth Admin API:', owner.id, `(${owner.email ?? 'no-email'})`);
       const credentials = await materializeCredentialsForExistingUser({ id: owner.id, email: owner.email ?? null });
@@ -616,7 +613,7 @@ async function getOwnerUser(): Promise<SeedOwnerUser> {
     try {
       const rows = await listUsersViaPg();
       if (rows.length > 0) {
-        const owner = rows.find(r => r.email && /^owner-[0-9a-f-]{36}@local\.app$/i.test(r.email)) ?? rows[0];
+        const owner = rows.find(r => isOwnerEmail(r.email)) ?? rows[0];
         console.log(`✅ Owner user found via Postgres auth.users: ${owner.id} (${owner.email ?? 'no-email'})`);
         const credentials = await materializeCredentialsForExistingUser(owner);
         return finalize({ id: owner.id, email: owner.email ?? undefined, role: '', phone: undefined, created_at: '' }, credentials);

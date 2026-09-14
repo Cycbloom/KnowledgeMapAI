@@ -7,9 +7,9 @@ import { ErrorCodes } from "../../../shared/types/errorCodes";
 /**
  * 开发期专属：把当前 owner 凭证同步到仓库根目录的 `.dev-owner-credentials.json`。
  *
- * 应用为单用户自动登录，数据库每次重置后会自动生成一个新的 `owner-<uuid>@local.app`
- * 账号并把凭证存进浏览器 localStorage。此端点让前端在「自动创建新 owner」时把这份
- * 凭证落到磁盘，供 AI/Playwright 调试脚本读取，用同一个账号登录看到真实数据。
+ * 应用为单用户自动登录，使用固定默认账号 `owner@local.app`（见 src/utils/silentAuth.ts），
+ * 凭证存进浏览器 localStorage。此端点让前端在「自动登录默认 owner」时把这份凭证落到
+ * 磁盘，供 AI/Playwright 调试脚本读取，用同一个账号登录看到真实数据。
  *
  * 安全约束：仅非生产环境可用（生产直接 403），且仅当 owner 已登录携带凭证时才会调用。
  */

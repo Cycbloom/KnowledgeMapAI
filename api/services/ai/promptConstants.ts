@@ -1365,6 +1365,44 @@ Respond with a single JSON object (no markdown, no extra text):
 }`,
 };
 
+// 学习资料生成的高质量样例锚点（对标 buildPromptFromSchema 产出的章节 instruction）：
+// 演示「定义 → 类比降难度 → 边界/例外 → 常见误解 → 一句话小结」的结构与用词密度。
+// 由 contentGenerationService 在 schema 分支按输出语言追加到 system prompt。
+export const LEARNING_MATERIAL_FEWSHOT: Record<"zh" | "en", string> = {
+  zh: `
+## Reference Example (style/quality anchor)
+下面是一段达标样板书段，供你参考该教材应有的结构与用词密度（不必照抄主题）：
+
+### 核心概念：哈希表（Hash Table）
+**定义**：哈希表是一种通过"键"直接定位"值"存储位置的数据结构，用哈希函数把键映射到数组下标，从而把查找时间从 O(n) 降到平均 O(1)。
+
+**直觉类比**：它像一本按"页码-内容"编好的词典——给你一个词，哈希函数相当于按首字母快速翻到对应页，而不是从头一页页翻。
+
+**如何工作**：插入时，先对键做哈希运算得到下标，再把值写入该位置；查找时用同一个哈希函数算出下标，直接取数即可。
+
+**边界条件**：当两个不同的键哈希到同一位置（冲突）时，用链地址法在桶里串成一个链表，或改用开放寻址寻找下一个空位。哈希表对键的相等判断敏感，自定义对象做键时必须保证相等的键有相同的哈希值。
+
+**常见误解**：哈希表"平均 O(1)"的前提是哈希函数分布够均匀、装载因子合理；设计不佳或过度填满时，最坏情况会退化到 O(n)。
+
+**小结**：哈希表以空间换时间，用哈希函数把随机访问从"遍历"变成"直取"，代价是要处理好冲突与装载因子。`,
+  en: `
+## Reference Example (style/quality anchor)
+Below is a representative excerpt of the expected quality — use it as a style/density anchor (do not copy its topic):
+
+### Core Concept: Hash Table
+**Definition**: A hash table is a data structure that stores values by directly locating them through a "key", mapping each key to an array index via a hash function, which reduces average lookup time from O(n) to O(1).
+
+**Intuition/anatomy**: Think of it like a dictionary sorted by page numbers — given a word, the hash function is like flipping to the right page by first letter instead of scanning page by page.
+
+**How it works**: On insert, hash the key to get an index and place the value there; on lookup, recompute the same index and fetch directly.
+
+**Boundary conditions**: When two distinct keys hash to the same slot (collision), use chaining (a linked list per bucket) or open addressing to find the next free slot. Hash tables are sensitive to key equality—custom objects used as keys must have equal keys produce equal hashes.
+
+**Common misconception**: "Average O(1)" assumes a well-distributed hash function and a reasonable load factor; with poor design or heavy overfilling, the worst case degrades to O(n).
+
+**Takeaway**: A hash table trades space for time, turning "scanning" into "direct access" via a hash function, at the cost of handling collisions and load factor.`,
+};
+
 export const OUTPUT_SCHEMAS: Record<string, string> = {
   learning_material: `
 You must respond with a JSON object containing:

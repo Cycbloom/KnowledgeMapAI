@@ -253,7 +253,15 @@ export class ContentGenerationService {
                 /\{\{categoryOptions\}\}/g,
                 categoryOptions,
               );
-              const { OUTPUT_SCHEMAS } = await import("./promptConstants");
+              const { OUTPUT_SCHEMAS, LEARNING_MATERIAL_FEWSHOT } =
+                await import("./promptConstants");
+              // 追加语言感知的 few-shot 高质量样板，作为风格/用词密度锚点
+              const fewShot = LEARNING_MATERIAL_FEWSHOT[
+                isEnglishLanguage(options.language) ? "en" : "zh"
+              ];
+              if (fewShot) {
+                systemPrompt += `\n\n${fewShot}`;
+              }
               if (OUTPUT_SCHEMAS.learning_material) {
                 systemPrompt += `\n\n${OUTPUT_SCHEMAS.learning_material}`.replace(
                   /\{\{outputLanguage\}\}/g,

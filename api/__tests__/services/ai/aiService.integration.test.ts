@@ -407,12 +407,12 @@ describe("AI Service 集成测试", () => {
         },
       );
 
-      // 3 个有 content 的 chunk 触发 sendStreamChunk
-      expect(res.write).toHaveBeenCalledTimes(3);
+      // 实现先累积整段内容再一次性 sendStreamChunk（非逐 chunk 发送）
+      expect(res.write).toHaveBeenCalledTimes(1);
 
-      // 验证发送的 content 拼接为 "Hello World"
+      // 验证发送的内容为拼接后的完整文本
       const mockRes = res as unknown as { chunks: string[] };
-      expect(mockRes.chunks).toEqual(["Hello", " ", "World"]);
+      expect(mockRes.chunks).toEqual(["Hello World"]);
     });
 
     it("流式调用使用 stream:true 和 stream_options 参数", async () => {

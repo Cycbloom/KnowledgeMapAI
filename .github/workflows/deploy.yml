@@ -1,0 +1,123 @@
+# git push 自动部署到自建云服务器
+#
+# 触发：push 到 main 或手动运行 workflow_dispatch。
+# 流程：在 GitHub-hosted runner 上：
+#   1) 构建 Web 生产产物（dist/，mode=production）
+#   2) 把 Web 产物打成独立 tarball（避免后续 APK 构建覆盖 dist/ 造成串扰）
+#   3) 构建 Android debug APK（JDK 17；android/gradle.properties 硬编码本机 JDK21，
+#      这里用环境变量 JAVA_HOME 覆盖为 runner 的 JDK17）
+#   4) 打包 web tarball + APK + latest.json → ssh/scp 到服务器 → 服务器脚本解包部署
+#
+# 首次启用需要的 GitHub 仓库 Secrets（Settings → Secrets and variables → Actions）：
+#   SSH_HOST         服务器 IP（如 1.15.174.173）
+#   SSH_USER         SSH 登录用户（建议专用部署账号，见下方安全说明）
+#   SSH_PORT         SSH 端口（默认 22）
+#   SSH_PRIVATE_KEY  SSH 私钥 PEM 内容
+#   SUPABASE_URL     https://supabase.cycbloom.cn
+#   SUPABASE_ANON_KEY  移动端构建写 .env.mobile 用（公开 client key）
+#   API_BASE_URL     https://api.cycbloom.cn/api/v1
+#
+# 安全建议：不要把 root 私钥放 CI。建议在服务器建只读/受限部署用户，且 authorized_keys
+# 仅允许该用户操作 /opt/km/{web,upload} 两条路径（可用 ssh 的 command= 限制或单独 key）。
+# .env.mobile 不入库，由 secrets 在 runner 上生成，含内容仅 client key。
+
+name: Deploy to Cloud
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-cloud
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Write mobile env
+        # .env.mobile 未入库；由 CI 用 secrets 在 runner 上生成，
+        # 供 mobile build 指向云端（与本地 .env.mobile 内容一致）
+        run: |
+          cat > .env.mobile <<'EOF'
+          VITE_SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          VITE_API_BASE_URL=${{ secrets.API_BASE_URL }}
+          VITE_OFFLINE_MODE=false
+          EOF
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Web (production)
+        run: npx vite build --mode production
+
+      - name: Package Web dist tgz
+        run: tar -czf web-dist.tgz -C dist .
+
+      - name: Build Android debug APK
+        # android/gradle.properties 指向本机 D:\jdk21，CI 上用 JDK17 覆盖
+        env:
+          JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
+        run: |
+          npm run mobile:build:debug
+
+      - name: Stage deploy bundle
+        run: |
+          mkdir -p bundle
+          mv web-dist.tgz bundle/
+          cp android/app/build/outputs/apk/debug/app-debug.apk bundle/knowledgemap.apk
+          cp deploy/downloads/latest.json bundle/latest.json
+          ls -la bundle/
+
+      - name: Upload bundle to server
+        uses: appleboy/scp-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "bundle/*"
+          target: "/opt/km/upload"
+
+      - name: Apply deploy on server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            set -e
+            echo "--- deploy Web (preserve downloads) ---"
+            cd /opt/km/web
+            find . -mindepth 1 -maxdepth 1 ! -name downloads -exec rm -rf {} +
+            tar -xzf /opt/km/upload/bundle/web-dist.tgz -C /opt/km/web
+            echo "--- deploy APK ---"
+            cp /opt/km/upload/bundle/knowledgemap.apk /opt/km/web/downloads/knowledgemap.apk
+            echo "--- update version manifest ---"
+            cp /opt/km/upload/bundle/latest.json /opt/km/web/downloads/latest.json
+            echo "--- done ---"
+            cat /opt/km/web/downloads/latest.json

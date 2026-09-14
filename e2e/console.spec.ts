@@ -184,7 +184,8 @@ test.describe('控制台命令历史测试', () => {
     await historyBtn.click();
 
     // ConsoleHistory 搜索框 placeholder（zh: 搜索... / en: Search...）
-    const searchInput = page.locator('input[placeholder*="搜索"], input[placeholder*="Search"]');
+    // 限定在控制台面板内，避免命中页面上其它含 "搜索/Search" 的输入框（strict mode 会报 resolved to 2 elements）
+    const searchInput = getConsolePanel(page).locator('input[placeholder*="搜索"], input[placeholder*="Search"]');
     await searchInput.fill('version');
 
     // 使用 button 限定选择器，避免匹配输出区域的表格单元格

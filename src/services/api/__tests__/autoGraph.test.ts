@@ -196,7 +196,7 @@ describe('autoGraphApi', () => {
       await autoGraphApi.optimizePrompt(data);
       expect(request).toHaveBeenCalledWith('/auto-graph/optimize-prompt', {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, language: 'zh-CN' }),
       });
     });
 
@@ -205,7 +205,7 @@ describe('autoGraphApi', () => {
       await autoGraphApi.optimizePrompt(data);
       expect(request).toHaveBeenCalledWith('/auto-graph/optimize-prompt', {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, language: 'zh-CN' }),
       });
     });
   });
@@ -244,6 +244,7 @@ describe('autoGraphApi', () => {
         method: 'POST',
         body: JSON.stringify({
           topic: '机器学习',
+          language: 'zh-CN',
           provider: 'openai',
           model: 'gpt-4',
         }),
@@ -262,6 +263,7 @@ describe('autoGraphApi', () => {
           topic: '机器学习',
           provider: 'anthropic',
           model: 'claude-3',
+          language: 'zh-CN',
         }),
       });
     });
@@ -274,7 +276,7 @@ describe('autoGraphApi', () => {
       await autoGraphApi.generateTemplates({ topic: '机器学习' });
       expect(request).toHaveBeenCalledWith('/auto-graph/generate-templates', {
         method: 'POST',
-        body: JSON.stringify({ topic: '机器学习' }),
+        body: JSON.stringify({ topic: '机器学习', language: 'zh-CN' }),
       });
     });
 
@@ -290,6 +292,7 @@ describe('autoGraphApi', () => {
         method: 'POST',
         body: JSON.stringify({
           ...data,
+          language: 'zh-CN',
           provider: 'openai',
           model: 'gpt-4',
         }),

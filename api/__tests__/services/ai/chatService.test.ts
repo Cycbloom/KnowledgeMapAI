@@ -323,12 +323,11 @@ describe("ChatService", () => {
         sessionId: "session-stream-1",
       });
 
-      // sendStreamChunk 应为每个有 content 的 chunk 调用一次（3 次）
-      expect(res.write).toHaveBeenCalledTimes(3 + 0); // 3 content chunks，无 [DONE]（由调用方发送）
-      // 验证发送的内容拼接为 "Hello World"
-      // 注意：sendStreamChunk 写入 `data: {"content":"..."}\n\n`，createMockResponse 已解析为 chunks
+      // 实现先累积整段内容再一次性 sendStreamChunk（非逐 chunk 发送）
+      expect(res.write).toHaveBeenCalledTimes(1);
+      // 验证发送的内容为拼接后的完整文本
       const mockRes = res as unknown as { chunks: string[] };
-      expect(mockRes.chunks).toEqual(["Hello", " ", "World"]);
+      expect(mockRes.chunks).toEqual(["Hello World"]);
     });
 
     it("流式调用使用 stream:true 与 stream_options 参数", async () => {

@@ -412,7 +412,7 @@ describe('graphsApi', () => {
         '/graphs/graph-1/infinite-expand',
         {
           method: 'POST',
-          body: JSON.stringify(data),
+          body: JSON.stringify({ ...data, language: 'zh-CN' }),
         },
       );
     });
@@ -521,11 +521,11 @@ describe('graphsApi', () => {
       });
     });
 
-    it('应该调用 discoverRelations 在无参数时 body 为空对象 {}', async () => {
+    it('应该调用 discoverRelations 在无参数时 body 只含 language', async () => {
       await graphsApi.discoverRelations();
       expect(request).toHaveBeenCalledWith('/graphs/discover-relations', {
         method: 'POST',
-        body: JSON.stringify({}),
+        body: JSON.stringify({ language: 'zh-CN' }),
       });
     });
 
@@ -538,7 +538,7 @@ describe('graphsApi', () => {
       await graphsApi.discoverRelations(data);
       expect(request).toHaveBeenCalledWith('/graphs/discover-relations', {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, language: 'zh-CN' }),
       });
     });
 

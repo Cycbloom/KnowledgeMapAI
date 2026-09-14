@@ -932,8 +932,32 @@ export const Layout = () => {
             </div>
           )}
         </main>
-        <footer className="sr-only" role="contentinfo">
-          {t('common.footer.copyright')}
+        <footer
+          role="contentinfo"
+          className={
+            isElectron()
+              ? "sr-only"
+              : `flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 px-4 py-2 text-[11px] border-t shrink-0 ${
+                  isDark
+                    ? "border-slate-800 bg-slate-950 text-slate-500"
+                    : "border-gray-200 bg-white text-gray-400"
+                } ${
+                  isMobile && !isFullScreenPage
+                    ? "pb-[calc(3.5rem+var(--safe-area-inset-bottom))]"
+                    : ""
+                }`
+          }
+        >
+          <span>{t('common.footer.copyright')}</span>
+          <span aria-hidden="true">·</span>
+          <a
+            href="https://beian.miit.gov.cn"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:underline"
+          >
+            浙ICP备2026076010号
+          </a>
         </footer>
       </div>
     </div>

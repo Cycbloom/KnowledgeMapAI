@@ -468,6 +468,7 @@ export const tutorChatSchema = z.object({
   provider: z.enum(["deepseek", "volcengine", "aliyun"]).optional(),
   model: z.string().optional(),
   session_id: z.string().uuid().optional(),
+  language: z.string().optional(),
 });
 
 export const gradeAnswerSchema = z.object({
@@ -479,6 +480,7 @@ export const gradeAnswerSchema = z.object({
   difficulty: z.string().optional(),
   provider: z.enum(["deepseek", "volcengine", "aliyun"]).optional(),
   model: z.string().optional(),
+  language: z.string().optional(),
 });
 
 export const extractConceptsSchema = z.object({
@@ -502,6 +504,7 @@ export const suggestNextTopicSchema = z.object({
     .optional(),
   provider: z.enum(["deepseek", "volcengine", "aliyun"]).optional(),
   model: z.string().optional(),
+  language: z.string().optional(),
 });
 
 // --- Data Schemas ---
@@ -640,10 +643,12 @@ export const sttSchema = z.object({
 
 // --- Additional AI Schemas ---
 export const annotateTermsSchema = z.object({
-  content: z.string().min(1, "内容不能为空"),
+  content: z.string().optional(),
+  node_content: z.string().optional(),
   graph_id: z.string().uuid("无效的图谱ID").optional(),
   provider: z.enum(["deepseek", "volcengine", "aliyun"]).optional(),
   model: z.string().optional(),
+  language: z.string().optional(),
 });
 
 export const podcastScriptSchema = z.object({
@@ -767,6 +772,7 @@ export const optimizePromptSchema = z.object({
     .enum(["clarity", "specificity", "creativity", "structure"])
     .optional(),
   provider: z.enum(["deepseek", "volcengine", "aliyun"]).optional(),
+  language: z.string().optional(),
 });
 
 // --- Task Schemas ---
@@ -1184,6 +1190,7 @@ export const writingAssistSchema = z.object({
   selectedText: z.string().min(1, "选中文本不能为空"),
   contextBefore: z.string().optional(),
   contextAfter: z.string().optional(),
+  language: z.string().optional(),
 });
 
 // --- Capture Auto Archive Schema (捕获 AI 自动归档) ---

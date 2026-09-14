@@ -20,7 +20,7 @@ router.post(
   requireAuth,
   validate(annotateTermsSchema),
   async (req: AuthedRequest, res: Response) => {
-    const { content, graph_id } = req.body;
+    const { content, node_content, graph_id, language } = req.body;
     const provider = await getAIProviderForTask("text");
 
     if (!provider.hasKey) {
@@ -34,9 +34,10 @@ router.post(
     const prompt = await promptService.getRenderedPrompt(
       req.supabase,
       "term_annotation",
-      { nodeContent: content },
+      { nodeContent: node_content ?? content },
       req.user.id,
       graph_id,
+      language,
     );
 
     const enrichedMetadata = await enrichMetadata(req.supabase, {

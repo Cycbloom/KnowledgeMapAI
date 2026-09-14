@@ -21,10 +21,15 @@ vi.mock('../client', () => ({
   getCsrfToken: vi.fn(),
 }));
 
+vi.mock('@/hooks/ai/useAILanguage', () => ({
+  getAILanguage: vi.fn(() => 'zh-CN'),
+}));
+
 // --- Imports (must be after vi.mock declarations) ---
 
 import { notesApi } from '../notes';
 import { request, requestUpload } from '../client';
+import { getAILanguage } from '@/hooks/ai/useAILanguage';
 
 // --- Test data ---
 
@@ -351,6 +356,7 @@ describe('notesApi', () => {
 
       expect(request).toHaveBeenCalledWith('/notes/note-1/summary', {
         method: 'POST',
+        body: JSON.stringify({ language: getAILanguage() }),
       });
       expect(result).toEqual(mockResponse);
     });
@@ -367,6 +373,7 @@ describe('notesApi', () => {
 
       expect(request).toHaveBeenCalledWith('/notes/note-1/extract-concepts', {
         method: 'POST',
+        body: JSON.stringify({ language: getAILanguage() }),
       });
       expect(result).toEqual(mockResponse);
     });
@@ -441,6 +448,7 @@ describe('notesApi', () => {
           selectedText: '选中文本',
           contextBefore: undefined,
           contextAfter: undefined,
+          language: getAILanguage(),
         }),
       });
       expect(result).toEqual(mockResponse);
@@ -466,6 +474,7 @@ describe('notesApi', () => {
           selectedText: '选中文本',
           contextBefore: '前文',
           contextAfter: '后文',
+          language: getAILanguage(),
         }),
       });
       expect(result).toEqual(mockResponse);

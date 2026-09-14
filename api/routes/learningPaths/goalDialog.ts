@@ -30,6 +30,7 @@ const suggestGoalsSchema = z.object({
   model: z.string().optional(),
   selected_graph_ids: z.array(z.string().uuid()).max(100).optional(),
   selected_domain_ids: z.array(z.string().uuid()).max(100).optional(),
+  language: z.string().optional(),
 });
 
 // 生成候选跨图谱学习路径
@@ -42,6 +43,7 @@ const generateVariantsSchema = z.object({
   model: z.string().optional(),
   selected_graph_ids: z.array(z.string().uuid()).max(100).optional(),
   selected_domain_ids: z.array(z.string().uuid()).max(100).optional(),
+  language: z.string().optional(),
 });
 
 // 保存用户选中的候选路径
@@ -108,8 +110,13 @@ router.post(
   requireAuth,
   validate({ body: suggestGoalsSchema }),
   async (req: AuthedRequest, res: Response) => {
-    const { provider, model, selected_graph_ids, selected_domain_ids } =
-      req.body;
+    const {
+      provider,
+      model,
+      selected_graph_ids,
+      selected_domain_ids,
+      language,
+    } = req.body;
     const result = await goalDrivenPathService.suggestGoals(
       req.supabase,
       req.user.id,
@@ -118,6 +125,7 @@ router.post(
         model,
         selectedGraphIds: selected_graph_ids,
         selectedDomainIds: selected_domain_ids,
+        language,
       },
     );
     res.json({ success: true, data: result });

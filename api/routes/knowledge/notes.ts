@@ -467,10 +467,13 @@ router.post(
   validate({ params: uuidParamsSchema }),
   async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
+    const language =
+      typeof req.body?.language === "string" ? req.body.language : undefined;
     const data = await notesService.generateDailySummary(
       req.supabase,
       req.user.id,
       id,
+      language,
     );
     res.json(data);
   },
@@ -490,10 +493,13 @@ router.post(
   validate({ params: uuidParamsSchema }),
   async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
+    const language =
+      typeof req.body?.language === "string" ? req.body.language : undefined;
     const data = await notesService.extractConcepts(
       req.supabase,
       req.user.id,
       id,
+      language,
     );
     res.json(data);
   },
@@ -591,14 +597,20 @@ router.post(
   validate({ params: uuidParamsSchema, body: writingAssistSchema }),
   async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
-    const { action, selectedText, contextBefore, contextAfter } = req.body;
-    const data = await notesService.writingAssist(req.supabase, req.user.id, {
-      noteId: id,
-      action,
-      selectedText,
-      contextBefore,
-      contextAfter,
-    });
+    const { action, selectedText, contextBefore, contextAfter, language } =
+      req.body;
+    const data = await notesService.writingAssist(
+      req.supabase,
+      req.user.id,
+      {
+        noteId: id,
+        action,
+        selectedText,
+        contextBefore,
+        contextAfter,
+      },
+      language,
+    );
     res.json(data);
   },
 );

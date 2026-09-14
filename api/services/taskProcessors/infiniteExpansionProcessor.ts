@@ -29,6 +29,7 @@ interface InfiniteExpansionPayload {
   relation_types?: string[];
   auto_generate_nodes?: boolean;
   node_depth?: number;
+  language?: string;
   [key: string]: unknown;
 }
 
@@ -132,6 +133,7 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
         relation_types = ["prerequisite", "extension", "related"],
         auto_generate_nodes = true,
         node_depth = 2,
+        language,
       } = payload;
 
       const provider = await getAIProviderForTask("text");
@@ -235,6 +237,8 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
             parentDomainName: currentDomainInfo?.parentName || undefined,
           },
           userId,
+          undefined,
+          language,
         );
 
         const enrichedMetadata = await enrichMetadata(supabase, {

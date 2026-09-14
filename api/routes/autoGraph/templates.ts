@@ -30,6 +30,7 @@ const generateTemplatesSchema = z.object({
   preferredLayout: z
     .enum(["radial", "tree", "network", "hierarchical"])
     .optional(),
+  language: z.string().optional(),
 });
 
 const applyTemplateSchema = z.object({
@@ -90,6 +91,7 @@ router.post(
       graph_id,
       maxNodes,
       preferredLayout,
+      language,
     } = req.body;
 
     try {
@@ -111,6 +113,7 @@ router.post(
         graphId: graph_id,
         maxNodes,
         preferredLayout: preferredLayout as LayoutSuggestion | undefined,
+        language,
       });
 
       logger.info("Templates generated successfully", {

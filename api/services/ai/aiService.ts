@@ -166,6 +166,7 @@ export class AIService {
         currentLevel?: string;
         dueCount?: number;
       };
+      language?: string;
     },
   ) {
     return knowledgeExpansionService.suggestNextTopic(nodeTitle, nodeContent, _existingNodes, options);
@@ -262,7 +263,11 @@ export class AIService {
 
   async generateGraphFromImage(
     imageBase64: string,
-    options?: { provider?: import("@shared/types").AIProviderType; model?: string },
+    options?: {
+      provider?: import("@shared/types").AIProviderType;
+      model?: string;
+      language?: string;
+    },
   ) {
     return analysisService.generateGraphFromImage(imageBase64, options);
   }

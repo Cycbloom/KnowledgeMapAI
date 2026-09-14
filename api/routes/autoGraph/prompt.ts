@@ -13,6 +13,7 @@ const router = Router();
 const optimizePromptSchema = z.object({
   topic: z.string().min(1),
   currentPrompt: z.string().optional(),
+  language: z.string().optional(),
 });
 
 router.post(
@@ -20,7 +21,7 @@ router.post(
   requireAuth,
   validate(optimizePromptSchema),
   async (req: AuthedRequest, res: Response) => {
-    const { topic, currentPrompt } = req.body;
+    const { topic, currentPrompt, language } = req.body;
     const supabase = req.supabase;
     const provider = await getAIProviderForTask("text");
 
@@ -42,6 +43,8 @@ router.post(
           hasCurrentPrompt: !!currentPrompt,
         },
         req.user.id,
+        undefined,
+        language,
       );
 
       const userMessage = `主题：${topic}

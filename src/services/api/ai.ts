@@ -336,11 +336,14 @@ export const aiApi: IAiApi = {
     );
   },
 
-  imageToGraph: (formData: FormData) =>
-    requestUpload<{ nodes: unknown[]; edges: unknown[] }>(
+  imageToGraph: (data: { formData: FormData; language?: string }) => {
+    const { formData } = data;
+    formData.append("language", data.language || getAILanguage());
+    return requestUpload<{ nodes: unknown[]; edges: unknown[] }>(
       "/ai/image-to-graph",
       formData,
-    ),
+    );
+  },
 
   urlToText: (url: string) =>
     request("/ai/url-to-text", {
@@ -408,11 +411,15 @@ export const aiApi: IAiApi = {
     difficulty?: string;
     provider?: string;
     model?: string;
+    language?: string;
   }) =>
     request<{
       success: boolean;
       data: { score: number; feedback: string; correct: boolean };
-    }>("/ai/grade", { method: "POST", body: JSON.stringify(data) }),
+    }>("/ai/grade", {
+      method: "POST",
+      body: JSON.stringify({ language: getAILanguage(), ...data }),
+    }),
 
   extractConcepts: (data: {
     text: string;

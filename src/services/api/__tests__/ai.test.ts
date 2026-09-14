@@ -309,13 +309,14 @@ describe('aiApi', () => {
   });
 
   describe('imageToGraph', () => {
-    it('应该以 POST /ai/image-to-graph 经 requestUpload 上传 FormData', () => {
+    it('应该以 POST /ai/image-to-graph 经 requestUpload 上传 FormData 并附加 language', () => {
       const formData = new FormData();
       formData.append('file', 'dummy');
 
-      aiApi.imageToGraph(formData);
+      aiApi.imageToGraph({ formData, language: getAILanguage() });
 
       expect(requestUpload).toHaveBeenCalledWith('/ai/image-to-graph', formData);
+      expect(formData.get('language')).toBe(getAILanguage());
     });
   });
 

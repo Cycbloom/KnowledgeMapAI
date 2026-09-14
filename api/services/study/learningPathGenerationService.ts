@@ -114,6 +114,7 @@ export class LearningPathGenerationService {
       model?: string;
       save_path?: boolean;
       path_title?: string;
+      language?: string;
     },
   ): Promise<LearningPathResult> {
     const {
@@ -126,6 +127,7 @@ export class LearningPathGenerationService {
       model,
       save_path,
       path_title,
+      language,
     } = options;
 
     const { nodes, edges } = await graphService.getGraphNodes(
@@ -167,6 +169,7 @@ export class LearningPathGenerationService {
         graphMeta?.title || "",
         providerType,
         model,
+        language,
       );
       stages = aiResult.stages;
       suggestions = aiResult.suggestions;

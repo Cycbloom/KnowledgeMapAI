@@ -226,6 +226,7 @@ export async function generateCrossGraphAIPath(
   relations: CrossGraphRelationInput[],
   targetGoal: string,
   dailyTimeMinutes: number,
+  language?: string,
 ): Promise<{ stages: CrossGraphStage[]; suggestions: string[] }> {
   const provider = await getAIProviderForTask("text");
   if (!provider.hasKey) {
@@ -266,6 +267,8 @@ export async function generateCrossGraphAIPath(
       targetGoalProvided: true,
     },
     userId,
+    undefined,
+    language,
   );
 
   const userMessage = `请根据以下图谱地图与学习目标，生成一份「图谱级」学习路径（顺序学习）。

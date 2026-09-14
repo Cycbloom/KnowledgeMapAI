@@ -28,12 +28,12 @@ router.post("/chat", requireAuth, validate(chatSchema), async (req: AuthRequest,
 });
 
 router.post("/tutor-chat", requireAuth, validate(tutorChatSchema), async (req: AuthRequest, res: Response) => {
-  const { message, graph_id, history, context_node_ids, mode, provider: providerType, model, session_id } = req.body;
+  const { message, graph_id, history, context_node_ids, mode, provider: providerType, model, session_id, language } = req.body;
   const sessionId = session_id || crypto.randomUUID();
   setSSEHeaders(res);
   res.setHeader("X-Session-Id", sessionId);
   await chatService.tutorChatStream(req, res, {
-    message, graphId: graph_id, contextNodeIds: context_node_ids, history, mode, provider: providerType, model, sessionId,
+    message, graphId: graph_id, contextNodeIds: context_node_ids, history, mode, provider: providerType, model, sessionId, language,
   });
 });
 
@@ -47,6 +47,7 @@ router.post("/grade", requireAuth, validate(gradeAnswerSchema), async (req: Auth
     difficulty,
     provider: providerType,
     model,
+    language,
   } = req.body;
   try {
     const result = await chatService.gradeAnswer({
@@ -58,6 +59,7 @@ router.post("/grade", requireAuth, validate(gradeAnswerSchema), async (req: Auth
       difficulty,
       provider: providerType,
       model,
+      language,
     });
     res.json({ success: true, data: result });
   } catch (error: unknown) {
@@ -77,9 +79,9 @@ router.post("/extract-concepts", requireAuth, validate(extractConceptsSchema), a
 });
 
 router.post("/suggest-next-topic", requireAuth, validate(suggestNextTopicSchema), async (req: AuthedRequest, res: Response) => {
-  const { node_title, node_content, existing_nodes, user_progress, provider: providerType, model } = req.body;
+  const { node_title, node_content, existing_nodes, user_progress, provider: providerType, model, language } = req.body;
   const result = await aiService.suggestNextTopic(node_title, node_content, existing_nodes, {
-    provider: providerType, model,
+    provider: providerType, model, language,
     // 真实掌握度由后端按 userId 聚合；user_progress 仅作可选覆盖
     userId: req.user.id,
     userProgress: user_progress

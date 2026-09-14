@@ -322,7 +322,8 @@ router.post(
   requireAuth,
   upload.single("file"),
   async (req: AuthedRequest, res: Response) => {
-    const { provider: providerOverride, model: modelOverride } = req.body;
+    const { provider: providerOverride, model: modelOverride, language } =
+      req.body;
     const file = req.file;
 
     if (!file) {
@@ -334,6 +335,7 @@ router.post(
     const result = await aiService.generateGraphFromImage(base64Image, {
       provider: providerOverride,
       model: modelOverride,
+      language,
     });
 
     if (result.nodes) {

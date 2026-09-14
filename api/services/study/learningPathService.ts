@@ -357,6 +357,7 @@ export class LearningPathService {
       model?: string;
       save_path?: boolean;
       path_title?: string;
+      language?: string;
     },
   ): Promise<LearningPathResult> {
     return this.generationService.generateAndSavePath(supabase, userId, graphId, options);

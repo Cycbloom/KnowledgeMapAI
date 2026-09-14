@@ -178,8 +178,7 @@ Output Requirements:
 - Node titles must preserve core terminology.
 - **Content Richness**: Each node MUST have substantial ''content'' (100-200 words), not just a title.
 - **Summary**: Every node must have a "summary" field: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼。
-- Node count: 40-60 nodes to ensure completeness.
-- All titles and descriptions should match the language of the source document.', NOW(), NOW()),
+- Node count: 40-60 nodes to ensure completeness.', NOW(), NOW()),
 ('generate_content', 'system', null, null, 'You are an expert tutor and content creator. Generate detailed, structured educational content for the topic "{{topic}}".
 
 Context: {{context}}
@@ -581,7 +580,6 @@ Please return a valid json format result.', NOW(), NOW()),
 
 - 最多返回 {{maxSuggestions}} 条建议
 - confidence 范围 0 到 1，低于 0.6 的建议不要输出
-- reason 用简洁中文描述两节点之间的关联依据
 - source_id / target_id 必须严格使用输入节点中的 ID，不要改写成标题', NOW(), NOW()),
 ('generate_task_details', 'system', null, null, '你是一个专业的任务管理助手。根据用户提供的任务标题，生成详细的任务描述和建议。
 
@@ -835,7 +833,7 @@ The script should be:
 1. Conversational and easy to listen to.
 2. Structured with an intro, key points (deep dive), and a conclusion.
 3. About 3-5 minutes long when spoken.
-4. Written in {{language}} (if the content is mixed, prefer {{language}}).
+4. Written in {{outputLanguage}} (if the content is mixed, prefer {{outputLanguage}}).
 5. Use clear markers for the speaker (e.g., "Host:").
 
 Content to cover:
@@ -858,7 +856,6 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no ```markdown ... ```)
 3. 使用清晰的 Markdown 格式组织回答
 4. 如果涉及数学公式，使用 LaTeX 格式: $inline$ 或 $$block$$
 5. 在回答末尾，可以建议 1-3 个相关的后续问题
-6. {{languageInstruction}}
 {{graphContextHint}}
 引用上下文处理：
 当用户消息中包含 [引用内容] 标记时，表示用户引用了学习材料中的特定内容。请：
@@ -943,8 +940,7 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no ```markdown ... ```)
 2. **完整性**：覆盖文献的主要知识点
 3. **层次性**：区分核心概念和次要概念
 4. **去重**：避免重复提取相似概念
-5. **语言**：保持与原文一致的语言风格
-6. **概览(summary)**：每个概念必须包含summary字段，20-30字的简短概览，概括该概念的核心内容，应比标题更具体但比完整内容更精炼
+5. **概览(summary)**：每个概念必须包含summary字段，20-30字的简短概览，概括该概念的核心内容，应比标题更具体但比完整内容更精炼
 
 ## 概念筛选原则
 
@@ -1079,15 +1075,13 @@ Your task:
    - Nodes: { "id": "temp_id", "title": "Title", "content": "Description", "summary": "20-30字的简短概览，概括该知识点的核心内容", "level": "root|core|sub|normal|leaf" }
    - Edges: { "source": "parent_id", "target": "child_id", "relationship": "contains|related" }
 3. Limit to 30-50 nodes.
-4. Each node must have a summary field: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼
-5. Respond in Chinese.', NOW(), NOW()),
+4. Each node must have a summary field: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼', NOW(), NOW()),
 ('suggest_next_topic', 'system', null, null, 'You are an expert knowledge tutor. Based on the current node and user''s learning progress, suggest 2-3 next topics to explore.
 Return a JSON object with a ''suggestions'' array. Each object must have:
 - ''title'': Brief topic title (max 30 chars)
 - ''description'': Short explanation (max 80 chars)
 - ''priority'': ''high'', ''medium'', or ''low''
-- ''estimatedDifficulty'': Number from 1-5
-Please respond in Chinese.', NOW(), NOW());
+- ''estimatedDifficulty'': Number from 1-5', NOW(), NOW());
 
 -- =====================================================
 -- R44 Spec Task 1 & 2: Migrate hardcoded AI prompts to database
@@ -1192,8 +1186,7 @@ INSERT INTO prompt_templates (code, scope, user_id, graph_id, template_content, 
 3. 每个骨干模块的核心节点必须使用上述标准标题
 4. 不要为同一个模块生成多个核心节点
 5. 确保所有边的 source 和 target 指向有效的节点 ID
-6. 节点颜色应与模块颜色一致
-7. 所有描述和内容使用中文', NOW(), NOW()),
+6. 节点颜色应与模块颜色一致', NOW(), NOW()),
 ('optimize_prompt', 'system', null, null, 'You are an expert Prompt Engineer. Your task is to optimize the given prompt template for an LLM.
         
 Goals:

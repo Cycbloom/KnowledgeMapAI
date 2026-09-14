@@ -1,4 +1,5 @@
 import { request } from "./client";
+import { getAILanguage } from "@/hooks/ai/useAILanguage";
 import type {
   Graph,
   Node,
@@ -268,11 +269,15 @@ export const graphsApi: IGraphsApi = {
       relation_types?: string[];
       auto_generate_nodes?: boolean;
       node_depth?: number;
+      language?: string;
     },
   ): Promise<unknown> =>
     request<unknown>(`/graphs/${graphId}/infinite-expand`, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...data,
+        language: data.language || getAILanguage(),
+      }),
     }),
 
   infiniteExpandStart: (
@@ -281,6 +286,7 @@ export const graphsApi: IGraphsApi = {
       max_depth?: number;
       max_graphs_per_level?: number;
       relation_types?: string[];
+      language?: string;
     },
   ): Promise<{
     candidates: WidthExpansionCandidate[];
@@ -293,7 +299,10 @@ export const graphsApi: IGraphsApi = {
       job: unknown;
     }>(`/graphs/${graphId}/infinite-expand/start`, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...data,
+        language: data.language || getAILanguage(),
+      }),
     }),
 
   infiniteExpandGenerate: (
@@ -389,10 +398,14 @@ export const graphsApi: IGraphsApi = {
     graph_ids?: string[];
     max_suggestions?: number;
     include_cross_domain?: boolean;
+    language?: string;
   }): Promise<DiscoveryResult> =>
     request<DiscoveryResult>("/graphs/discover-relations", {
       method: "POST",
-      body: JSON.stringify(data || {}),
+      body: JSON.stringify({
+        ...data,
+        language: data?.language || getAILanguage(),
+      }),
     }),
 
   createDiscoveredRelation: (data: {

@@ -25,7 +25,11 @@ import { ErrorCodes } from "../../../shared/types/errorCodes";
 export class AnalysisService {
   async generateGraphFromImage(
     imageBase64: string,
-    options: { provider?: AIProviderType; model?: string } = {},
+    options: {
+      provider?: AIProviderType;
+      model?: string;
+      language?: string;
+    } = {},
   ) {
     let providerName = options.provider;
 
@@ -55,6 +59,9 @@ export class AnalysisService {
         getSupabaseAdmin(),
         "image_to_graph",
         {},
+        undefined,
+        undefined,
+        options.language,
       );
 
       if (!systemPrompt || systemPrompt.trim().length === 0) {

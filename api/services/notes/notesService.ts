@@ -830,6 +830,7 @@ export class NotesService {
     supabase: SupabaseClient,
     userId: string,
     noteId: string,
+    language?: string,
   ): Promise<GenerateDailySummaryResponse> {
     const startTime = Date.now();
 
@@ -880,6 +881,8 @@ export class NotesService {
           today_completed_tasks_list: completedTasksList,
         },
         userId,
+        undefined,
+        language,
       );
 
       // 7. 调用 AI(带超时 + 重试)
@@ -980,6 +983,7 @@ export class NotesService {
     supabase: SupabaseClient,
     userId: string,
     noteId: string,
+    language?: string,
   ): Promise<ExtractConceptsResponse> {
     const startTime = Date.now();
 
@@ -1006,6 +1010,8 @@ export class NotesService {
         'notes_extract_concepts',
         { content: note.content },
         userId,
+        undefined,
+        language,
       );
 
       // 4. 调用 AI(要求 JSON 输出)
@@ -1375,6 +1381,7 @@ export class NotesService {
     supabase: SupabaseClient,
     userId: string,
     req: WritingAssistRequest,
+    language?: string,
   ): Promise<WritingAssistResponse> {
     const startTime = Date.now();
 
@@ -1400,6 +1407,8 @@ export class NotesService {
           contextAfter: req.contextAfter ?? '',
         },
         userId,
+        undefined,
+        language,
       );
 
       // 4. 调用 AI(单一 system + user 消息,带超时 + 重试)

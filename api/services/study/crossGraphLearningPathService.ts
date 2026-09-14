@@ -79,6 +79,7 @@ class CrossGraphLearningPathService {
       force?: boolean;
       /** 自然语言学习目标：提供时走 AI 目标驱动生成，否则用规则算法 */
       targetGoal?: string;
+      language?: string;
     },
   ): Promise<CrossGraphPathResult> {
     if (!options?.force) {
@@ -155,6 +156,7 @@ class CrossGraphLearningPathService {
           relations,
           targetGoal,
           options?.dailyMinutes ?? 180,
+          options?.language,
         )
       : generateCrossGraphRulePath(graphs, relations);
 

@@ -241,6 +241,7 @@ class GoalDrivenPathService {
       model?: string;
       selectedGraphIds?: string[];
       selectedDomainIds?: string[];
+      language?: string;
     },
   ): Promise<{ suggestedGoals: string[] }> {
     const provider = opts?.provider
@@ -298,7 +299,7 @@ class GoalDrivenPathService {
       { graphContextSummary, domainSummary, selectionContext },
       userId,
       undefined,
-      undefined,
+      opts?.language,
     );
 
     const selectionInstruction = selectionContext
@@ -381,6 +382,7 @@ ${domainSummary}
       model?: string;
       selectedGraphIds?: string[];
       selectedDomainIds?: string[];
+      language?: string;
     },
   ): Promise<{ variants: CrossGraphPathVariant[] }> {
     const provider = opts.provider
@@ -492,7 +494,7 @@ ${domainSummary}
       },
       userId,
       undefined,
-      undefined,
+      opts.language,
     );
 
     // 领域 id → 名称映射：让候选路径生成感知领域

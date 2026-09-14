@@ -41,6 +41,7 @@ export interface GenerateTemplatesOptions {
   graphId?: string;
   maxNodes?: number;
   preferredLayout?: LayoutSuggestion;
+  language?: string;
 }
 
 export interface GenerateTemplatesResult {
@@ -461,6 +462,7 @@ export class TemplateGeneratorService {
         model: options.model,
         userId: options.userId,
         graphId: options.graphId,
+        language: options.language,
       });
 
       const nodes: GeneratedTemplateNode[] = backboneResult.backbone.nodes.map(
@@ -629,6 +631,7 @@ export class TemplateGeneratorService {
       preferredLayout,
       options.userId,
       options.graphId,
+      options.language,
     );
 
     const userPrompt = this.buildUserPrompt(topic, context);
@@ -736,6 +739,7 @@ export class TemplateGeneratorService {
     preferredLayout?: LayoutSuggestion,
     userId?: string,
     graphId?: string,
+    language?: string,
   ): Promise<string> {
     const categoryGuides: Record<TemplateCategory, string> = {
       knowledge:
@@ -757,6 +761,7 @@ export class TemplateGeneratorService {
           {},
           userId,
           graphId,
+          language,
         )) || "";
     }
 
@@ -787,6 +792,9 @@ export class TemplateGeneratorService {
         preferredLayout: preferredLayout || "radial",
         layoutGuidance,
       },
+      undefined,
+      undefined,
+      language,
     );
 
     if (customPrompt && customPrompt.trim().length > 0) {

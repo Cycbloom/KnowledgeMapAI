@@ -220,7 +220,10 @@ export interface IAiApi {
     language?: string;
   }): Promise<{ nodes: unknown[]; edges: unknown[] }>;
 
-  imageToGraph(formData: FormData): Promise<{ nodes: unknown[]; edges: unknown[] }>;
+  imageToGraph(data: {
+    formData: FormData;
+    language?: string;
+  }): Promise<{ nodes: unknown[]; edges: unknown[] }>;
 
   urlToText(url: string): Promise<{ text: string; title?: string }>;
 

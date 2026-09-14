@@ -101,6 +101,7 @@ router.post(
 const autoClassifySchema = z.object({
   graph_ids: z.array(z.string().uuid()).optional(),
   max_domains: z.number().int().min(1).max(20).optional(),
+  language: z.string().optional(),
 });
 
 const applyClassifySchema = z.object({
@@ -124,11 +125,12 @@ router.post(
   async (req: AuthedRequest, res: Response) => {
     const supabase = req.supabase;
     const userId = req.user.id;
-    const { graph_ids, max_domains } = req.body;
+    const { graph_ids, max_domains, language } = req.body;
 
     const result = await domainService.autoClassifyGraphs(supabase, userId, {
       graph_ids,
       max_domains,
+      language,
     });
     res.json(result);
   },

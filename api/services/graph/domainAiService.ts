@@ -178,7 +178,7 @@ ${domains.map((d, i) => `${i + 1}. ${d.name}${d.description ? ` (${d.description
   async autoClassifyGraphs(
     supabase: SupabaseClient,
     userId: string,
-    options?: { graph_ids?: string[]; max_domains?: number },
+    options?: { graph_ids?: string[]; max_domains?: number; language?: string },
   ): Promise<{ domains: AutoClassifiedDomain[]; graphs: AutoClassifyGraphInfo[] }> {
     let query = notDeleted(
       supabase
@@ -277,6 +277,8 @@ ${domains.map((d, i) => `${i + 1}. ${d.name}${d.description ? ` (${d.description
         "auto_domain_classify",
         { graphList: graphLines, maxDomains },
         userId,
+        undefined,
+        options?.language,
       );
     } catch (promptError) {
       logger.warn("自动分类：加载提示词失败，使用空内容", {

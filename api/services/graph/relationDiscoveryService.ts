@@ -114,6 +114,7 @@ export class RelationDiscoveryService {
       max_suggestions?: number;
       include_cross_domain?: boolean;
       session_id?: string;
+      language?: string;
     },
   ): Promise<DiscoveryResult & { session_id?: string }> {
     const maxSuggestions = options?.max_suggestions || 20;
@@ -201,6 +202,8 @@ export class RelationDiscoveryService {
         include_cross_domain: includeCrossDomain,
       },
       userId,
+      undefined,
+      options?.language,
     );
 
     const userMessage = `请分析以下${graphs.length}个知识图谱，发现它们之间的潜在关系。

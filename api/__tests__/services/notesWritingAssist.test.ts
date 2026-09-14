@@ -142,6 +142,8 @@ describe("NotesService.writingAssist (P2 Task 3.1)", () => {
         contextAfter: "",
       }),
       USER_ID,
+      undefined,
+      undefined,
     );
   });
 
@@ -163,6 +165,8 @@ describe("NotesService.writingAssist (P2 Task 3.1)", () => {
         contextAfter: "",
       }),
       USER_ID,
+      undefined,
+      undefined,
     );
   });
 
@@ -186,6 +190,8 @@ describe("NotesService.writingAssist (P2 Task 3.1)", () => {
         contextAfter: "后文上下文",
       }),
       USER_ID,
+      undefined,
+      undefined,
     );
   });
 

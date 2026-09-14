@@ -47,6 +47,7 @@ export interface GenerateBackboneOptions {
   includeModules?: BackboneModule[];
   maxNodesPerModule?: number;
   customModules?: BackboneModuleCustomConfig[];
+  language?: string;
 }
 
 export interface GenerateBackboneResult {
@@ -174,6 +175,7 @@ export class BackboneNetworkService {
       options.userId,
       options.graphId,
       customModules,
+      options.language,
     );
 
     const userPrompt = this.buildUserPrompt(
@@ -342,6 +344,7 @@ export class BackboneNetworkService {
     userId?: string,
     graphId?: string,
     customModules?: BackboneModuleCustomConfig[],
+    language?: string,
   ): Promise<string> {
     const useCustomModules = customModules && customModules.length > 0;
 
@@ -367,6 +370,7 @@ export class BackboneNetworkService {
       },
       userId,
       graphId,
+      language,
     );
 
     if (!systemPrompt || systemPrompt.trim().length === 0) {

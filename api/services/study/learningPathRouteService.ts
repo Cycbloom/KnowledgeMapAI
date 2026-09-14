@@ -45,10 +45,12 @@ interface GeneratePathData {
   current_knowledge?: string;
   provider?: string;
   model?: string;
+  language?: string;
 }
 
 interface GenerateQuestionsData {
   graph_id: string;
+  language?: string;
 }
 
 class LearningPathRouteService {
@@ -66,6 +68,7 @@ class LearningPathRouteService {
       current_knowledge,
       provider: providerType,
       model,
+      language,
     } = data;
 
     try {
@@ -112,6 +115,7 @@ class LearningPathRouteService {
           graphMeta?.title || "",
           providerType,
           model,
+          language,
         );
         stages = aiResult.stages;
         suggestions = aiResult.suggestions;
@@ -303,7 +307,7 @@ class LearningPathRouteService {
       };
     }>;
   }> {
-    const { graph_id } = data;
+    const { graph_id, language } = data;
 
     try {
       const { data: graphMeta } = await supabase
@@ -381,6 +385,7 @@ class LearningPathRouteService {
         },
         userId,
         graph_id,
+        language,
       );
 
       const descriptionLine = graphMeta.description

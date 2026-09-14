@@ -17,6 +17,7 @@ export interface GenerateTemplatesData {
   graph_id?: string;
   maxNodes?: number;
   preferredLayout?: LayoutSuggestion;
+  language?: string;
 }
 
 export interface TemplateNodeData {
@@ -231,10 +232,17 @@ export const autoGraphApi = {
       body: JSON.stringify(data),
     }),
 
-  optimizePrompt: (data: { topic: string; currentPrompt?: string }) =>
+  optimizePrompt: (data: {
+    topic: string;
+    currentPrompt?: string;
+    language?: string;
+  }) =>
     request<{ optimizedPrompt: string }>("/auto-graph/optimize-prompt", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...data,
+        language: data.language || getAILanguage(),
+      }),
     }),
 
   generateEmbeddings: (limit?: number) =>
@@ -257,7 +265,10 @@ export const autoGraphApi = {
     data: GenerateTemplatesData,
   ): Promise<GenerateTemplatesResult> => {
     const config = getAIConfig("text");
-    const payload = { ...data };
+    const payload = {
+      ...data,
+      language: data.language || getAILanguage(),
+    };
     if (!payload.provider && config.provider)
       {payload.provider = config.provider;}
     if (!payload.model && config.model) payload.model = config.model;

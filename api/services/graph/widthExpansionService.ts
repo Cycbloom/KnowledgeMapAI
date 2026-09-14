@@ -16,6 +16,7 @@ export interface WidthExpansionConfig {
   max_depth: number;
   max_graphs_per_level: number;
   relation_types: WidthRelationType[];
+  language?: string;
 }
 
 export interface WidthCandidate {
@@ -89,6 +90,7 @@ async function suggestRelatedGraphs(
     sourceGraphTitle: string;
     max_graphs_per_level: number;
     relation_types: WidthRelationType[];
+    language?: string;
   },
 ): Promise<
   Array<{
@@ -120,6 +122,8 @@ async function suggestRelatedGraphs(
       parentDomainName: undefined,
     },
     userId,
+    undefined,
+    params.language,
   );
 
   const completion = await provider.client.chat.completions.create({
@@ -188,6 +192,7 @@ async function generateCandidates(
   userId: string,
   sourceGraphId: string,
   job: WidthJob,
+  language?: string,
 ): Promise<{ candidates: WidthCandidate[]; reachesMaxDepth: boolean }> {
   const reachesMaxDepth = job.depth >= job.max_depth;
   if (reachesMaxDepth || job.frontier.length === 0) {
@@ -203,6 +208,7 @@ async function generateCandidates(
       sourceGraphTitle: frontierNode.title,
       max_graphs_per_level: job.max_graphs_per_level,
       relation_types: job.relation_types,
+      language,
     });
 
     for (const s of suggestions) {
@@ -281,6 +287,7 @@ export class WidthExpansionService {
       userId,
       sourceGraphId,
       job,
+      config.language,
     );
     return { candidates, reachesMaxDepth, job };
   }

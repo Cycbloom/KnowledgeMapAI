@@ -449,6 +449,7 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
       "isBeginner",
       "hasSources",
       "sources",
+      "outputLanguage",
     ],
     auto_graph_expand: [
       "nodeTitle",
@@ -469,6 +470,12 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
     ],
     literature_concept_extraction: ["title", "authors", "abstract", "content"],
     literature_relation_inference: ["title", "concepts", "existingNodes"],
+    learning_material: ["outputLanguage", "categoryOptions"],
+    learning_schema_assist: ["outputLanguage"],
+    cross_graph_goal_dialog: ["outputLanguage"],
+    cross_graph_path_variants: ["outputLanguage"],
+    cross_graph_goal_suggest: ["outputLanguage"],
+    podcast_script: ["outputLanguage"],
   };
 
   if (editingCode) {

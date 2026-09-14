@@ -76,6 +76,7 @@ interface InfiniteExpansionOptions {
   relation_types?: string[];
   auto_generate_nodes?: boolean;
   node_depth?: number;
+  language?: string;
 }
 
 export class GraphRelationsRouteService {
@@ -482,6 +483,7 @@ export class GraphRelationsRouteService {
       relation_types = ['prerequisite', 'extension', 'related'],
       auto_generate_nodes = true,
       node_depth = 2,
+      language,
     } = options;
 
     const { data: sourceGraph } = await supabase
@@ -510,6 +512,7 @@ export class GraphRelationsRouteService {
         relation_types,
         auto_generate_nodes,
         node_depth,
+        language,
       },
     );
 

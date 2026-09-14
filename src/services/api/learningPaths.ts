@@ -311,6 +311,7 @@ export interface GeneratePathInput {
   daily_minutes_target?: number;
   target_completion_date?: string;
   conversation_history?: Array<{ role: "user" | "assistant"; content: string }>;
+  language?: string;
 }
 
 export const learningPathsApi = {
@@ -397,7 +398,10 @@ export const learningPathsApi = {
   generateFromGraph: (data: GeneratePathInput) =>
     request<LearningPathResult>("/learning-paths/generate", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...data,
+        language: data.language || getAILanguage(),
+      }),
     }),
 
   adjust: (
@@ -453,12 +457,16 @@ export const learningPathsApi = {
     title?: string;
     force?: boolean;
     target_goal?: string;
+    language?: string;
   }) =>
     request<{ success: boolean; data: CrossGraphPathResult }>(
       "/learning-paths/generate-cross-graph",
       {
         method: "POST",
-        body: JSON.stringify(data || {}),
+        body: JSON.stringify({
+          ...(data || {}),
+          language: data?.language || getAILanguage(),
+        }),
       },
     ),
 
@@ -483,10 +491,17 @@ export const learningPathsApi = {
     model?: string;
     selected_graph_ids?: string[];
     selected_domain_ids?: string[];
+    language?: string;
   }) =>
     request<{ success: boolean; data: { suggestedGoals: string[] } }>(
       "/learning-paths/cross-graph/goal/suggest",
-      { method: "POST", body: JSON.stringify(data || {}) },
+      {
+        method: "POST",
+        body: JSON.stringify({
+          ...(data || {}),
+          language: data?.language || getAILanguage(),
+        }),
+      },
     ),
 
   dialogStream: async (
@@ -533,10 +548,17 @@ export const learningPathsApi = {
     model?: string;
     selected_graph_ids?: string[];
     selected_domain_ids?: string[];
+    language?: string;
   }) =>
     request<{ success: boolean; data: { taskId: string; taskType: string } }>(
       "/learning-paths/cross-graph/goal/variants",
-      { method: "POST", body: JSON.stringify(data) },
+      {
+        method: "POST",
+        body: JSON.stringify({
+          ...data,
+          language: data.language || getAILanguage(),
+        }),
+      },
     ),
 
   saveVariant: (data: {
@@ -572,10 +594,13 @@ export const learningPathsApi = {
 };
 
 export const learningPathApi = {
-  getQuestions: (data: { graph_id: string }) =>
+  getQuestions: (data: { graph_id: string; language?: string }) =>
     request<LearningPathQuestions>("/learning-paths/questions", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...data,
+        language: data.language || getAILanguage(),
+      }),
     }),
 
   generate: (data: {
@@ -587,10 +612,14 @@ export const learningPathApi = {
     current_knowledge?: string;
     provider?: string;
     model?: string;
+    language?: string;
   }) =>
     request<LearningPathPreview>("/learning-paths/generate-preview", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...data,
+        language: data.language || getAILanguage(),
+      }),
     }),
 
   getProgress: (graphId: string) =>

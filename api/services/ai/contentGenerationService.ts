@@ -51,8 +51,6 @@ export class ContentGenerationService {
       "podcast_script",
       {
         context,
-        language:
-          language === "zh-CN" || language === "zh" ? "Chinese" : "English",
       },
       undefined,
       undefined,

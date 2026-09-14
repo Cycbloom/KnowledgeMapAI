@@ -119,7 +119,7 @@ export const domainService = {
   async autoClassifyGraphs(
     supabase: SupabaseClient,
     userId: string,
-    options?: { graph_ids?: string[]; max_domains?: number },
+    options?: { graph_ids?: string[]; max_domains?: number; language?: string },
   ): Promise<{ domains: import("./domainShared").AutoClassifiedDomain[]; graphs: import("./domainShared").AutoClassifyGraphInfo[] }> {
     return aiService.autoClassifyGraphs(supabase, userId, options);
   },

@@ -231,6 +231,7 @@ export class KnowledgeExpansionService {
         currentLevel?: string;
         dueCount?: number;
       };
+      language?: string;
     } = {},
   ) {
     const provider = options.provider
@@ -282,6 +283,9 @@ export class KnowledgeExpansionService {
               getSupabaseAdmin(),
               "suggest_next_topic",
               {},
+              undefined,
+              undefined,
+              options.language,
             );
 
             if (!systemPrompt || systemPrompt.trim().length === 0) {

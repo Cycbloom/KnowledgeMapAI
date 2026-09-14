@@ -49,7 +49,7 @@ const createTemplate = (
 });
 
 // getRenderedPrompt 末尾追加的语言指令
-const ZH_INSTRUCTION = "Please respond in Chinese.";
+const ZH_INSTRUCTION = "请用中文回答。";
 const EN_INSTRUCTION = "Please respond in English.";
 
 describe("PromptService", () => {

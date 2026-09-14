@@ -62,6 +62,7 @@ const discoverRelationsSchema = z.object({
   graph_ids: z.array(z.string().uuid()).optional(),
   max_suggestions: z.number().min(1).max(50).default(20),
   include_cross_domain: z.boolean().default(true),
+  language: z.string().optional(),
 });
 
 const createRelationFromDiscoverySchema = z.object({
@@ -196,7 +197,8 @@ router.post(
   requireAuth,
   validate({ body: discoverRelationsSchema }),
   async (req: AuthedRequest, res: Response) => {
-    const { graph_ids, max_suggestions, include_cross_domain } = req.body;
+    const { graph_ids, max_suggestions, include_cross_domain, language } =
+      req.body;
     const userId = req.user.id;
 
     const result = await relationDiscoveryService.discoverRelations(
@@ -206,6 +208,7 @@ router.post(
         graph_ids,
         max_suggestions,
         include_cross_domain,
+        language,
       },
     );
 

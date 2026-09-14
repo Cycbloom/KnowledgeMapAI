@@ -136,6 +136,7 @@ const infiniteExpansionSchema = z.object({
     .default(["prerequisite", "extension", "related"]),
   auto_generate_nodes: z.boolean().optional().default(true),
   node_depth: z.number().min(1).max(3).optional().default(2),
+  language: z.string().optional(),
 });
 
 const applySelectionSchema = z.object({
@@ -156,12 +157,12 @@ router.post(
   validate(infiniteExpansionSchema),
   async (req: AuthedRequest, res: Response) => {
     const { graphId } = req.params;
-    const { max_depth, max_graphs_per_level, relation_types } = req.body;
+    const { max_depth, max_graphs_per_level, relation_types, language } = req.body;
     const data = await widthExpansionService.start(
       req.supabase,
       req.user.id,
       graphId,
-      { max_depth, max_graphs_per_level, relation_types },
+      { max_depth, max_graphs_per_level, relation_types, language },
     );
     res.json(data);
   },
@@ -213,12 +214,13 @@ router.post(
       relation_types,
       auto_generate_nodes,
       node_depth,
+      language,
     } = req.body;
     const data = await graphRelationsRouteService.startInfiniteExpansion(
       req.supabase,
       req.user.id,
       graphId,
-      { max_depth, max_graphs_per_level, relation_types, auto_generate_nodes, node_depth },
+      { max_depth, max_graphs_per_level, relation_types, auto_generate_nodes, node_depth, language },
     );
     res.json(data);
   },

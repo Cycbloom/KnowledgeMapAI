@@ -12,7 +12,7 @@ import { OUTPUT_SCHEMAS } from './schemas';
 import { logger } from '@/utils/logger';
 
 const LANGUAGE_INSTRUCTIONS: Record<string, string> = {
-  "zh-CN": "Please respond in Chinese.",
+  "zh-CN": "请用中文回答。",
   "en-US": "Please respond in English.",
 };
 

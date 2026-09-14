@@ -58,14 +58,6 @@ export class RAGChatService {
       };
     }
 
-    const isEnglish =
-      language === "en-US" ||
-      language === "en" ||
-      (language && language.startsWith("en"));
-    const languageInstruction = isEnglish
-      ? "Please respond in English."
-      : "请用中文回答";
-
     const graphContextHint =
       useGraphContext && graphId && context.includes("[图谱关联节点]")
         ? `\n\n重要提示：以下知识上下文中包含通过图谱关系发现的关联节点（标记为"图谱关联"）。这些节点之间存在图谱关系路径，请利用这些关系进行推理和解释，帮助用户理解知识之间的深层联系。\n`
@@ -82,7 +74,6 @@ export class RAGChatService {
         "rag_chat",
         {
           context: context || "(暂无相关上下文)",
-          languageInstruction,
           graphContextHint,
         },
         undefined,
@@ -145,6 +136,7 @@ export class RAGChatService {
         sources,
         aiProvider,
         model,
+        language,
       );
 
       return {
@@ -166,6 +158,7 @@ export class RAGChatService {
     sources: RAGSearchResult[],
     provider: AIProvider,
     model?: string,
+    language?: string,
   ): Promise<string[]> {
     if (sources.length === 0) {
       return [
@@ -186,6 +179,9 @@ export class RAGChatService {
         supabase,
         "suggest_questions",
         { originalQuestion, previousAnswer: answer.substring(0, 500) },
+        undefined,
+        undefined,
+        language,
       );
 
       const completion = await withAIMonitoring(
@@ -268,14 +264,6 @@ export class RAGChatService {
       return sources.slice(0, 3);
     }
 
-    const isEnglish =
-      language === "en-US" ||
-      language === "en" ||
-      (language && language.startsWith("en"));
-    const languageInstruction = isEnglish
-      ? "Please respond in English."
-      : "请用中文回答";
-
     const graphContextHint =
       useGraphContext && graphId && context.includes("[图谱关联节点]")
         ? `\n\n重要提示：以下知识上下文中包含通过图谱关系发现的关联节点（标记为"图谱关联"）。这些节点之间存在图谱关系路径，请利用这些关系进行推理和解释，帮助用户理解知识之间的深层联系。\n`
@@ -292,7 +280,6 @@ export class RAGChatService {
         "rag_chat",
         {
           context: context || "(暂无相关上下文)",
-          languageInstruction,
           graphContextHint,
         },
         undefined,

@@ -13,6 +13,7 @@ import { AppError } from "../../middleware/errorHandler";
 interface AutoClassifyDomainsPayload {
   graph_ids?: string[];
   max_domains?: number;
+  language?: string;
   [key: string]: unknown;
 }
 
@@ -64,6 +65,8 @@ export class AutoClassifyDomainsProcessor implements TaskProcessor {
           typeof payload?.max_domains === "number"
             ? payload.max_domains
             : undefined,
+        language:
+          typeof payload?.language === "string" ? payload.language : undefined,
       });
 
       control.throwIfAborted();

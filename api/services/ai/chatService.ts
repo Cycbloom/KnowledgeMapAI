@@ -194,7 +194,7 @@ export class ChatService {
       mode?: "free" | "guided";
       learningPath?: string[];
     } = {},
-    options: { provider?: AIProviderType; model?: string } = {},
+    options: { provider?: AIProviderType; model?: string; language?: string } = {},
   ) {
     const provider = options.provider
       ? await getAIProvider(options.provider)
@@ -234,6 +234,9 @@ export class ChatService {
                 ? context.existingNodes.join(", ")
                 : undefined,
             },
+            undefined,
+            undefined,
+            options.language,
           );
 
           const completion = await withTimeoutAndRetry(
@@ -777,6 +780,7 @@ export class ChatService {
       provider?: AIProviderType;
       model?: string;
       sessionId: string;
+      language?: string;
     },
   ): Promise<void> {
     try {
@@ -788,7 +792,7 @@ export class ChatService {
         const mockContent = await this.tutorChat(
           [{ role: "user", content: options.message }],
           { mode: options.mode },
-          { provider: options.provider, model: options.model },
+          { provider: options.provider, model: options.model, language: options.language },
         );
         this.streamMockResponse(res, mockContent);
         return;
@@ -856,6 +860,9 @@ export class ChatService {
             ? context.existingNodes.slice(0, 20).join(", ")
             : undefined,
         },
+        undefined,
+        undefined,
+        options.language,
       );
 
       const enableWebSearch = await hasWebSearchKey().catch(() => false);
@@ -907,6 +914,7 @@ export class ChatService {
       difficulty?: string;
       provider?: AIProviderType;
       model?: string;
+      language?: string;
     },
   ): Promise<{ score: number; feedback: string; correct: boolean }> {
     if (!options.userAnswer || options.userAnswer.trim() === "") {
@@ -924,6 +932,9 @@ export class ChatService {
         explanation: options.explanation || "",
         difficulty: options.difficulty || "medium",
       },
+      undefined,
+      undefined,
+      options.language,
     );
 
     const raw = await this.chat(

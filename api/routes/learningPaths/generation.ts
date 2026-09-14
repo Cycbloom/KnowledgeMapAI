@@ -26,6 +26,7 @@ const generatePathSchema = z.object({
   model: z.string().optional(),
   save_path: z.boolean().optional(),
   path_title: z.string().max(200).optional(),
+  language: z.string().optional(),
 });
 
 // 生成预览路径的 schema
@@ -40,11 +41,13 @@ const generatePreviewPathSchema = z.object({
   current_knowledge: z.string().max(1000).optional(),
   provider: z.string().optional(),
   model: z.string().optional(),
+  language: z.string().optional(),
 });
 
 // 生成问题请求 schema
 const getQuestionsSchema = z.object({
   graph_id: z.string().uuid(),
+  language: z.string().optional(),
 });
 
 // 跨图谱学习路径生成请求 schema
@@ -53,6 +56,7 @@ const generateCrossGraphSchema = z.object({
   title: z.string().max(200).optional(),
   force: z.boolean().optional(),
   target_goal: z.string().min(5).max(500).optional(),
+  language: z.string().optional(),
 });
 
 // 生成学习路径预览
@@ -70,6 +74,7 @@ router.post(
       current_knowledge,
       provider: providerType,
       model,
+      language,
     } = req.body;
 
     const learningPath = await learningPathRouteService.generatePath(
@@ -84,6 +89,7 @@ router.post(
         current_knowledge,
         provider: providerType,
         model,
+        language,
       },
     );
     res.json(learningPath);
@@ -96,11 +102,11 @@ router.post(
   requireAuth,
   validate({ body: getQuestionsSchema }),
   async (req: AuthedRequest, res: Response) => {
-    const { graph_id } = req.body;
+    const { graph_id, language } = req.body;
     const result = await learningPathRouteService.generateQuestions(
       req.supabase,
       req.user.id,
-      { graph_id },
+      { graph_id, language },
     );
     res.json(result);
   },
@@ -123,6 +129,7 @@ router.post(
       model,
       save_path,
       path_title,
+      language,
     } = req.body;
 
     try {
@@ -140,6 +147,7 @@ router.post(
           model,
           save_path,
           path_title,
+          language,
         },
       );
 
@@ -162,7 +170,7 @@ router.post(
   requireAuth,
   validate({ body: generateCrossGraphSchema }),
   async (req: AuthedRequest, res: Response) => {
-    const { daily_time_minutes, title, force, target_goal } = req.body;
+    const { daily_time_minutes, title, force, target_goal, language } = req.body;
     const result = await crossGraphLearningPathService.generateCrossGraphPath(
       req.supabase,
       req.user.id,
@@ -171,6 +179,7 @@ router.post(
         title,
         force,
         targetGoal: target_goal,
+        language,
       },
     );
     res.json({ success: true, data: result });

@@ -96,6 +96,7 @@ router.post(
         templateType: "topic_research",
         provider: providerType as AIProviderType,
         model,
+        language,
       });
 
       const template = result.templates[0];

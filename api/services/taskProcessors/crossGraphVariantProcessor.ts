@@ -25,6 +25,7 @@ interface CrossGraphVariantPayload {
   variant_count?: number;
   provider?: string;
   model?: string;
+  language?: string;
   selected_graph_ids?: string[];
   selected_domain_ids?: string[];
   [key: string]: unknown;
@@ -91,6 +92,8 @@ export class CrossGraphVariantProcessor implements TaskProcessor {
           provider:
             typeof payload.provider === "string" ? payload.provider : undefined,
           model: typeof payload.model === "string" ? payload.model : undefined,
+          language:
+            typeof payload.language === "string" ? payload.language : undefined,
           selectedGraphIds: Array.isArray(payload.selected_graph_ids)
             ? payload.selected_graph_ids
             : undefined,

@@ -513,6 +513,7 @@ export async function generateAIPath(
   graphTitle: string,
   _providerType: string | undefined,
   model: string | undefined,
+  language?: string,
 ): Promise<{ stages: LearningPathStage[]; suggestions: string[] }> {
   const provider = await getAIProviderForTask("text");
 
@@ -589,6 +590,7 @@ export async function generateAIPath(
     },
     userId,
     graphId,
+    language,
   );
 
   const userMessage = i18next.t("learningPath.api.prompts.pathUserMessage", {

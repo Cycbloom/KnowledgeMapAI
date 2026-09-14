@@ -1,4 +1,5 @@
 import { request } from './client';
+import { getAILanguage } from '@/hooks/ai/useAILanguage';
 import type {
   Domain,
   DomainTreeNode,
@@ -84,10 +85,10 @@ export const domainsApi = {
     }),
 
   // 根据已有图谱自动聚类合成领域（候选确认后再创建）
-  autoClassify: (data?: { graph_ids?: string[]; max_domains?: number }) =>
+  autoClassify: (data?: { graph_ids?: string[]; max_domains?: number; language?: string }) =>
     request<{ domains: AutoClassifiedDomain[]; graphs: AutoClassifyGraphInfo[] }>('/domains/auto-classify', {
       method: 'POST',
-      body: JSON.stringify(data || {}),
+      body: JSON.stringify({ ...data, language: data?.language || getAILanguage() }),
     }),
 
   // 批量创建领域并建立图谱-领域多对多关联

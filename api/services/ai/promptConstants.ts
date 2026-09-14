@@ -10,9 +10,9 @@
 export type PromptScope = "system" | "user" | "graph";
 
 const LANGUAGE_INSTRUCTIONS: Record<string, string> = {
-  "zh-CN": "Please respond in Chinese.",
+  "zh-CN": "请用中文回答。",
   "en-US": "Please respond in English.",
-  zh: "Please respond in Chinese.",
+  zh: "请用中文回答。",
   en: "Please respond in English.",
 };
 
@@ -322,8 +322,7 @@ Topic: {{topic}}`,
 3. 每个骨干模块的核心节点必须使用上述标准标题
 4. 不要为同一个模块生成多个核心节点
 5. 确保所有边的 source 和 target 指向有效的节点 ID
-6. 节点颜色应与模块颜色一致
-7. 所有描述和内容使用中文`,
+6. 节点颜色应与模块颜色一致`,
   branch_suggestions: `You are a knowledge graph expert specializing in creating interactive exploration paths like story branches or adventure game choices.
 
 Goal: Generate 3-5 distinct branch suggestions for the user to explore from the current node.
@@ -461,7 +460,6 @@ Instructions:
 
 - 最多返回 {{maxSuggestions}} 条建议
 - confidence 范围 0 到 1，低于 0.6 的建议不要输出
-- reason 用简洁中文描述两节点之间的关联依据
 - source_id / target_id 必须严格使用输入节点中的 ID，不要改写成标题`,
   deep_analysis: `You are an expert professor and researcher. Your task is to provide a deep analysis of the following concept: "{{node_title}}".
 
@@ -527,8 +525,7 @@ Output Requirements:
 - Node titles must preserve core terminology.
 - **Content Richness**: Each node MUST have substantial 'content' (100-200 words), not just a title.
 - **Summary**: Every node must have a "summary" field: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼。
-- Node count: 40-60 nodes to ensure completeness.
-- All titles and descriptions should match the language of the source document.`,
+- Node count: 40-60 nodes to ensure completeness.`,
   generate_cards: `You are an educational expert. Generate {{count}} flashcards based on the provided topic and content.
 
 Context: The current node is part of a larger knowledge structure.
@@ -647,8 +644,7 @@ Your task:
    - Nodes: { "id": "temp_id", "title": "Title", "content": "Description", "summary": "20-30字的简短概览，概括该知识点的核心内容", "level": "root|core|sub|normal|leaf" }
    - Edges: { "source": "parent_id", "target": "child_id", "relationship": "contains|related" }
 3. Limit to 30-50 nodes.
-4. Each node must have a summary field: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼
-5. Respond in Chinese.`,
+4. Each node must have a summary field: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼`,
   infinite_graph_expansion: `你是一个知识图谱专家。你的任务是根据给定的知识领域，分析并生成**其他独立的知识领域**。
 
 ## 重要概念区分
@@ -933,8 +929,7 @@ Please return a valid json format result.`,
 2. **完整性**：覆盖文献的主要知识点
 3. **层次性**：区分核心概念和次要概念
 4. **去重**：避免重复提取相似概念
-5. **语言**：保持与原文一致的语言风格
-6. **概览(summary)**：每个概念必须包含summary字段，20-30字的简短概览，概括该概念的核心内容，应比标题更具体但比完整内容更精炼
+5. **概览(summary)**：每个概念必须包含summary字段，20-30字的简短概览，概括该概念的核心内容，应比标题更具体但比完整内容更精炼
 
 ## 概念筛选原则
 
@@ -1090,7 +1085,7 @@ The script should be:
 1. Conversational and easy to listen to.
 2. Structured with an intro, key points (deep dive), and a conclusion.
 3. About 3-5 minutes long when spoken.
-4. Written in {{language}} (if the content is mixed, prefer {{language}}).
+4. Written in {{outputLanguage}} (if the content is mixed, prefer {{outputLanguage}}).
 5. Use clear markers for the speaker (e.g., "Host:").
 
 Content to cover:
@@ -1113,7 +1108,6 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
 3. 使用清晰的 Markdown 格式组织回答
 4. 如果涉及数学公式，使用 LaTeX 格式: $inline$ 或 $$block$$
 5. 在回答末尾，可以建议 1-3 个相关的后续问题
-6. {{languageInstruction}}
 {{graphContextHint}}
 引用上下文处理：
 当用户消息中包含 [引用内容] 标记时，表示用户引用了学习材料中的特定内容。请：
@@ -1139,8 +1133,7 @@ Return a JSON object with a 'suggestions' array. Each object must have:
 - 'title': Brief topic title (max 30 chars)
 - 'description': Short explanation (max 80 chars)
 - 'priority': 'high', 'medium', or 'low'
-- 'estimatedDifficulty': Number from 1-5
-Please respond in Chinese.`,
+- 'estimatedDifficulty': Number from 1-5`,
   suggest_questions: `基于用户的原始问题和回答，生成 2-3 个相关的后续问题。
 这些问题应该：
 1. 帮助用户深入理解当前话题
@@ -1796,7 +1789,6 @@ Connection Types:
 
 Important:
 - Only suggest connections with similarity >= 0.5
-- Provide clear reasons in Chinese
 - similarity should be between 0 and 1
 - Use exact node titles from the input for matching`,
 
@@ -1864,7 +1856,6 @@ Learning Order:
 Important:
 - Only suggest relations that do NOT already exist in existing_relations
 - confidence should be between 0 and 1 (higher means more confident)
-- Provide clear reasons in Chinese
 - shared_concepts should list 2-5 key concepts that appear in both graphs
 - Use exact graph titles from the input for matching`,
 

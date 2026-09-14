@@ -1,4 +1,5 @@
 import { request, requestUpload } from './client';
+import { getAILanguage } from "@/hooks/ai/useAILanguage";
 import type {
   Note,
   NoteTemplate,
@@ -113,11 +114,13 @@ export const notesApi: INotesApi = {
   generateDailySummary: (noteId: string) =>
     request<GenerateDailySummaryResponse>(`/notes/${noteId}/summary`, {
       method: 'POST',
+      body: JSON.stringify({ language: getAILanguage() }),
     }),
 
   extractConcepts: (noteId: string) =>
     request<ExtractConceptsResponse>(`/notes/${noteId}/extract-concepts`, {
       method: 'POST',
+      body: JSON.stringify({ language: getAILanguage() }),
     }),
 
   createNodesFromConcepts: (
@@ -169,6 +172,7 @@ export const notesApi: INotesApi = {
         selectedText: data.selectedText,
         contextBefore: data.contextBefore,
         contextAfter: data.contextAfter,
+        language: getAILanguage(),
       }),
     }),
 

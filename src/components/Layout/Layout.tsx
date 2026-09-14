@@ -699,6 +699,7 @@ export const Layout = () => {
           </div>
         )}
 
+        <div className="flex-1 flex flex-col min-w-0 h-full">
         <main id="main-content" ref={mainRef} tabIndex={-1} className="flex-1 overflow-y-auto custom-scrollbar flex flex-col w-full relative focus:outline-none">
           {/* 移动端原生壳延伸到挖孔区后，用安全区高度把内容压到前置摄像头行以下 */}
           {isMobile && !isFullScreenPage && (
@@ -959,6 +960,7 @@ export const Layout = () => {
             浙ICP备2026076010号
           </a>
         </footer>
+        </div>
       </div>
     </div>
   );

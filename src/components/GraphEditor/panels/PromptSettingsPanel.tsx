@@ -286,14 +286,6 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
     [i18n.language],
   );
 
-  const getPromptCallers = useCallback(
-    (tpl: PromptTemplateEntry): string[] => {
-      const callers = tpl?.callers as string[] | null | undefined;
-      return Array.isArray(callers) ? callers : [];
-    },
-    [],
-  );
-
   const categories = useMemo(() => {
     return PROMPT_CATEGORIES.map((category) => ({
       ...category,
@@ -584,26 +576,14 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
                             </span>
                           )}
                         </div>
-                        <div className="mt-1 flex items-center gap-2 min-w-0">
+                        <div className="mt-1 min-w-0">
                           {getPromptDescription(effective) && (
-                            <span
-                              className="flex-1 min-w-0 text-xs text-gray-500 dark:text-gray-400 truncate"
+                            <p
+                              className="text-xs text-gray-500 dark:text-gray-400 truncate"
                               title={getPromptDescription(effective)}
                             >
                               {getPromptDescription(effective)}
-                            </span>
-                          )}
-                          {getPromptCallers(effective).length > 0 && (
-                            <span className="flex flex-wrap gap-1 shrink-0">
-                              {getPromptCallers(effective).map((caller) => (
-                                <span
-                                  key={caller}
-                                  className="px-1.5 py-0.5 text-[10px] rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300"
-                                >
-                                  {caller}
-                                </span>
-                              ))}
-                            </span>
+                            </p>
                           )}
                         </div>
                       </div>

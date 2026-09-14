@@ -10,5 +10,7 @@
   "saving": "Saving...",
   "saveChanges": "Save Changes",
   "optimizeFailed": "Optimization failed: {{message}}",
-  "saveFailed": "Save failed: {{message}}"
+  "saveFailed": "Save failed: {{message}}",
+  "undeclaredVariables": "Template uses undeclared variables: {{vars}} (may render empty)",
+  "blockStructure": "Template contains {{ifCount}} conditional block(s) / {{eachCount}} loop block(s)"
 }

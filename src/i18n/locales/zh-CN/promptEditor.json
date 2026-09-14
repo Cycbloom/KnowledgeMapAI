@@ -10,5 +10,7 @@
   "saving": "保存中...",
   "saveChanges": "保存更改",
   "optimizeFailed": "优化失败: {{message}}",
-  "saveFailed": "保存失败: {{message}}"
+  "saveFailed": "保存失败: {{message}}",
+  "undeclaredVariables": "模板引用了未声明变量：{{vars}}（渲染时可能为空）",
+  "blockStructure": "模板包含 {{ifCount}} 个条件块 / {{eachCount}} 个循环块"
 }

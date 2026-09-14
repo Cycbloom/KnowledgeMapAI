@@ -409,73 +409,11 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
     });
   };
 
-  const variableMap: Record<string, string[]> = {
-    generate_cards: [
-      "count",
-      "context",
-      "allowedTypes",
-      "includesQA",
-      "includesChoice",
-    ],
-    branch_suggestions: ["isRootOrCore", "isLeaf", "topic"],
-    generate_content: ["topic", "context", "isRoot", "isLeaf", "isNormal"],
-    chat: ["contextText"],
-    text_to_graph: [],
-    recommend_connections: [
-      "node_title",
-      "node_content",
-      "existing_nodes_json",
-    ],
-    tutor_chat: [
-      "isGuided",
-      "currentNodeId",
-      "currentNodeTitle",
-      "currentNodeContent",
-      "existingNodes",
-    ],
-    document_to_graph: [],
-    term_annotation: [],
-    infinite_graph_expansion: [
-      "domainTitle",
-      "domainDescription",
-      "maxGraphsPerLevel",
-    ],
-    auto_graph_init: [
-      "topic",
-      "isCustom",
-      "customPrompt",
-      "isAcademic",
-      "isPractical",
-      "isBeginner",
-      "hasSources",
-      "sources",
-      "outputLanguage",
-    ],
-    auto_graph_expand: [
-      "nodeTitle",
-      "nodeContent",
-      "nodeLevel",
-      "minCount",
-      "maxCount",
-      "useLevelStrategy",
-      "isRootOrCore",
-      "isLeaf",
-      "isCustom",
-      "customPrompt",
-      "isAcademic",
-      "isPractical",
-      "isBeginner",
-      "existingChildren",
-      "existingNodesInGraph",
-    ],
-    literature_concept_extraction: ["title", "authors", "abstract", "content"],
-    literature_relation_inference: ["title", "concepts", "existingNodes"],
-    learning_material: ["outputLanguage", "categoryOptions"],
-    learning_schema_assist: ["outputLanguage"],
-    cross_graph_goal_dialog: ["outputLanguage"],
-    cross_graph_path_variants: ["outputLanguage"],
-    cross_graph_goal_suggest: ["outputLanguage"],
-    podcast_script: ["outputLanguage"],
+  // 变量清单由后端从模板注册表（prompt_templates.variables）返回，DB 为空时后端会自动从模板提取
+  const getPromptVariables = (code: string): string[] => {
+    const tpl = getEffectiveTemplate(code);
+    const vars = tpl?.variables as string[] | null | undefined;
+    return Array.isArray(vars) ? vars : [];
   };
 
   if (editingCode) {
@@ -485,7 +423,7 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
       <div className="h-[600px]">
         <PromptEditor
           initialContent={currentTemp?.template_content || ""}
-          variables={variableMap[editingCode] || []}
+          variables={getPromptVariables(editingCode)}
           onSave={handleSave}
           onCancel={() => setEditingCode(null)}
           title={t("profile.promptSettings.editTemplate", {

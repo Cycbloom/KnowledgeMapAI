@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { X, Sparkles, Save, Variable } from "lucide-react";
+import { X, Sparkles, Save, Variable, AlertTriangle, ListTree } from "lucide-react";
 import { api } from "../../../services/api";
 import { useAutoSave, useBeforeUnload } from "../../../hooks";
 import { message } from "@/utils/messageHelper";
+import { TemplateEngine } from "@shared/template/templateEngine";
 
 export interface PromptEditorSaveOptions {
   /** 由自动保存触发：父组件应静默保存且不退出编辑 */
@@ -48,6 +49,18 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
 
   // Warn user before leaving when there are unsaved changes
   useBeforeUnload(content !== initialContent, t("common.unsavedChanges"));
+
+  // 模板变量与块结构分析（基于 shared TemplateEngine）
+  const templateVars = useMemo(
+    () => TemplateEngine.extractVariables(content),
+    [content],
+  );
+  const undeclaredVars = useMemo(
+    () => templateVars.filter((v) => !variables.includes(v)),
+    [templateVars, variables],
+  );
+  const blocks = useMemo(() => TemplateEngine.countBlocks(content), [content]);
+  const showHint = undeclaredVars.length > 0 || blocks.if > 0 || blocks.each > 0;
 
   const handleInsertVariable = (variable: string) => {
     const textarea = document.getElementById(
@@ -143,6 +156,29 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
           </button>
         ))}
       </div>
+
+      {/* 变量/块结构提示 */}
+      {showHint && (
+        <div className="px-4 py-2 space-y-1 border-b dark:border-gray-700 bg-amber-50 dark:bg-amber-900/20">
+          {undeclaredVars.length > 0 && (
+            <p className="flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-300">
+              <AlertTriangle size={12} className="flex-shrink-0" />
+              {t("promptEditor.undeclaredVariables", {
+                vars: undeclaredVars.map((v) => `{{${v}}}`).join(", "),
+              })}
+            </p>
+          )}
+          {(blocks.if > 0 || blocks.each > 0) && (
+            <p className="flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-300">
+              <ListTree size={12} className="flex-shrink-0" />
+              {t("promptEditor.blockStructure", {
+                ifCount: blocks.if,
+                eachCount: blocks.each,
+              })}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Editor */}
       <div className="flex-1 relative min-h-[300px]">

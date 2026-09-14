@@ -26,6 +26,8 @@ import { isElectron } from "./config/electronConfig";
 import { toUser } from "@shared/types/database";
 import { routeRegistrations, type RouteRegistration } from "./config/routeConfig";
 import { isOfflineActive } from "./services/offline/offlineMode";
+import { isCapacitorMobile } from "./config/mobileApiConfig";
+import { MobileUpdateToast } from "./components/update/MobileUpdateToast";
 import "./i18n";
 
 // P7: 主入口常驻壳层瘦身（第二轮）——仅在 Web 端渲染、且触发时才显示的壳层组件改为
@@ -52,8 +54,9 @@ const LazyCelebrationOverlay = React.lazy(() =>
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { token } = useStore();
-  if (!isSupabaseConfigured()) return <Navigate to="/login" replace />;
-  if (!token) return <Navigate to="/login" replace />;
+  // 未配置或未登录的访客先落到门面页（页面内含登录入口），而非直接进入登录/配置流程。
+  if (!isSupabaseConfigured()) return <Navigate to="/landing" replace />;
+  if (!token) return <Navigate to="/landing" replace />;
   return <>{children}</>;
 };
 
@@ -335,6 +338,8 @@ function App() {
                 <LazyUpdatePrompt />
               </>
             )}
+            {/* 移动端启动自动检查更新（每 24h 一次，仅 toast 提示） */}
+            {isCapacitorMobile() && <MobileUpdateToast />}
             <Suspense fallback={<LazyLoadFallback />}>
               {/*
                 Skip link 只在 Web 渲染：Electron 使用 HashRouter，裸 href="#xxx" 会被解析

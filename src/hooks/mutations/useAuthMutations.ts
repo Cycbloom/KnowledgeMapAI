@@ -7,7 +7,7 @@ import type {
 } from "@shared/types/api";
 import { useStore } from "../../store/useStore";
 import { queryKeys } from "../queries/config";
-import { clearOwnerCredentials } from "../../utils/silentAuth";
+import { clearOwnerCredentials, markSignedOut } from "../../utils/silentAuth";
 
 export const useLoginMutation = () => {
   const queryClient = useQueryClient();
@@ -36,11 +36,17 @@ export const useRegisterMutation = () => {
 export const useLogoutMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => authApi.logout(),
+    mutationFn: async () => {
+      try {
+        return await authApi.logout();
+      } finally {
+        // 无论登出请求成功与否，都切断「自动重登」链路：
+        // 清除本地凭证并置已退出标记，保证退出后刷新/重启不会自动登录。
+        clearOwnerCredentials();
+        markSignedOut();
+      }
+    },
     onSuccess: () => {
-      // 清理持久化的专属用户凭证，否则下次启动 silentSignIn 会用残留凭证静默重登，
-      // 造成「退出登录后仍自动登录」的假象。
-      clearOwnerCredentials();
       queryClient.setQueryData(queryKeys.user, null);
       queryClient.clear();
     },

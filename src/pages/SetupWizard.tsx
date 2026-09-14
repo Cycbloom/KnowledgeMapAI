@@ -22,6 +22,7 @@ import { apiClient } from "../services/api/createApiClient";
 import { updateSupabaseConfig } from "../config/authConfig";
 import { resetSupabaseClient } from "../utils/supabase";
 import { isElectron } from "../config/electronConfig";
+import { PublicFooter } from "../components/Layout/PublicFooter";
 import type { AIProviderType } from "@shared/types/ai";
 
 interface MigrationResult {
@@ -902,6 +903,8 @@ export const SetupWizard = () => {
           </p>
         </div>
       </div>
+
+      <PublicFooter />
     </main>
   );
 };

@@ -17,6 +17,8 @@ app.cycbloom.cn {
 		root * /opt/km/web
 		try_files {path} /index.html
 		file_server
+		# 允许 Capacitor 手机 App（origin=https://localhost）跨域拉取 downloads/latest.json 等
+		header Access-Control-Allow-Origin *
 	}
 }
 

@@ -15,6 +15,8 @@ import { useNavigateBack } from "../hooks/common/useNavigateBack";
 import { useLearningSettingsStore } from "../store/useLearningSettingsStore";
 import { cn } from "../utils/utils";
 import { isElectron } from "../config/electronConfig";
+import { isCapacitorMobile } from "../config/mobileApiConfig";
+import { MobileUpdatePanel } from "../components/update/MobileUpdatePanel";
 import { AvailableModels } from "../types";
 import {
   ArrowLeft,
@@ -558,6 +560,9 @@ export const Settings = () => {
                 </div>
               </section>
             )}
+
+            {/* 仅移动端（Capacitor）显示应用内更新 */}
+            {isCapacitorMobile() && <MobileUpdatePanel />}
 
             <section
               id="plugins"

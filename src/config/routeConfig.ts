@@ -61,6 +61,12 @@ export interface NavItemRegistration {
 export const routeRegistrations: RouteRegistration[] = [
   // ---- core ----
   {
+    path: "/landing",
+    component: () => import("../pages/Landing").then((m) => ({ default: m.Landing })),
+    layout: "public",
+    title: "layout.breadcrumb.home",
+  },
+  {
     path: "/login",
     component: () => import("../pages/Login").then((m) => ({ default: m.Login })),
     layout: "public",

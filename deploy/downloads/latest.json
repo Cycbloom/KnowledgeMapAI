@@ -1,0 +1,6 @@
+{
+  "versionName": "1.0.6",
+  "versionCode": 7,
+  "url": "https://app.cycbloom.cn/downloads/knowledgemap.apk",
+  "notes": "新增落地页与 App 内自动更新；修复移动端新建图谱实时查重卡死（改为点击时检查）"
+}

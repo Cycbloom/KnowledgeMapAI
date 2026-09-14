@@ -12,6 +12,13 @@ import type { Session, SupabaseClient } from '@supabase/supabase-js';
 
 const CREDENTIALS_KEY = 'km-owner-credentials';
 
+/**
+ * 「已显式退出」标记。
+ * 用户点击退出登录后置位，restoreSession 会据此在刷新/重启时保持退出状态，
+ * 不再用本地凭证静默重登（也不会走自动建号兜底），直到再次显式登录以清除该标记。
+ */
+const SIGNED_OUT_KEY = 'km-signed-out';
+
 interface OwnerCredentials {
   email: string;
   password: string;
@@ -54,6 +61,22 @@ export const saveOwnerCredentials = (credentials: OwnerCredentials): void => {
 
 export const clearOwnerCredentials = (): void => {
   localStorage.removeItem(CREDENTIALS_KEY);
+};
+
+export const markSignedOut = (): void => {
+  localStorage.setItem(SIGNED_OUT_KEY, '1');
+};
+
+export const clearSignedOut = (): void => {
+  localStorage.removeItem(SIGNED_OUT_KEY);
+};
+
+export const isSignedOut = (): boolean => {
+  try {
+    return localStorage.getItem(SIGNED_OUT_KEY) === '1';
+  } catch {
+    return false;
+  }
 };
 
 /**
@@ -180,12 +203,17 @@ export function isDevelopmentMode(): boolean {
 export const restoreSession = async (
   client: SupabaseClient,
 ): Promise<Session | null> => {
+  // 用户显式退出后（刷新/重启）保持退出状态，不自动重登，直到再次显式登录。
+  if (isSignedOut()) return null;
+
   const { data: sessionData } = await client.auth.getSession();
   if (sessionData.session) {
     const { data: userData, error } = await client.auth.getUser(
       sessionData.session.access_token,
     );
     if (!error && userData.user) {
+      // 已恢复到有效会话，清除可能残留的已退出标记。
+      clearSignedOut();
       return sessionData.session;
     }
     // 僵尸 session：用户已不存在，清除本地缓存的会话

@@ -6,6 +6,7 @@ import { useStore } from '../store/useStore';
 import { useTheme, useFormDraft } from '../hooks';
 import { useKeyboardHandler } from '../hooks/gesture/useKeyboardHandler';
 import { ConfirmationModal } from '../components/common/ConfirmationModal';
+import { PublicFooter } from '../components/Layout/PublicFooter';
 import { Sun, Moon, Cloud, Check, X } from 'lucide-react';
 import { isValidationError } from '../utils/errors';
 import { getAuthModeDisplay } from '../config/authConfig';
@@ -101,9 +102,10 @@ export const Register = () => {
       id="public-main"
       ref={mainRef}
       tabIndex={-1}
-      className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-slate-900 transition-colors duration-300 focus:outline-none"
+      className="min-h-screen flex flex-col bg-gray-100 dark:bg-slate-900 transition-colors duration-300 focus:outline-none"
     >
-      <div className="bg-white dark:bg-slate-800 p-8 rounded-lg shadow-md w-full max-w-md mx-4 transition-colors duration-300">
+      <div className="flex-1 flex items-center justify-center w-full px-4">
+        <div className="bg-white dark:bg-slate-800 p-8 rounded-lg shadow-md w-full max-w-md transition-colors duration-300">
         <h1 className="text-2xl font-bold mb-2 text-center text-gray-900 dark:text-gray-100">{t('register.title')}</h1>
         <div className="flex items-center justify-center gap-1.5 mb-6 text-xs text-gray-500 dark:text-gray-400">
           <Cloud size={14} />
@@ -208,7 +210,10 @@ export const Register = () => {
           {t('register.alreadyHaveAccount')} <Link to="/login" className="text-primary-600 dark:text-primary-400 underline">{t('register.login')}</Link>
         </p>
       </div>
-      
+      </div>
+
+      <PublicFooter />
+
       <button
         onClick={toggleTheme}
         className="fixed bottom-6 right-6 p-3 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-all duration-300"

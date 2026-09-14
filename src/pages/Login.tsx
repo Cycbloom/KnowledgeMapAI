@@ -8,12 +8,13 @@ import {
   authConfig,
 } from "../config/authConfig";
 import { getSupabaseClient, resetSupabaseClient } from "../utils/supabase";
-import { restoreSession, saveOwnerCredentials } from "../utils/silentAuth";
+import { restoreSession, saveOwnerCredentials, clearSignedOut } from "../utils/silentAuth";
 import { toUser } from "@shared/types/database";
 import { useStore } from "../store/useStore";
 import { useTheme, useFormDraft } from "../hooks";
 import { useKeyboardHandler } from "../hooks/gesture/useKeyboardHandler";
 import { ConfirmationModal } from "../components/common/ConfirmationModal";
+import { PublicFooter } from "../components/Layout/PublicFooter";
 import { isElectron } from "../config/electronConfig";
 import { logger } from "../utils/logger";
 import type { AIProviderType } from "@shared/types/ai";
@@ -505,6 +506,8 @@ export const Login = () => {
       }
 
       saveOwnerCredentials({ email: loginEmail.trim(), password: loginPassword });
+      // 用户已显式登录成功：清除「已退出」标记，恢复后续刷新/重启的自动登录体验。
+      clearSignedOut();
       setUser(
         toUser(data.session.user),
         data.session.access_token,
@@ -1720,6 +1723,8 @@ export const Login = () => {
           )}
         </div>
       </div>
+
+      <PublicFooter />
 
       <button
         onClick={toggleTheme}

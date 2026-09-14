@@ -106,6 +106,7 @@ npm run mobile:build:release    # 正式 APK
 VITE_SUPABASE_URL=https://supabase.cycbloom.cn
 VITE_SUPABASE_ANON_KEY=<ANON_KEY>
 VITE_API_BASE_URL=https://api.cycbloom.cn/api/v1
+VITE_APK_URL=https://app.cycbloom.cn/downloads/knowledgemap.apk   # 门面页「下载 Android App」链接（可选）
 ```
 
 构建并部署（`dist/` 上传到服务器 `/opt/km/web/`，Caddy 已配 SPA 回退）：
@@ -114,6 +115,55 @@ VITE_API_BASE_URL=https://api.cycbloom.cn/api/v1
 npm run build
 # 将 dist/* 同步到服务器 /opt/km/web/
 ```
+
+### 4.2.1 发布 Android 安装包（APK）下载
+
+门面页的「下载 Android App」链接指向 `app.cycbloom.cn` 同源下的静态文件（由 `VITE_APK_URL` 配置），
+手机打开网页即可直接下载安装，无需连接电脑。发布步骤：
+
+```bash
+# 1. 构建 APK（debug 或 release，产物在 android/app/build/outputs/apk/）
+npm run mobile:build:debug          # debug：.../apk/debug/app-debug.apk
+npm run mobile:build:release        # release：.../apk/release/app-release.apk
+
+# 2. 在服务器创建目录并把 apk 放到下载路径
+ssh -i C:\Users\金\.ssh\km-deploy root@1.15.174.173
+mkdir -p /opt/km/web/downloads
+scp android/app/build/outputs/apk/debug/app-debug.apk /opt/km/web/downloads/knowledgemap.apk
+
+# 3. Caddy 的 file_server 已能直接服务 /opt/km/web/ 下静态文件，无需改动
+# 验证：curl -I https://app.cycbloom.cn/downloads/knowledgemap.apk
+```
+
+> 若改动 `VITE_APK_URL`，需重新构建 Web 并部署（第 4.2 节）。
+
+### 4.2.2 应用内自动更新（移动端）
+
+移动端 App 内置「应用内自动更新」，让手机不用连电脑即可收到并安装新版。
+
+**工作流程（三方协作）：**
+
+1. **服务器**：`/opt/km/web/downloads/latest.json` 是版本清单，`knowledgemap.apk` 是安装包本体。
+2. **检测时机**：每次 App 启动时自动检查一次（`MobileUpdateToast`）+ 设置页「检查更新」手动/进入即静默刷新（`MobileUpdatePanel`）。
+3. **判断逻辑**（`src/services/update/updateService.ts`）：拉取 `latest.json` 与本地版本对比——
+   - **优先**比 `versionCode`（自研原生插件 `AutoUpdatePlugin.getLocalVersion` 读取）；
+   - **兜底**比 `versionName`（语义化比较，当原生插件读不到 versionCode 时），避免误报「已是最新」。
+4. **安装**：有新版时提示，一键下载 APK 到缓存目录，经 FileProvider 拉起系统安装器（Android 仍保留最后一次系统确认，无法静默）。
+
+**发新版本时，必须同步 3 处（保证 `versionCode` 递增，否则 Android 不会覆盖更新）：**
+
+1. `android/app/build.gradle`：`versionCode` 加 1、`versionName` 同步更新
+2. 重新构建 APK 并上传覆盖 `/opt/km/web/downloads/knowledgemap.apk`（见 4.2.1）
+3. 更新 `/opt/km/web/downloads/latest.json`：`versionCode`/`versionName` 与 build.gradle **保持一致**，`url` 指向 APK
+
+**仓库约定：** `deploy/downloads/latest.json` 为版本清单源，发布时把它与 build.gradle 一起改，再 scp 到服务器（与 APK 上传脚本一并）。
+
+**CORS 前提：** Capacitor 手机 App 的页面源是 `https://localhost`，拉取 `app.cycbloom.cn/downloads/...` 属跨域，服务器 Caddy 必须为该静态目录返回 `Access-Control-Allow-Origin: *`（见 `deploy/Caddyfile` 的 `app.cycbloom.cn` → `handle { ... }` 内 `header Access-Control-Allow-Origin *`）。缺了会导致手机读不到版本清单、检查更新失效。
+
+**实现位置：**
+- 原生插件：`android/app/src/main/java/com/knowledgemap/app/AutoUpdatePlugin.java`（读本地版本 / 下载 APK / FileProvider 拉起安装），并在 `MainActivity.java` 中 `registerPlugin(AutoUpdatePlugin.class)`
+- 前端逻辑：`src/services/update/updateService.ts`（版本对比，含 `compareVersions`）
+- UI：设置页 `src/components/update/MobileUpdatePanel.tsx`（进入静默、点按钮才提示）、启动自动推送 `src/components/update/MobileUpdateToast.tsx`（每次启动检查，同一版本号只提示一次）
 
 ### 4.3 桌面端（Electron）
 

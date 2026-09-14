@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useId } from "react";
+import React, { useState, useCallback, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -344,20 +344,12 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
     isChecking,
     isDuplicate,
     similarGraphs,
-    checkTopic,
+    checkTopicNow,
     reset: resetTopicCheck,
   } = useTopicCheck({
     debounceMs: 500,
     excludeGraphId: graphId,
   });
-
-  useEffect(() => {
-    if (topic.trim().length >= 2 && !graphId) {
-      checkTopic(topic);
-    } else {
-      resetTopicCheck();
-    }
-  }, [topic, checkTopic, resetTopicCheck, graphId]);
 
   const handleAddSource = useCallback(() => {
     if (newSource.trim()) {
@@ -376,11 +368,6 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
       return;
     }
 
-    if (!graphId && isDuplicate) {
-      message.warning(t("autoGraph.topicDuplicate"));
-      return;
-    }
-
     if (style === "custom" && !customPrompt.trim()) {
       message.warning(t("autoGraph.enterCustomRules"));
       return;
@@ -391,6 +378,16 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
     nodeIdCounter = 0;
 
     try {
+      if (!graphId) {
+        // 不再跟随标题输入过程实时查重，统一在点击「开始生成」时检查一次：
+        // 若重复则停止并展示黄色警告条（isDuplicate + similarGraphs 触发），阻止进入生成。
+        const isDuplicateTopic = await checkTopicNow(topic);
+        if (isDuplicateTopic) {
+          message.warning(t("autoGraph.topicDuplicate"));
+          return;
+        }
+      }
+
       const result = await api.autoGraph.init({
         topic,
         style,
@@ -443,7 +440,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
     sources,
     graphId,
     handleError,
-    isDuplicate,
+    checkTopicNow,
     t,
     selectedTemplateType,
     moduleConfig,
@@ -1069,7 +1066,12 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
             id={topicInputId}
             aria-required={true}
             value={topic}
-            onChange={(e) => setTopic(e.target.value)}
+            onChange={(e) => {
+              setTopic(e.target.value);
+              // 标题变化时只清掉上一次的重复提示，不实时发请求查重；
+              // 查重统一在点击「开始生成」时进行（handleInitialize）。
+              resetTopicCheck();
+            }}
             placeholder={t("autoGraph.topicPlaceholder")}
             className={`w-full ${isMobile ? "px-3 py-2 text-sm" : "px-4 py-3"} border rounded-lg focus:ring-2 focus:border-transparent dark:bg-slate-700 dark:text-white ${
               isDuplicate
@@ -1294,7 +1296,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
 
       <button
         onClick={handleInitialize}
-        disabled={isInitializing || !topic.trim() || isChecking || isDuplicate}
+        disabled={isInitializing || !topic.trim()}
         className={`w-full ${isMobile ? "py-2.5 px-3 text-sm" : "py-3 px-4"} bg-gradient-to-r from-primary-500 to-primary-500 text-white font-medium rounded-lg hover:from-primary-600 hover:to-primary-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
       >
         {isInitializing ? (

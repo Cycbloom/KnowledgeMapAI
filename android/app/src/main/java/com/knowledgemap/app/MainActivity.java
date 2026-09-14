@@ -29,5 +29,8 @@ public class MainActivity extends BridgeActivity {
         WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(), decorView);
         controller.hide(WindowInsetsCompat.Type.statusBars());
         controller.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+
+        // 注册应用内自动更新插件（版本检测 + 下载安装）
+        registerPlugin(AutoUpdatePlugin.class);
     }
 }

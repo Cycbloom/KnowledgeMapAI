@@ -3,6 +3,8 @@ import { Link, useNavigate, useLocation, Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { useStore } from "../../store/useStore";
+import { ICP_FILING } from "@/config/siteConfig";
+import { isCapacitorMobile } from "@/config/mobileApiConfig";
 import { useQuizUiStore } from "../../store/useQuizUiStore";
 import { useUser, queryKeys } from "../../hooks/queries";
 import { useLogoutMutation, useImportGraphMutation } from "../../hooks/mutations";
@@ -933,6 +935,8 @@ export const Layout = () => {
             </div>
           )}
         </main>
+        {/* Capacitor 手机 App 界面不展示页脚备案号（App 界面非强制；Web/桌面保留合规展示） */}
+        {!isCapacitorMobile() && (
         <footer
           role="contentinfo"
           className={
@@ -952,14 +956,15 @@ export const Layout = () => {
           <span>{t('common.footer.copyright')}</span>
           <span aria-hidden="true">·</span>
           <a
-            href="https://beian.miit.gov.cn"
+            href={ICP_FILING.beianUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="hover:underline"
           >
-            浙ICP备2026076010号
+            {ICP_FILING.number}
           </a>
         </footer>
+        )}
         </div>
       </div>
     </div>

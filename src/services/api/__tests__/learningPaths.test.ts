@@ -254,7 +254,7 @@ describe('learningPathsApi', () => {
       await learningPathsApi.generateFromGraph(data);
       expect(request).toHaveBeenCalledWith('/learning-paths/generate', {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, language: 'zh-CN' }),
       });
     });
   });
@@ -347,7 +347,7 @@ describe('learningPathApi', () => {
       await learningPathApi.getQuestions(data);
       expect(request).toHaveBeenCalledWith('/learning-paths/questions', {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, language: 'zh-CN' }),
       });
     });
   });
@@ -365,7 +365,7 @@ describe('learningPathApi', () => {
         '/learning-paths/generate-preview',
         {
           method: 'POST',
-          body: JSON.stringify(data),
+          body: JSON.stringify({ ...data, language: 'zh-CN' }),
         },
       );
     });

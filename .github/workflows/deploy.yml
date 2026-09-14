@@ -82,9 +82,12 @@ jobs:
         env:
           JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
         run: |
-          # git 检出在 Linux 上可能丢失 gradlew 的 exec 位（Windows core.filemode=false），
-          # 显式补上，否则 run-gradlew.mjs 以 ./gradlew 方式执行会 Permission denied
+          # 1) git 检出在 Linux 上可能丢失 gradlew 的 exec 位（Windows core.filemode=false），
+          #    显式补上，否则 run-gradlew.mjs 以 ./gradlew 方式执行会 Permission denied
           chmod +x android/gradlew
+          # 2) gradle.properties 硬编码了本机 Windows 路径 org.gradle.java.home，
+          #    它在 Linux runner 上无效且优先级高于 JAVA_HOME，必须移除让 gradle 用 JAVA_HOME
+          sed -i '/^org.gradle.java.home=/d' android/gradle.properties
           npm run mobile:build:debug
 
       - name: Stage deploy bundle

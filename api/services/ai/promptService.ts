@@ -167,6 +167,14 @@ export class PromptService {
 
     if (error) throw error;
 
+    if (result) {
+      const cacheUserId = result.user_id || "system";
+      const cacheGraphId = result.graph_id || "none";
+      await cacheService.del(
+        CacheKeys.PROMPT_TEMPLATE(result.code, cacheUserId, cacheGraphId),
+      );
+    }
+
     return result;
   }
 
@@ -368,29 +376,50 @@ export class PromptService {
   async saveTemplate(
     supabase: SupabaseClient,
     template: Partial<PromptTemplate>,
-  ) {
-    const { data, error } = await supabase
+  ): Promise<PromptTemplate> {
+    const { code, scope, user_id, graph_id, template_content } = template;
+
+    if (!code || !scope || typeof template_content !== "string") {
+      throw new AppError(ErrorCodes.VALIDATION_MISSING_FIELD);
+    }
+
+    // prompt_templates 的唯一索引均为部分索引（WHERE scope = ...），PostgreSQL
+    // 的 ON CONFLICT 推断无法匹配部分索引（报 42P10），因此不能使用 upsert。
+    // 改为手动 upsert：按 (code, scope, user_id, graph_id) 命中则 UPDATE，
+    // 未命中则 INSERT。
+    let query = supabase
       .from("prompt_templates")
-      .upsert(
-        {
-          ...template,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "code,scope,user_id,graph_id" },
-      )
-      .select()
-      .single();
+      .select("id")
+      .eq("code", code)
+      .eq("scope", scope);
 
-    if (error) throw error;
+    if (scope === "user") {
+      query = query.eq("user_id", user_id ?? "").is("graph_id", null);
+    } else if (scope === "graph") {
+      query = query.eq("user_id", user_id ?? "").eq("graph_id", graph_id ?? "");
+    } else {
+      query = query.is("user_id", null).is("graph_id", null);
+    }
 
-    // Invalidate cache
-    const userId = template.user_id || "system";
-    const graphId = template.graph_id || "none";
-    await cacheService.del(
-      CacheKeys.PROMPT_TEMPLATE(template.code ?? "", userId, graphId),
-    );
+    const { data: existing, error: findError } = await query
+      .limit(1)
+      .maybeSingle();
+    if (findError) throw findError;
 
-    return data;
+    if (existing) {
+      return this.update(supabase, existing.id, {
+        code,
+        template_content,
+      });
+    }
+
+    return this.create(supabase, {
+      code,
+      scope,
+      template_content,
+      user_id: user_id ?? undefined,
+      graph_id: graph_id ?? undefined,
+    });
   }
 
   async deleteTemplate(supabase: SupabaseClient, id: string) {
@@ -510,6 +539,13 @@ Formatting:
 - Use lists and bullet points for readability.
 - Respect the suggested word count per section whenever feasible.
 - **Write every section title in {{outputLanguage}}**: translate each title listed in the Structure above into the target language, do not keep the original-language titles.
+
+Quality & Constraints:
+- **Earn every section**: each chapter must actually deliver what its instruction asks. No filler, clichés, or padded generalizations. Prefer concrete, specific sentences over vague ones.
+- **Difficulty calibration**: match {{level}} (if provided). For beginner/入门 use minimal jargon and plenty of analogy; for advanced/高级 keep terminology and derivations. Default to a balanced level for university students / professionals.
+- **Grounding (no fabrication)**: write ONLY from {{topic}}, {{context}}, and any disambiguation context provided. Do NOT invent specific data, statistics, citations, or names. When an exact number or source is genuinely needed but not given, use a placeholder marked "[需核实/verify]".
+- **Per-section convention**: for each chapter, first define/frame the topic, then elaborate, then give boundary conditions and common misconceptions — unless the chapter instruction asks otherwise.
+- **Self-check**: after drafting, re-read the whole material and confirm every section met its instruction; trim anything unrelated to the topic.
 
 Topic: {{topic}}
 Context/Background: {{context}}

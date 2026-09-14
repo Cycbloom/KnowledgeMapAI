@@ -21,6 +21,10 @@ export function useAutoSave<T>(options: UseAutoSaveOptions<T>): UseAutoSaveResul
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onSaveRef = useRef(onSave);
   const valueRef = useRef(value);
+  // 记录最近一次已保存的值。自动保存仅在值发生变化后触发：
+  // - 首次挂载（含 StrictMode 下 effect 二次执行）值未变 → 不保存；
+  // - 用户改回已保存的值 → 不重复保存。
+  const lastSavedRef = useRef(value);
   const isFirstRenderRef = useRef(true);
 
   useEffect(() => {
@@ -42,7 +46,9 @@ export function useAutoSave<T>(options: UseAutoSaveOptions<T>): UseAutoSaveResul
     clearTimer();
     setStatus('saving');
     try {
-      await onSaveRef.current(valueRef.current);
+      const currentValue = valueRef.current;
+      await onSaveRef.current(currentValue);
+      lastSavedRef.current = currentValue;
       setStatus('saved');
     } catch (error) {
       console.error('[useAutoSave] save failed:', error);
@@ -56,6 +62,8 @@ export function useAutoSave<T>(options: UseAutoSaveOptions<T>): UseAutoSaveResul
       return;
     }
     if (!enabled) return;
+    // 值未变化（例如 StrictMode 使 effect 执行两次、或用户改回已保存值）→ 不保存
+    if (value === lastSavedRef.current) return;
 
     clearTimer();
     timerRef.current = setTimeout(() => {
@@ -74,6 +82,7 @@ export function useAutoSave<T>(options: UseAutoSaveOptions<T>): UseAutoSaveResul
 
   const reset = useCallback(() => {
     clearTimer();
+    lastSavedRef.current = valueRef.current;
     setStatus('idle');
   }, [clearTimer]);
 

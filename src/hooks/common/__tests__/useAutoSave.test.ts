@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { StrictMode, createElement, type ReactNode } from "react";
 import { renderHook, act } from "@testing-library/react";
 import { useAutoSave } from "../useAutoSave";
 
@@ -147,5 +148,62 @@ describe("useAutoSave", () => {
 
     // 保存成功后状态为 saved
     expect(result.current.status).toBe("saved");
+  });
+
+  it("StrictMode 下首次挂载（值未变）不触发自动保存（回归：未修改也保存）", () => {
+    const onSave = vi.fn();
+    const wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(StrictMode, null, children);
+    const { rerender, unmount } = renderHook(
+      ({ value }) => useAutoSave({ value, onSave, delay: 1000 }),
+      { initialProps: { value: "initial" }, wrapper },
+    );
+
+    // StrictMode 会让 effect 运行两次；值未变不应设置定时器 → 推进时间也不应保存
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+    expect(onSave).not.toHaveBeenCalled();
+
+    // 值真正变化后才触发
+    rerender({ value: "updated" });
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(onSave).toHaveBeenCalledTimes(1);
+    expect(onSave).toHaveBeenCalledWith("updated");
+
+    unmount();
+  });
+
+  it("值改回已保存值时不重复触发保存", async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    const { rerender } = renderHook(
+      ({ value }) => useAutoSave({ value, onSave, delay: 1000 }),
+      { initialProps: { value: "initial" } },
+    );
+
+    // 首次变化 → 自动保存 "edited"
+    rerender({ value: "edited" });
+    await act(async () => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(onSave).toHaveBeenCalledTimes(1);
+    expect(onSave).toHaveBeenCalledWith("edited");
+
+    // 改回与已保存值不同的值 → 仍是新变更，会再保存
+    rerender({ value: "initial" });
+    await act(async () => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(onSave).toHaveBeenCalledTimes(2);
+    expect(onSave).toHaveBeenCalledWith("initial");
+
+    // 值不再变化 → 不再触发保存
+    rerender({ value: "initial" });
+    await act(async () => {
+      vi.advanceTimersByTime(2000);
+    });
+    expect(onSave).toHaveBeenCalledTimes(2);
   });
 });

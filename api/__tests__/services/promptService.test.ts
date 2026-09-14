@@ -30,7 +30,10 @@ vi.mock("../../supabase", () => ({
 }));
 
 import { promptService } from "../../services/ai/promptService";
-import { createMockSupabase } from "../../../tests/helpers/mockFactories";
+import {
+  createMockSupabase,
+  type MockSupabaseClient,
+} from "../../../tests/helpers/mockFactories";
 
 // Helper: 构建测试用 PromptTemplate
 const createTemplate = (
@@ -595,6 +598,77 @@ describe("PromptService", () => {
       );
 
       expect(result).toBeNull();
+    });
+  });
+
+  // ============================================================
+  // saveTemplate() - 手动 upsert（避免部分唯一索引导致的 ON CONFLICT 42P10）
+  // ============================================================
+  describe("saveTemplate()", () => {
+    it("命中已有模板 → 走 UPDATE 路径（不再使用 upsert）", async () => {
+      const existingTpl = createTemplate({
+        id: "tpl-save-1",
+        scope: "user",
+        user_id: "user-1",
+        template_content: "old",
+      });
+      const supabase = createMockSupabase({ data: null });
+      const mock = supabase as unknown as MockSupabaseClient;
+
+      // select 查询命中已有模板（maybeSingle 返回现有行）
+      mock._queryChain.maybeSingle.mockResolvedValue({
+        data: { id: "tpl-save-1" },
+        error: null,
+      });
+      // update 路径的 select().single() 返回更新后的模板
+      mock._queryChain.single.mockResolvedValue({
+        data: { ...existingTpl, template_content: "new" },
+        error: null,
+      });
+
+      const result = await promptService.saveTemplate(supabase, {
+        code: "test_code",
+        scope: "user",
+        user_id: "user-1",
+        template_content: "new",
+      });
+
+      expect(mock._queryChain.maybeSingle).toHaveBeenCalled();
+      expect(mock._queryChain.update).toHaveBeenCalled();
+      expect(result?.template_content).toBe("new");
+    });
+
+    it("未命中已有模板 → 走 INSERT 路径（不再使用 upsert）", async () => {
+      const createdTpl = createTemplate({
+        id: "tpl-save-2",
+        scope: "user",
+        user_id: "user-1",
+        template_content: "new",
+      });
+      const supabase = createMockSupabase({ data: null });
+      const mock = supabase as unknown as MockSupabaseClient;
+
+      // select 查询未命中（maybeSingle 返回 null）
+      mock._queryChain.maybeSingle.mockResolvedValue({
+        data: null,
+        error: null,
+      });
+      // insert 路径的 select().single() 返回新建的模板
+      mock._queryChain.single.mockResolvedValue({
+        data: createdTpl,
+        error: null,
+      });
+
+      const result = await promptService.saveTemplate(supabase, {
+        code: "test_code",
+        scope: "user",
+        user_id: "user-1",
+        template_content: "new",
+      });
+
+      expect(mock._queryChain.maybeSingle).toHaveBeenCalled();
+      expect(mock._queryChain.insert).toHaveBeenCalled();
+      expect(result?.id).toBe("tpl-save-2");
     });
   });
 });

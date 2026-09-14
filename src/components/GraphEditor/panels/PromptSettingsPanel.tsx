@@ -4,7 +4,7 @@ import { api } from "../../../services/api";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { formatDate } from "@/utils/formatters";
 import { message } from "../../../utils/messageHelper";
-import { PromptEditor } from "./PromptEditor";
+import { PromptEditor, type PromptEditorSaveOptions } from "./PromptEditor";
 import { DEFAULT_PROMPTS as FALLBACK_DEFAULTS } from "../../../services/prompt";
 import {
   Edit,
@@ -259,7 +259,10 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
     return { code, template_content: "", source: "System" };
   };
 
-  const handleSave = async (content: string) => {
+  const handleSave = async (
+    content: string,
+    options?: PromptEditorSaveOptions,
+  ) => {
     if (!editingCode) return;
     // 阻止保存空内容（后端会拒绝），提前给用户明确提示
     if (!content || !content.trim()) {
@@ -272,8 +275,13 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
       template_content: content,
       graph_id: scope === "graph" ? graphId : undefined,
     });
-    message.success(t("graphEditor.promptSettings.saveSuccess"));
-    setEditingCode(null);
+    // 自动保存：静默且保留编辑状态，不打断用户输入
+    if (!options?.auto) {
+      message.success(t("graphEditor.promptSettings.saveSuccess"));
+    }
+    if (!options?.auto) {
+      setEditingCode(null);
+    }
     fetchTemplates();
   };
 

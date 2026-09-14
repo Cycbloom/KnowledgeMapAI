@@ -122,6 +122,10 @@ export class MobilePromptService {
 
     if (error) throw error;
 
+    if (result) {
+      this.invalidateCache(result);
+    }
+
     return result;
   }
 
@@ -283,23 +287,49 @@ export class MobilePromptService {
     supabase: SupabaseClient,
     template: Partial<PromptTemplate>,
   ) {
-    const { data, error } = await supabase
+    const { code, scope, user_id, graph_id, template_content } = template;
+
+    if (!code || !scope || typeof template_content !== 'string') {
+      throw new Error('Invalid template data');
+    }
+
+    // prompt_templates 的唯一索引均为部分索引（WHERE scope = ...），PostgreSQL
+    // 的 ON CONFLICT 推断无法匹配部分索引（报 42P10），因此不能使用 upsert。
+    // 改为手动 upsert：按 (code, scope, user_id, graph_id) 命中则 UPDATE，
+    // 未命中则 INSERT。
+    let query = supabase
       .from('prompt_templates')
-      .upsert(
-        {
-          ...template,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'code,scope,user_id,graph_id' },
-      )
-      .select()
-      .single();
+      .select('id')
+      .eq('code', code)
+      .eq('scope', scope);
 
-    if (error) throw error;
+    if (scope === 'user') {
+      query = query.eq('user_id', user_id ?? '').is('graph_id', null);
+    } else if (scope === 'graph') {
+      query = query.eq('user_id', user_id ?? '').eq('graph_id', graph_id ?? '');
+    } else {
+      query = query.is('user_id', null).is('graph_id', null);
+    }
 
-    this.invalidateCache(data);
+    const { data: existing, error: findError } = await query
+      .limit(1)
+      .maybeSingle();
+    if (findError) throw findError;
 
-    return data;
+    if (existing) {
+      return this.update(supabase, existing.id, {
+        code,
+        template_content,
+      });
+    }
+
+    return this.create(supabase, {
+      code,
+      scope,
+      template_content,
+      user_id,
+      graph_id,
+    });
   }
 
   async deleteTemplate(supabase: SupabaseClient, id: string) {

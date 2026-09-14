@@ -5,10 +5,15 @@ import { api } from "../../../services/api";
 import { useAutoSave, useBeforeUnload } from "../../../hooks";
 import { message } from "@/utils/messageHelper";
 
+export interface PromptEditorSaveOptions {
+  /** 由自动保存触发：父组件应静默保存且不退出编辑 */
+  auto?: boolean;
+}
+
 interface PromptEditorProps {
   initialContent: string;
   variables: string[];
-  onSave: (content: string) => Promise<void>;
+  onSave: (content: string, options?: PromptEditorSaveOptions) => Promise<void>;
   onCancel: () => void;
   title?: string;
 }
@@ -30,7 +35,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
   const { status: autoSaveStatus } = useAutoSave<string>({
     value: content,
     onSave: async (v) => {
-      await onSave(v);
+      await onSave(v, { auto: true });
     },
     delay: 3000,
     enabled: true,

@@ -1,4 +1,4 @@
-import { Link, Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Network,
@@ -12,7 +12,6 @@ import {
   Sun,
   Moon,
 } from "lucide-react";
-import { useStore } from "@/store/useStore";
 import { useTheme } from "@/hooks";
 import { PublicFooter } from "@/components/Layout/PublicFooter";
 import { SITE_NAME, APK_DOWNLOAD_URL } from "@/config/siteConfig";
@@ -57,19 +56,12 @@ const FEATURES = [
 ];
 
 /**
- * 门面页（Landing）：网站首页对未登录访客的介绍展示。
- * 已登录用户访问时直接进入应用首页；未登录则展示简介、功能亮点与
- * 移动端安装包下载入口，并提供「进入应用 / 登录」按钮。
+ * 门面页（Landing）：网站首页对访客的介绍展示。
+ * 无论是否登录都可停留于此，方便下载移动端安装包；提供「进入应用 / 登录」按钮。
  */
 export const Landing = () => {
   const { t } = useTranslation();
-  const token = useStore((state) => state.token);
   const { isDark, toggleTheme } = useTheme();
-
-  // 已登录用户无需停留在门面页，直接进入应用首页
-  if (token) {
-    return <Navigate to="/" replace />;
-  }
 
   return (
     <main

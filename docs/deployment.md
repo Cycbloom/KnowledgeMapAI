@@ -126,10 +126,12 @@ npm run build
 npm run mobile:build:debug          # debug：.../apk/debug/app-debug.apk
 npm run mobile:build:release        # release：.../apk/release/app-release.apk
 
-# 2. 在服务器创建目录并把 apk 放到下载路径
+# 2. 在服务器创建目录并把 apk 放到下载路径（管理员操作；root 仅密钥登录）
 ssh -i C:\Users\金\.ssh\km-deploy root@1.15.174.173
 mkdir -p /opt/km/web/downloads
 scp android/app/build/outputs/apk/debug/app-debug.apk /opt/km/web/downloads/knowledgemap.apk
+
+# 注：手动 scp 需 root（专用部署账号 lighthouse 会拒绝 scp）。CI 自动部署则走 lighthouse 入口脚本。
 
 # 3. Caddy 的 file_server 已能直接服务 /opt/km/web/ 下静态文件，无需改动
 # 验证：curl -I https://app.cycbloom.cn/downloads/knowledgemap.apk
@@ -187,8 +189,26 @@ NODE_ENV=production
 ### SSH 登录
 
 ```bash
+# 管理员运维（root 已禁用密码登录，仅密钥）：
 ssh -i C:\Users\金\.ssh\km-deploy root@1.15.174.173
 ```
+
+> 服务器已执行安全加固：`PermitRootLogin prohibit-password`（root 仅密钥登录）、
+> `PasswordAuthentication no`（全站禁用密码认证）、移除 cloud-init 给 `ubuntu` 的免密 sudo。
+
+### 自动部署专用账号 `lighthouse`（不可 root 登录，仅限部署）
+
+CI 自动部署使用**专用账号 `lighthouse`**，不再使用 root。其 `authorized_keys` 强制
+`command=/home/lighthouse/km-deploy-entry.sh`，入口脚本只接受 **stdin 的 base64 tarball**
+负载，仅允许写 `/opt/km/web`（保留 downloads），**拒绝 scp/任意远程命令**。
+
+- 部署方式：把 `bundle`（web-dist.tgz / knowledgemap.apk / latest.json）打成单 tar.gz →
+  `base64 -w0` → 管道进 stdin 交给入口脚本（见 `.github/workflows/deploy.yml`）。
+- 入口脚本规范副本：`deploy/scripts/km-deploy-entry.sh`（改脚本后需同步到
+  `/home/lighthouse/km-deploy-entry.sh` 并 `chown lighthouse:lighthouse -m 750`）。
+- 手动验证（无部署产物时为 no-op，不触碰线上）：
+  `mkdir -p /tmp/km-nop && echo x > /tmp/km-nop/m.txt && tar -czf /tmp/b.tar.gz -C /tmp/km-nop . && base64 -w0 /tmp/b.tar.gz | sudo -u lighthouse /home/lighthouse/km-deploy-entry.sh`
+  → 应输出 `deploy OK` 与当前 latest.json，且 `/opt/km/web` 文件校验和不变。
 
 ### API server
 
@@ -228,6 +248,9 @@ gunzip -c /opt/km/data/backups/db-<时间戳>.sql.gz | docker exec -i supabase-d
 ## 6. 安全要点
 
 - UFW 仅放行 22/80/443；Supabase 网关与 API 均不对外直连（仅 Caddy 代理）
+- **SSH 加固**：root 仅密钥登录（prohibit-password）、全站禁用密码认证；自动部署走专用账号 `lighthouse`
+  （authorized_keys 强制入口脚本，只写 `/opt/km/web`、拒绝任意命令/scp），**root 私钥不进 CI**；
+  已移除 cloud-init 给 `ubuntu` 的免密 sudo
 - 公开的 Supabase demo 密钥已在网关层被拒（401）
 - 公开注册关闭；admin 接口仅 service_role 可用
 - 密钥分级：ANON_KEY 可进客户端；SERVICE_ROLE_KEY / JWT_SECRET / POSTGRES_PASSWORD 只留在服务器
@@ -258,5 +281,6 @@ gunzip -c /opt/km/data/backups/db-<时间戳>.sql.gz | docker exec -i supabase-d
 | `deploy/scripts/deploy-api.sh` | 部署/更新 API server（装依赖+写 env+systemd） |
 | `deploy/scripts/backup.sh` | 每日备份（服务器端 `/opt/km/backup.sh`） |
 | `deploy/scripts/verify-supabase.sh` / `verify-https.sh` / `verify-auth-flow.sh` | 部署后验证 |
+| `deploy/scripts/km-deploy-entry.sh` | 专用部署账号 `lighthouse` 的服务器端入口脚本（副本，见 §5） |
 | `deploy/supabase-official/docker-compose.prod.yml` | 精简版 Supabase 编排模板 |
 | `deploy/Caddyfile` | Caddy 反代配置模板 |

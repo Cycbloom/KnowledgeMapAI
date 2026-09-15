@@ -54,8 +54,16 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Setup Android SDK (licenses + platform)
+        # GitHub-hosted runner 已预装 Android SDK。不用 android-actions/setup-android：
+        # 其在新版 cmdline-tools 下执行 'sdkmanager tools' 报 "Failed to find package 'tools'"
+        # 而失败。这里手动接受许可证，并确保项目所需 platform/build-tools 存在（幂等）。
+        run: |
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          sdkmanager "platforms;android-36" >/dev/null 2>&1 || true
+          sdkmanager "build-tools;36.0.0" >/dev/null 2>&1 || true
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" >/dev/null 2>&1 || true
 
       - name: Write mobile env
         # .env.mobile 未入库；由 CI 用 secrets 在 runner 上生成，

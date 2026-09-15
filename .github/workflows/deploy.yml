@@ -6,19 +6,20 @@
 #   2) 把 Web 产物打成独立 tarball（避免后续 APK 构建覆盖 dist/ 造成串扰）
 #   3) 构建 Android debug APK（JDK 17；android/gradle.properties 硬编码本机 JDK21，
 #      这里用环境变量 JAVA_HOME 覆盖为 runner 的 JDK17）
-#   4) 打包 web tarball + APK + latest.json → ssh/scp 到服务器 → 服务器脚本解包部署
+#   4) 打包 web tarball + APK + latest.json → 经 stdin base64 送入专用部署账号入口脚本
 #
 # 首次启用需要的 GitHub 仓库 Secrets（Settings → Secrets and variables → Actions）：
 #   SSH_HOST         服务器 IP（如 1.15.174.173）
-#   SSH_USER         SSH 登录用户（建议专用部署账号，见下方安全说明）
+#   SSH_USER         SSH 专用部署账号（固定为 lighthouse，切勿用 root）
 #   SSH_PORT         SSH 端口（默认 22）
-#   SSH_PRIVATE_KEY  SSH 私钥 PEM 内容
+#   SSH_PRIVATE_KEY  lighthouse 的 SSH 私钥 PEM 内容（勿放 root 私钥）
 #   SUPABASE_URL     https://supabase.cycbloom.cn
 #   SUPABASE_ANON_KEY  移动端构建写 .env.mobile 用（公开 client key）
 #   API_BASE_URL     https://api.cycbloom.cn/api/v1
 #
-# 安全建议：不要把 root 私钥放 CI。建议在服务器建只读/受限部署用户，且 authorized_keys
-# 仅允许该用户操作 /opt/km/{web,upload} 两条路径（可用 ssh 的 command= 限制或单独 key）。
+# 安全说明：部署走专用账号 lighthouse，其 authorized_keys 强制 command= 跳转到
+# /home/lighthouse/km-deploy-entry.sh：只接受 stdin 的 base64 负载、只写 /opt/km/web
+# （保留 downloads）、拒绝 scp/任意远程命令。因此 CI 不再需要 root，也不执行任意 shell。
 # .env.mobile 不入库，由 secrets 在 runner 上生成，含内容仅 client key。
 
 name: Deploy to Cloud
@@ -106,32 +107,27 @@ jobs:
           cp deploy/downloads/latest.json bundle/latest.json
           ls -la bundle/
 
-      - name: Upload bundle to server
-        uses: appleboy/scp-action@v1.0.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          source: "bundle/*"
-          target: "/opt/km/upload"
-
-      - name: Apply deploy on server
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            set -e
-            echo "--- deploy Web (preserve downloads) ---"
-            cd /opt/km/web
-            find . -mindepth 1 -maxdepth 1 ! -name downloads -exec rm -rf {} +
-            tar -xzf /opt/km/upload/bundle/web-dist.tgz -C /opt/km/web
-            echo "--- deploy APK ---"
-            cp /opt/km/upload/bundle/knowledgemap.apk /opt/km/web/downloads/knowledgemap.apk
-            echo "--- update version manifest ---"
-            cp /opt/km/upload/bundle/latest.json /opt/km/web/downloads/latest.json
-            echo "--- done ---"
-            cat /opt/km/web/downloads/latest.json
+      - name: Deploy via restricted lighthouse channel
+        # 专用部署账号 lighthouse 的安全通道：服务器 authorized_keys 对 lighthouse 强制
+        # command=/home/lighthouse/km-deploy-entry.sh，该入口脚本只接受 stdin 的 base64
+        # 负载，仅允许写 /opt/km/web（保留 downloads）、拒绝 scp/任意远程命令。
+        # 因此这里不再使用 root + scp + 任意 shell（避免 root 权限被 CI 滥用）。
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          port="${SSH_PORT:-22}"
+          key_file="$RUNNER_TEMP/km_deploy_key.pem"
+          umask 077
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$key_file"
+          # bundle 已含 web-dist.tgz / knowledgemap.apk / latest.json（见上一 Stage 步骤）。
+          # 打包成单个 tarball → 单行 base64 → 经 stdin 送入入口脚本（不指定远程命令，
+          # 由 authorized_keys 的 command= 强制入口脚本执行）。
+          tar -czf /tmp/km-bundle.tar.gz -C bundle .
+          base64 -w0 /tmp/km-bundle.tar.gz | \
+            ssh -i "$key_file" -o BatchMode=yes -o StrictHostKeyChecking=no \
+                -o IdentitiesOnly=yes -p "$port" "${SSH_USER}@${SSH_HOST}"
+          rm -f "$key_file"
